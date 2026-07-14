@@ -1,0 +1,34 @@
+name: Validar UCAN Academic Mall
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validar JavaScript y auditorías
+        run: npm test
+      - name: Probar servidor y autenticación
+        env:
+          PORT: 3011
+          ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
+        run: |
+          node server.js > /tmp/ucan.log 2>&1 &
+          echo $! > /tmp/ucan.pid
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:3011/health && break
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:3011/version
+          curl -fsS http://127.0.0.1:3011/api/auth/options
+          kill "$(cat /tmp/ucan.pid)"
+      - name: Construir imagen Docker
+        run: docker build -t ucan-academic-mall:test .

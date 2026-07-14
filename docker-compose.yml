@@ -1,0 +1,37 @@
+name: ucan-academic-mall-v265
+services:
+  ucan-babylon-mall-v265:
+    build:
+      context: .
+    image: ucan-academic-mall:v265
+    container_name: ucan-babylon-mall-v265
+    ports:
+      - "${UCAN_PORT:-3011}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      UCAN_BUILD: V265-20260714-USERS-AVATARS
+      REGISTRATION_ENABLED: "${REGISTRATION_ENABLED:-true}"
+      ADMIN_INITIAL_USERNAME: "${ADMIN_INITIAL_USERNAME:-admin}"
+      ADMIN_INITIAL_PASSWORD: "${ADMIN_INITIAL_PASSWORD:-Cambiar-UCAN-2026!}"
+      ADMIN_INITIAL_EMAIL: "${ADMIN_INITIAL_EMAIL:-admin@ucan.local}"
+      LEGACY_ADMIN_PIN_ENABLED: "${LEGACY_ADMIN_PIN_ENABLED:-false}"
+      ADMIN_PIN: "${ADMIN_PIN:-}"
+      VOICE_ROOM_LIMIT: "${VOICE_ROOM_LIMIT:-12}"
+      VOICE_STUN_URL: "${VOICE_STUN_URL:-stun:stun.cloudflare.com:3478}"
+      VOICE_TURN_URL: "${VOICE_TURN_URL:-}"
+      VOICE_TURN_USERNAME: "${VOICE_TURN_USERNAME:-}"
+      VOICE_TURN_CREDENTIAL: "${VOICE_TURN_CREDENTIAL:-}"
+    volumes:
+      - ./data:/app/data
+      - ./generated:/app/generated
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+    labels:
+      ucan.version: V265
+      ucan.build: V265-20260714-USERS-AVATARS

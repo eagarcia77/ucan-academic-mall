@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es-PR">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>UCAN Academic Mall V265 | Salas virtuales, anfiteatro y pizarras electrónicas</title>
+  <script src="/vendor/babylon.js"></script>
+  <script src="/vendor/babylonjs.loaders.min.js"></script>
+  <script src="/vendor/jszip.min.js"></script>
+  <style>
+    :root{--green:#007b5f;--yellow:#fed141;--gold:#85714d;--ink:#07110f;--panel:rgba(6,16,18,.82)}
+    *{box-sizing:border-box}
+    html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--ink);font-family:Inter,Segoe UI,system-ui,sans-serif;color:#fff}
+    #renderCanvas{width:100%;height:100%;touch-action:none;display:block;outline:none;background:#0c1517}
+    #hud{position:fixed;left:16px;top:16px;z-index:10;width:min(470px,calc(100vw - 32px));background:var(--panel);border:1px solid rgba(255,255,255,.16);border-radius:18px;box-shadow:0 20px 65px rgba(0,0,0,.35);backdrop-filter:blur(15px);padding:14px}
+    #hud h1{font-size:18px;margin:0 0 5px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.row{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
+    button,input,select{border:0;border-radius:11px;padding:9px 10px;font-weight:750;box-sizing:border-box;font:inherit}button{background:var(--yellow);color:#12130d;cursor:pointer}button.secondary{background:#173033;color:#e7fffb;border:1px solid rgba(255,255,255,.16)}button:disabled{opacity:.55;cursor:not-allowed}
+    #status{margin-top:8px;font-size:12px;color:#d2f6ef;line-height:1.35}.environment-controls{align-items:center}.environment-controls select{width:100%;background:#f8f6eb;color:#14211e;border:1px solid rgba(255,255,255,.2)}.environment-status{font-size:11px;color:#d2f6ef;line-height:1.25;padding:6px 8px;background:rgba(23,48,51,.72);border-radius:10px;text-align:center}.tiny{font-size:11px;color:#bde3df;margin-top:7px;line-height:1.3}
+    #loading{position:fixed;inset:0;display:grid;place-items:center;background:#07110f;z-index:8;color:#e9fffb;text-align:center;padding:22px}.card{max-width:680px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:22px;padding:22px;box-shadow:0 22px 70px rgba(0,0,0,.38)}
+    #boardPanel{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.72);backdrop-filter:blur(8px)}
+    #boardPanel.open{display:flex}.board-card{width:min(1050px,96vw);max-height:94vh;overflow:auto;background:#f7f8f5;color:#14211e;border-radius:20px;box-shadow:0 28px 90px rgba(0,0,0,.5);border:3px solid var(--green)}
+    .board-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;background:linear-gradient(120deg,var(--green),#0b5446);color:white;position:sticky;top:0;z-index:2}.board-head h2{font-size:18px;margin:0}.board-close{background:white;color:#17302b;min-width:42px}
+    .board-tools{padding:14px 16px;display:grid;grid-template-columns:minmax(160px,1fr) minmax(220px,2fr);gap:10px;align-items:end;border-bottom:1px solid #d8dfdb}.field label{display:block;font-size:12px;font-weight:800;margin-bottom:5px}.field select,.field input{width:100%;background:white;border:1px solid #bccac4;color:#14211e}
+    .board-actions{padding:0 16px 12px;display:flex;flex-wrap:wrap;gap:8px}.board-actions button{background:#e5ece8;color:#17302b;border:1px solid #c6d3cd}.board-actions button.primary{background:var(--yellow);color:#111}
+    #boardInfo{padding:0 16px 12px;font-size:13px;color:#37514a}.viewer{margin:0 16px 16px;min-height:360px;border:1px solid #c8d2ce;border-radius:14px;overflow:hidden;background:#17201e;display:grid;place-items:center}.viewer iframe,.viewer video,.viewer img{width:100%;height:min(62vh,610px);border:0;object-fit:contain;background:#111}.viewer .text-preview{width:100%;height:min(62vh,610px);overflow:auto;background:white;color:#1a2421;padding:26px;white-space:pre-wrap;line-height:1.5}.viewer-placeholder{padding:42px;text-align:center;color:#d6e9e2}.analysis-card{margin:0 16px 16px;background:#ffffff;border:1px solid #c8d2ce;border-radius:14px;padding:14px 16px;color:#17302b}.analysis-card h3{margin:0 0 10px;font-size:18px}.analysis-section{margin-bottom:12px}.analysis-section p{margin:6px 0 0;line-height:1.45}.analysis-section ul{margin:8px 0 0 18px;padding:0}.analysis-section li{margin:0 0 6px}.analysis-empty{color:#527169;margin:0}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @media(max-width:820px){#hud{width:min(360px,calc(100vw - 20px));left:10px;top:10px;max-height:48vh;overflow:auto}.board-tools{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr)}}
+
+    .hud-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}.hud-title{min-width:0}.hud-title h1{margin:0}.location-chip{margin-top:4px;display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border-radius:999px;background:rgba(0,123,95,.24);border:1px solid rgba(189,227,223,.28);font-size:11px;color:#e8fffb}.hud-toggle{padding:7px 10px;min-width:42px}.hud-body.collapsed{display:none}
+    .quick-nav{display:grid;grid-template-columns:1fr auto;gap:7px;margin-bottom:8px}.quick-nav select{min-width:0;background:#f8f6eb;color:#14211e;border:1px solid rgba(255,255,255,.2)}
+    .nav-group{margin:7px 0;border:1px solid rgba(255,255,255,.13);border-radius:12px;background:rgba(8,28,28,.48);overflow:hidden}.nav-group summary{cursor:pointer;padding:8px 10px;font-size:12px;font-weight:850;color:#effffb;list-style:none}.nav-group summary::-webkit-details-marker{display:none}.nav-group summary::after{content:'＋';float:right}.nav-group[open] summary::after{content:'−'}.nav-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:0 8px 8px}.nav-grid button{padding:8px 7px;font-size:12px}.nav-grid button.active-destination{outline:2px solid #fff;box-shadow:0 0 0 3px rgba(254,209,65,.55)}
+    .control-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:8px}.access-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:8px}.performance-status{margin-top:8px;padding:7px 9px;border-radius:10px;background:rgba(23,48,51,.72);font-size:11px;color:#d2f6ef;line-height:1.3}
+    body.high-contrast{--panel:rgba(0,0,0,.96);--yellow:#ffe248}body.high-contrast #hud{border:2px solid #fff}body.high-contrast button.secondary{background:#000;color:#fff;border:1px solid #fff}body.high-contrast .environment-status,body.high-contrast .performance-status{background:#000;border:1px solid #fff;color:#fff}
+    body.large-text #hud{font-size:112%}body.large-text #hud h1{font-size:21px}body.large-text #status,body.large-text .tiny,body.large-text .environment-status,body.large-text .performance-status{font-size:13px}
+    body.reduced-motion *,body.reduced-motion *::before,body.reduced-motion *::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+    @media(max-width:820px){.nav-grid{grid-template-columns:repeat(2,1fr)}.quick-nav{grid-template-columns:1fr}.access-grid{grid-template-columns:1fr 1fr}}
+
+    #livePanelViewer{position:fixed;inset:0;z-index:45;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.82);backdrop-filter:blur(10px)}
+    #livePanelViewer.open{display:flex}.live-panel-card{width:min(1180px,96vw);max-height:96vh;background:#f7f5ec;color:#14302a;border:3px solid var(--yellow);border-radius:20px;overflow:hidden;box-shadow:0 30px 100px rgba(0,0,0,.65)}
+    .live-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:#0c3934;color:#fff}.live-panel-head h2{margin:0;font-size:19px}.live-panel-close{min-width:44px;background:#fff;color:#14302a;font-size:22px;padding:6px 12px}
+    .live-panel-stage{display:grid;place-items:center;padding:14px;background:#dfe7e2;max-height:82vh;overflow:auto}.live-panel-stage img{display:block;width:min(1024px,100%);height:auto;background:#fff;box-shadow:0 12px 34px rgba(0,0,0,.22)}
+    #livePanelHint{margin:0;padding:8px 16px 12px;background:#f7f5ec;color:#426a62;font-size:13px;text-align:center}
+  </style>
+</head>
+<body>
+  <canvas id="renderCanvas" aria-label="Campus virtual UCAN en 3D"></canvas>
+  <div id="loading"><div class="card"><h2>UCAN Academic Mall V265</h2><p>Cargando áreas comunes, anfiteatro renovado y pizarras electrónicas…</p><p id="loadStatus">Inicializando motor local Babylon.js.</p></div></div>
+  <section id="hud" aria-label="Controles del campus virtual">
+    <div class="hud-head">
+      <div class="hud-title"><h1>UCAN Academic Mall V265</h1><div id="buildBadge" style="display:inline-block;margin-top:6px;padding:4px 9px;border-radius:999px;background:#fed141;color:#071713;font-weight:800;font-size:11px">COMPILACIÓN V265 ACTIVA</div><div id="currentLocation" class="location-chip" aria-live="polite">📍 Piso 1 · Áreas comunes</div></div>
+      <button id="hudToggle" class="secondary hud-toggle" aria-expanded="true" aria-controls="hudBody" title="Contraer panel">−</button>
+    </div>
+    <div id="hudBody" class="hud-body">
+      <div class="quick-nav"><select id="destinationSelect" aria-label="Seleccionar destino">
+        <option value="foodcourt">Piso 1 · Áreas comunes</option><option value="cafeteria">Cafetería</option><option value="library">Biblioteca</option>
+        <option value="floor2">Piso 2 · Galería</option><option value="class201">SV-201</option><option value="class202">SV-202</option><option value="class203">SV-203</option><option value="class204">SV-204</option><option value="class205">SV-205</option>
+        <option value="theater">Piso 3 · Anfiteatro</option><option value="rooftop">Terraza panorámica</option>
+        <option value="rooftopWeather">Observatorio · Estado del tiempo</option><option value="rooftopAgenda">Observatorio · Agenda astronómica</option>
+        <option value="rooftopMoon">Observatorio · Fase lunar</option><option value="rooftopSky">Observatorio · Mapa celeste</option><option value="rooftopCalendar">Observatorio · Calendario astronómico</option>
+      </select><button id="destinationGo">Ir al destino</button></div>
+
+      <details class="nav-group" open><summary>Niveles y áreas comunes</summary><div class="nav-grid">
+        <button data-go="foodcourt">Piso 1</button><button data-go="floor2">Piso 2</button><button data-go="theater">Piso 3</button>
+        <button data-go="rooftop">Terraza</button><button data-go="cafeteria">Cafetería</button><button data-go="library">Biblioteca</button>
+      </div></details>
+      <details class="nav-group"><summary>Observatorio de la terraza</summary><div class="nav-grid">
+        <button data-go="rooftopWeather">Tiempo</button><button data-go="rooftopAgenda">Agenda</button><button data-go="rooftopMoon">Fase lunar</button>
+        <button data-go="rooftopSky">Mapa celeste</button><button data-go="rooftopCalendar">Calendario</button><button data-go="rooftop">Vista general</button>
+      </div></details>
+      <details class="nav-group"><summary>Salas virtuales</summary><div class="nav-grid">
+        <button data-go="class201">SV-201</button><button data-go="class202">SV-202</button><button data-go="class203">SV-203</button>
+        <button data-go="class204">SV-204</button><button data-go="class205">SV-205</button><button id="boardsBtn" class="secondary">Pizarras</button>
+      </div></details>
+      <details class="nav-group"><summary>Realidad extendida y navegación</summary><div class="nav-grid">
+        <button id="xrBtn" class="secondary">Entrar en VR</button><button id="mrBtn" class="secondary">MR beta</button><button id="resetBtn" class="secondary">Reubicar</button>
+      </div></details>
+
+      <div class="control-grid"><button id="comfortBtn" class="secondary">Modo confort</button><button id="qualityBtn" class="secondary">Calidad: alta</button></div>
+      <div class="access-grid"><button id="autoQualityBtn" class="secondary" aria-pressed="true">Calidad automática</button><button id="motionBtn" class="secondary" aria-pressed="false">Reducir movimiento</button><button id="contrastBtn" class="secondary" aria-pressed="false">Alto contraste</button><button id="textSizeBtn" class="secondary" aria-pressed="false">Texto grande</button></div>
+      <div class="row environment-controls"><select id="seasonSelect" aria-label="Seleccionar estación"><option value="spring">Primavera</option><option value="summer">Verano</option><option value="autumn">Otoño</option><option value="winter">Invierno</option></select><div id="environmentStatus" class="environment-status">Ambiente natural</div></div>
+      <div id="performanceStatus" class="performance-status" aria-live="polite">Rendimiento: analizando el dispositivo…</div>
+      <div id="utilityActions"></div>
+    </div>
+    <div id="status">Use W/A/S/D o las flechas para caminar. Presione R para reubicarse. El panel organiza los destinos, la accesibilidad y el rendimiento.</div>
+    <div class="tiny">V265: cuentas de usuario, rol administrativo, avatares personalizables, presencia compartida y observatorio interactivo.</div>
+  </section>
+
+
+  <section id="livePanelViewer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="livePanelTitle">
+    <div class="live-panel-card">
+      <div class="live-panel-head"><h2 id="livePanelTitle">Panel astronómico</h2><button id="livePanelClose" class="live-panel-close" aria-label="Cerrar vista ampliada">×</button></div>
+      <div class="live-panel-stage"><img id="livePanelImage" alt="Vista ampliada del panel astronómico" /></div>
+      <p id="livePanelHint">Vista ampliada</p>
+    </div>
+  </section>
+
+  <section id="boardPanel" role="dialog" aria-modal="true" aria-labelledby="boardTitle">
+    <div class="board-card">
+      <div class="board-head">
+        <h2 id="boardTitle">Pizarra electrónica</h2>
+        <button id="boardClose" class="board-close" aria-label="Cerrar pizarra">×</button>
+      </div>
+      <div class="board-tools">
+        <div class="field"><label for="boardSelect">Sala</label><select id="boardSelect"></select></div>
+        <div class="field"><label for="boardFile">Cargar presentación, documento, imagen o video</label><input id="boardFile" type="file" accept=".ppt,.pptx,.pps,.ppsx,.pptm,.potx,.docx,.pdf,.txt,.md,.csv,.json,.html,.htm,.png,.jpg,.jpeg,.webp,.gif,.mp4,.webm,.ogg,application/pdf,video/*,image/*,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation" /></div>
+      </div>
+      <div class="board-actions">
+        <button id="boardPrev">← Anterior</button><button id="boardNext">Siguiente →</button><button id="boardPlay" class="primary">Reproducir</button><button id="boardPause">Pausar</button><button id="boardClear">Limpiar pizarra</button>
+      </div>
+      <div id="boardInfo">Seleccione una sala y cargue un archivo. El contenido se procesa localmente en el navegador y genera análisis inteligente cuando el formato lo permite.</div>
+      <div id="boardViewer" class="viewer"><div class="viewer-placeholder">La vista previa aparecerá aquí. También se reflejará en la pizarra 3D de la sala seleccionada.</div></div>
+      <div class="analysis-card">
+        <h3>Análisis IA local</h3>
+        <div id="boardAnalysisContent"><p class="analysis-empty">Suba un documento para generar un análisis inteligente local.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <script src="/js/ucan_avatar_shared.js?build=V265-20260714-USERS-AVATARS"></script>
+  <script src="/js/ucan_babylon_mall_v265_accounts_avatars.js?build=V265-20260714-USERS-AVATARS"></script>
+  <script src="/js/ucan_v240_features.js?build=V265-20260714-USERS-AVATARS"></script>
+  <script src="/js/ucan_v240_voice.js?build=V265-20260714-USERS-AVATARS"></script>
+  <script src="/js/ucan_v240_experiences.js?build=V265-20260714-USERS-AVATARS"></script>
+  <script src="/js/ucan_v265_identity.js?build=V265-20260714-USERS-AVATARS"></script>
+</body>
+</html>

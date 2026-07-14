@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es-PR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Cache-Control" content="no-store">
+  <title>Administración de usuarios | UCAN Academic Mall V265</title>
+  <style>
+    :root{--green:#007b5f;--yellow:#fed141;--ink:#12221e;--muted:#60756f;--paper:#f3f7f5;--danger:#a52b2b}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--ink)}header{background:linear-gradient(130deg,#073b35,var(--green));color:#fff;padding:24px}header>div{max-width:1280px;margin:auto;display:flex;justify-content:space-between;gap:18px;align-items:center;flex-wrap:wrap}h1{margin:0;font-size:28px}.toolbar{display:flex;gap:9px;flex-wrap:wrap}button,a.button{border:0;border-radius:9px;padding:10px 13px;font-weight:800;text-decoration:none;cursor:pointer;background:var(--yellow);color:#101713}.secondary{background:#fff!important;color:#17332d!important}.danger{background:#a52b2b!important;color:#fff!important}main{max-width:1280px;margin:24px auto;padding:0 16px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}.stat,.card{background:#fff;border:1px solid #d5e3de;border-radius:15px;padding:16px;box-shadow:0 8px 24px #0d38200d}.stat b{display:block;font-size:30px;color:var(--green)}.stat span{color:var(--muted)}.card h2{margin-top:0}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:1020px}th,td{padding:11px;border-bottom:1px solid #dce6e2;text-align:left;vertical-align:middle}th{background:#edf5f2;font-size:12px;text-transform:uppercase;letter-spacing:.04em}.badge{display:inline-block;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:900}.admin{background:#fff1b8;color:#654d00}.user{background:#dcefea;color:#075646}.active{background:#dff4e6;color:#176439}.disabled{background:#f8dddd;color:#8d2929}.actions{display:flex;gap:6px;flex-wrap:wrap}.actions button{font-size:12px;padding:7px 9px;background:#e6efeb;color:#15372f}.message{margin:0 0 14px;padding:10px 12px;border-radius:10px;display:none}.message.show{display:block}.message.error{background:#ffeaea;color:var(--danger)}.message.ok{background:#e6f7ed;color:#176439}.small{font-size:12px;color:var(--muted)}@media(max-width:800px){.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+<header><div><div><h1>Administración de usuarios</h1><div id="adminName">UCAN Academic Mall V265</div></div><div class="toolbar"><a class="button secondary" href="/campus">Regresar al campus</a><button id="refresh">Actualizar</button><button id="logout" class="danger">Cerrar sesión</button></div></div></header>
+<main>
+  <div id="message" class="message" aria-live="polite"></div>
+  <section class="stats"><div class="stat"><b id="total">0</b><span>Cuentas</span></div><div class="stat"><b id="active">0</b><span>Activas</span></div><div class="stat"><b id="admins">0</b><span>Administradores</span></div><div class="stat"><b id="online">0</b><span>En línea</span></div></section>
+  <section class="card"><h2>Directorio de cuentas</h2><p class="small">Puede activar o desactivar cuentas, cambiar roles y generar contraseñas temporales. Las contraseñas nunca se muestran ni se guardan en texto claro.</p><div class="table-wrap"><table><thead><tr><th>Usuario</th><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Avatar</th><th>Último acceso</th><th>Acciones</th></tr></thead><tbody id="users"></tbody></table></div></section>
+</main>
+<script>
+(() => {
+  const $=id=>document.getElementById(id); let currentUser=null;
+  const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const show=(text,type='ok')=>{const el=$('message');el.textContent=text;el.className=`message show ${type}`;setTimeout(()=>el.className='message',6500)};
+  async function api(url,options={}){const response=await fetch(url,{...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||`HTTP ${response.status}`);return data;}
+  const fmt=value=>value?new Intl.DateTimeFormat('es-PR',{dateStyle:'medium',timeStyle:'short'}).format(new Date(value)):'Nunca';
+  async function load(){
+    try{
+      const me=await api('/api/auth/me');currentUser=me.user;if(currentUser.role!=='admin'){location.replace('/campus');return;}$('adminName').textContent=`${currentUser.displayName} · Administrador`;
+      const data=await api('/api/admin/users');$('total').textContent=data.stats.total;$('active').textContent=data.stats.active;$('admins').textContent=data.stats.admins;$('online').textContent=data.stats.online;
+      $('users').innerHTML=data.users.map(user=>`<tr data-id="${esc(user.id)}"><td><strong>${esc(user.username)}</strong><br><span class="small">${esc(user.id)}</span></td><td>${esc(user.displayName)}</td><td>${esc(user.email)}</td><td><span class="badge ${user.role}">${user.role==='admin'?'Administrador':'Usuario'}</span></td><td><span class="badge ${user.status}">${user.status==='active'?'Activa':'Desactivada'}</span></td><td>${user.avatarConfigured?'Configurado':'Pendiente'}</td><td>${esc(fmt(user.lastLogin))}</td><td><div class="actions"><button data-action="role" data-role="${user.role==='admin'?'user':'admin'}">${user.role==='admin'?'Convertir en usuario':'Hacer administrador'}</button><button data-action="status" data-status="${user.status==='active'?'disabled':'active'}">${user.status==='active'?'Desactivar':'Activar'}</button><button data-action="reset">Restablecer contraseña</button></div></td></tr>`).join('');
+    }catch(error){if(/sesión|401|403/i.test(error.message))location.replace('/login?next=admin');else show(error.message,'error');}
+  }
+  $('users').addEventListener('click',async event=>{
+    const button=event.target.closest('button[data-action]');if(!button)return;const row=button.closest('tr');const id=row.dataset.id;button.disabled=true;
+    try{
+      if(button.dataset.action==='reset'){
+        if(!confirm('Se generará una contraseña temporal y la cuenta deberá cambiarla al entrar.'))return;
+        const data=await api(`/api/admin/users/${id}/reset-password`,{method:'POST',body:'{}'});prompt('Copie la contraseña temporal y entréguela al usuario:',data.temporaryPassword);show('Contraseña temporal generada.');
+      }else{
+        const payload=button.dataset.action==='role'?{role:button.dataset.role}:{status:button.dataset.status};await api(`/api/admin/users/${id}`,{method:'PATCH',body:JSON.stringify(payload)});show('Cuenta actualizada.');
+      }
+      await load();
+    }catch(error){show(error.message,'error');}finally{button.disabled=false;}
+  });
+  $('refresh').onclick=load;$('logout').onclick=async()=>{await api('/api/auth/logout',{method:'POST',body:'{}'}).catch(()=>{});location.replace('/login');};load();
+})();
+</script>
+</body>
+</html>

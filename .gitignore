@@ -1,0 +1,9 @@
+.env
+*.log
+*.zip
+node_modules/
+data/users.json
+data/uploads/*
+!data/uploads/.gitkeep
+generated/*
+!generated/.gitkeep

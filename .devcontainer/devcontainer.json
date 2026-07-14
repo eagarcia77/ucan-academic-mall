@@ -1,0 +1,23 @@
+{
+  "name": "UCAN Academic Mall V265",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": ".."
+  },
+  "overrideCommand": true,
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "UCAN Academic Mall",
+      "onAutoForward": "openBrowser",
+      "visibility": "public"
+    }
+  },
+  "postCreateCommand": "chmod +x .devcontainer/start-codespace.sh",
+  "postStartCommand": "bash .devcontainer/start-codespace.sh",
+  "remoteEnv": {
+    "PORT": "3000",
+    "UCAN_BUILD": "V265-CODESPACES",
+    "REGISTRATION_ENABLED": "true"
+  }
+}
