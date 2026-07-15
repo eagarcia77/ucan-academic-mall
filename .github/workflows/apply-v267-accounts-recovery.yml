@@ -40,3 +40,5 @@ jobs:
           fi
           git commit -m "Añadir administración completa y recuperación de contraseña [v267-applied]"
           git push
+
+# Disparo manual del workflow después de su creación inicial.
