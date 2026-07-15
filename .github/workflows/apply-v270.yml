@@ -1,0 +1,38 @@
+name: Aplicar V270 VR y Avatar Studio
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/apply_v270_vr_avatar.js
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: "!contains(github.event.head_commit.message, '[v270-applied]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Aplicar V270
+        run: node scripts/apply_v270_vr_avatar.js
+      - name: Validar proyecto
+        run: npm test
+      - name: Guardar V270
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No hay cambios pendientes."
+            exit 0
+          fi
+          git commit -m "Publicar V270 Meta Quest natural y Avatar Studio [v270-applied]"
+          git push
