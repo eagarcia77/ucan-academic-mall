@@ -1,0 +1,116 @@
+name: Aplicar corrección de teclado y salto
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message || '', '[keyboard-hotfix-applied]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Proteger formularios y activar salto
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('public/js/ucan_v265_identity.js')
+          text = path.read_text(encoding='utf-8')
+          marker = 'function setupKeyboardAndJump()'
+
+          if marker not in text:
+              anchor = "  async function api(url, options={}) {"
+              if anchor not in text:
+                  raise SystemExit('No se encontró el punto de inserción del módulo de identidad.')
+
+              injection = r'''  const MOVEMENT_CODES = new Set(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ShiftLeft','ShiftRight','KeyR','Space']);
+          function keyboardTarget(target) { return target instanceof Element ? target : null; }
+          function isTextEntryTarget(target) { return Boolean(keyboardTarget(target)?.closest('input,textarea,select,[contenteditable="true"],[contenteditable=""],[role="textbox"]')); }
+          function isInteractiveTarget(target) { return Boolean(keyboardTarget(target)?.closest('button,a,summary,option,label,[role="button"],[role="link"]')); }
+          function profileOrDialogOpen() { return Boolean(document.querySelector('#ucanProfileModal.open,#boardPanel.open,#livePanelViewer.open')); }
+          function releaseMovementKeys() {
+            for (const code of MOVEMENT_CODES) window.dispatchEvent(new KeyboardEvent('keyup',{code,key:code==='Space'?' ':'',bubbles:false}));
+          }
+          function setupKeyboardAndJump() {
+            if (!state.scene || !state.controllerCamera || window.__UCAN_KEYBOARD_JUMP_AUDIT__?.connected) return;
+            let jumpRequested=false, jumpActive=false, jumpStart=0, jumpBaseY=0;
+            const jumpDuration=760, jumpHeight=1.08;
+            const controlsBlocked=event=>isTextEntryTarget(event.target)||isInteractiveTarget(event.target)||profileOrDialogOpen();
+            document.addEventListener('keydown',event=>{
+              if(!MOVEMENT_CODES.has(event.code))return;
+              if(controlsBlocked(event)){event.stopPropagation();return;}
+              if(event.code==='Space'){
+                event.preventDefault();event.stopPropagation();
+                if(!event.repeat)jumpRequested=true;
+              }
+            },false);
+            document.addEventListener('keyup',event=>{
+              if(!MOVEMENT_CODES.has(event.code))return;
+              if(controlsBlocked(event)||event.code==='Space')event.stopPropagation();
+            },false);
+            document.addEventListener('focusin',event=>{if(isTextEntryTarget(event.target)||isInteractiveTarget(event.target))releaseMovementKeys();});
+            document.addEventListener('pointerdown',event=>{const canvas=event.target?.closest?.('#renderCanvas');if(canvas){canvas.tabIndex=0;canvas.focus({preventScroll:true});}});
+            window.addEventListener('blur',releaseMovementKeys);
+            document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseMovementKeys();});
+            state.scene.onBeforeRenderObservable.add(()=>{
+              const riding=window.__ucanV254IsRiding?.()===true;
+              if(jumpRequested&&!jumpActive&&!profileOrDialogOpen()&&!riding){
+                jumpActive=true;jumpRequested=false;jumpStart=performance.now();jumpBaseY=state.controllerCamera.position.y;
+                window.__UCAN_API__?.setStatus?.('Salto activado. Use W, A, S y D para desplazarse.');
+              }
+              if(!jumpActive)return;
+              if(profileOrDialogOpen()||riding){state.controllerCamera.position.y=jumpBaseY;jumpActive=false;jumpRequested=false;return;}
+              const progress=(performance.now()-jumpStart)/jumpDuration;
+              if(progress>=1){state.controllerCamera.position.y=jumpBaseY;jumpActive=false;return;}
+              const t=Math.max(0,Math.min(1,progress));
+              state.controllerCamera.position.y=jumpBaseY+4*jumpHeight*t*(1-t);
+            });
+            const canvas=$('renderCanvas');if(canvas)canvas.tabIndex=0;
+            const status=$('status');if(status)status.textContent='Use W/A/S/D o las flechas para caminar, la barra espaciadora para saltar y R para reubicarse. Los controles se desactivan automáticamente mientras escribe.';
+            window.__UCAN_KEYBOARD_JUMP_AUDIT__={version:'V266',connected:true,formTypingProtected:true,protectedKeys:[...MOVEMENT_CODES],jumpEnabled:true,jumpKey:'Space',durationMs:jumpDuration,height:jumpHeight};
+            console.info('[UCAN V266] Teclado y salto:',window.__UCAN_KEYBOARD_JUMP_AUDIT__);
+          }
+          '''
+              text = text.replace(anchor, injection + anchor, 1)
+              old_init = 'setupSceneAvatar();renderOnlineList([]);presenceLoop();setInterval(presenceLoop,2200);'
+              new_init = 'setupSceneAvatar();setupKeyboardAndJump();renderOnlineList([]);presenceLoop();setInterval(presenceLoop,2200);'
+              if old_init not in text:
+                  raise SystemExit('No se encontró la inicialización del avatar.')
+              text = text.replace(old_init, new_init, 1)
+              text = text.replace("window.__UCAN_IDENTITY__={version:'V265'", "window.__UCAN_IDENTITY__={version:'V266'", 1)
+              path.write_text(text, encoding='utf-8')
+
+          print('Corrección de teclado y salto presente.')
+          PY
+
+      - name: Validar JavaScript
+        run: |
+          node --check public/js/ucan_v265_identity.js
+          grep -q "function setupKeyboardAndJump" public/js/ucan_v265_identity.js
+          grep -q "jumpKey:'Space'" public/js/ucan_v265_identity.js
+
+      - name: Publicar corrección en main
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "La corrección ya estaba aplicada."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/js/ucan_v265_identity.js
+          git commit -m "Corregir WASD en formularios y activar salto [keyboard-hotfix-applied]"
+          git push origin HEAD:main
