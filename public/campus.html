@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>UCAN Academic Mall V265 | Salas virtuales, anfiteatro y pizarras electrónicas</title>
+  <title>UCAN Academic Mall V268 | Salas virtuales, anfiteatro y pizarras electrónicas</title>
   <script src="/vendor/babylon.js"></script>
   <script src="/vendor/babylonjs.loaders.min.js"></script>
   <script src="/vendor/jszip.min.js"></script>
@@ -47,10 +47,10 @@
 </head>
 <body>
   <canvas id="renderCanvas" aria-label="Campus virtual UCAN en 3D"></canvas>
-  <div id="loading"><div class="card"><h2>UCAN Academic Mall V265</h2><p>Cargando áreas comunes, anfiteatro renovado y pizarras electrónicas…</p><p id="loadStatus">Inicializando motor local Babylon.js.</p></div></div>
+  <div id="loading"><div class="card"><h2>UCAN Academic Mall V268</h2><p>Cargando áreas comunes, anfiteatro renovado y pizarras electrónicas…</p><p id="loadStatus">Inicializando motor local Babylon.js.</p></div></div>
   <section id="hud" aria-label="Controles del campus virtual">
     <div class="hud-head">
-      <div class="hud-title"><h1>UCAN Academic Mall V265</h1><div id="buildBadge" style="display:inline-block;margin-top:6px;padding:4px 9px;border-radius:999px;background:#fed141;color:#071713;font-weight:800;font-size:11px">COMPILACIÓN V265 ACTIVA</div><div id="currentLocation" class="location-chip" aria-live="polite">📍 Piso 1 · Áreas comunes</div></div>
+      <div class="hud-title"><h1>UCAN Academic Mall V268</h1><div id="buildBadge" style="display:inline-block;margin-top:6px;padding:4px 9px;border-radius:999px;background:#fed141;color:#071713;font-weight:800;font-size:11px">COMPILACIÓN V268 ACTIVA</div><div id="currentLocation" class="location-chip" aria-live="polite">📍 Piso 1 · Áreas comunes</div></div>
       <button id="hudToggle" class="secondary hud-toggle" aria-expanded="true" aria-controls="hudBody" title="Contraer panel">−</button>
     </div>
     <div id="hudBody" class="hud-body">
@@ -84,10 +84,9 @@
       <div id="performanceStatus" class="performance-status" aria-live="polite">Rendimiento: analizando el dispositivo…</div>
       <div id="utilityActions"></div>
     </div>
-    <div id="status">Use W/A/S/D o las flechas para caminar. Presione R para reubicarse. El panel organiza los destinos, la accesibilidad y el rendimiento.</div>
-    <div class="tiny">V265: cuentas de usuario, rol administrativo, avatares personalizables, presencia compartida y observatorio interactivo.</div>
+    <div id="status">En Meta Quest use el joystick izquierdo para caminar y el derecho para girar. Las escaleras ajustan la altura automáticamente.</div>
+    <div class="tiny">V268: navegación optimizada para Meta Quest, controles estándar de joysticks y altura automática en escaleras y rampas.</div>
   </section>
-
 
   <section id="livePanelViewer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="livePanelTitle">
     <div class="live-panel-card">
@@ -119,11 +118,12 @@
     </div>
   </section>
 
-  <script src="/js/ucan_avatar_shared.js?build=V265-20260714-USERS-AVATARS"></script>
-  <script src="/js/ucan_babylon_mall_v265_accounts_avatars.js?build=V265-20260714-USERS-AVATARS"></script>
-  <script src="/js/ucan_v240_features.js?build=V265-20260714-USERS-AVATARS"></script>
-  <script src="/js/ucan_v240_voice.js?build=V265-20260714-USERS-AVATARS"></script>
-  <script src="/js/ucan_v240_experiences.js?build=V265-20260714-USERS-AVATARS"></script>
-  <script src="/js/ucan_v265_identity.js?build=V265-20260714-USERS-AVATARS"></script>
+  <script src="/js/ucan_avatar_shared.js?build=V268-20260715-META-QUEST"></script>
+  <script src="/js/ucan_v268_quest_locomotion.js?build=V268-20260715-META-QUEST"></script>
+  <script src="/js/ucan_babylon_mall_v265_accounts_avatars.js?build=V268-20260715-META-QUEST"></script>
+  <script src="/js/ucan_v240_features.js?build=V268-20260715-META-QUEST"></script>
+  <script src="/js/ucan_v240_voice.js?build=V268-20260715-META-QUEST"></script>
+  <script src="/js/ucan_v240_experiences.js?build=V268-20260715-META-QUEST"></script>
+  <script src="/js/ucan_v265_identity.js?build=V268-20260715-META-QUEST"></script>
 </body>
 </html>
