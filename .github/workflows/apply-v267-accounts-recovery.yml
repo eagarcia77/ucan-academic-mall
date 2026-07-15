@@ -1,0 +1,42 @@
+name: Aplicar V267 cuentas y recuperación
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/apply_v267_accounts_recovery.js
+      - .github/workflows/apply-v267-accounts-recovery.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: "!contains(github.event.head_commit.message, '[v267-applied]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Aplicar actualización
+        run: node scripts/apply_v267_accounts_recovery.js
+      - name: Validar sintaxis
+        run: |
+          node --check server.js
+          node --check lib/auth.js
+          node --check public/js/ucan_v265_identity.js
+      - name: Guardar cambios
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/auth.js server.js public/login.html public/admin.html public/campus.html public/js/ucan_v265_identity.js package.json .env.example
+          if git diff --cached --quiet; then
+            echo "No hay cambios pendientes."
+            exit 0
+          fi
+          git commit -m "Añadir administración completa y recuperación de contraseña [v267-applied]"
+          git push
