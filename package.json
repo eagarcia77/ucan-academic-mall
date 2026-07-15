@@ -1,11 +1,11 @@
 {
-  "name": "ucan-babylon-mall-v265",
-  "version": "2.6.5",
-  "description": "UCAN Academic Mall V265 - cuentas, administración, avatares personalizables y presencia compartida",
+  "name": "ucan-babylon-mall-v268",
+  "version": "2.6.8",
+  "description": "UCAN Academic Mall V268 - cuentas, avatares y locomoción optimizada para Meta Quest",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check lib/auth.js && node --check public/js/ucan_babylon_mall_v265_accounts_avatars.js && node --check public/js/ucan_avatar_shared.js && node --check public/js/ucan_v265_identity.js && node --check public/js/ucan_v240_features.js && node --check public/js/ucan_v240_voice.js && node --check public/js/ucan_v240_experiences.js",
+    "check": "node --check server.js && node --check lib/auth.js && node --check public/js/ucan_babylon_mall_v265_accounts_avatars.js && node --check public/js/ucan_avatar_shared.js && node --check public/js/ucan_v265_identity.js && node --check public/js/ucan_v268_quest_locomotion.js && node --check public/js/ucan_v240_features.js && node --check public/js/ucan_v240_voice.js && node --check public/js/ucan_v240_experiences.js",
     "audit:accounts": "node audit_accounts_v265.js",
     "audit:floor": "node audit_floor_separation.js",
     "audit:layers": "node audit_layers.js",
