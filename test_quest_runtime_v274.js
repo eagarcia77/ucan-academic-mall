@@ -1,0 +1,14 @@
+const fs=require('fs'),vm=require('vm');
+const source=fs.readFileSync('public/js/ucan_v274_xr_visibility_run_jump.js','utf8');
+const store=new Map();
+const sandbox={console,localStorage:{getItem:key=>store.get(key)||null,setItem:(key,value)=>store.set(key,String(value))},document:{getElementById:()=>null,querySelector:()=>null},window:{}};
+sandbox.window=sandbox;
+sandbox.BABYLON={Scene:function(){}};
+sandbox.window.BABYLON=sandbox.BABYLON;
+sandbox.BABYLON.Scene.prototype={createDefaultXRExperienceAsync:async()=>({})};
+vm.createContext(sandbox);vm.runInContext(source,sandbox);
+const boot=sandbox.__UCAN_QUEST_XR_BOOT__||{};
+const checks={version:boot.version==='V274',blackScreenProtection:boot.blackScreenProtection===true,transparentRailFix:boot.transparentRailFix===true,runEnabled:boot.runEnabled===true,jumpEnabled:boot.jumpEnabled===true,defaultSpeed:boot.defaultSpeed===5,runSpeed:boot.runSpeed===7.5};
+const ok=Object.values(checks).every(Boolean);
+console.log(JSON.stringify({ok,checks},null,2));
+if(!ok)process.exit(1);
