@@ -9,6 +9,7 @@ const UCAN_VERSION = 'V275';
 const UCAN_BUILD = 'V275-20260717-XR-STAIR-BLOCKERS-TERRACE';
 const UCAN_SCRIPT = '/js/ucan_babylon_mall_v265_accounts_avatars.js?build=V275-20260717-XR-STAIR-BLOCKERS-TERRACE';
 const UCAN_XR_SCRIPT = '/js/ucan_v275_xr_stair_blockers.js?build=V275-20260717-XR-STAIR-BLOCKERS-TERRACE';
+const UCAN_BLOCKER_SCRIPT = '/js/ucan_v275_blocker_pickability.js?build=V275-20260717-XR-STAIR-BLOCKERS-TERRACE';
 
 const originalLoad = Module._load;
 Module._load = function patchedModuleLoad(request, parent, isMain) {
@@ -63,11 +64,12 @@ function sendHtml(res, status, body) {
 function campusV275Html() {
   const file = path.join(__dirname, 'public', 'campus.html');
   let html = fs.readFileSync(file, 'utf8');
+  const xrScripts = `${UCAN_XR_SCRIPT}"></script>\n  <script src="${UCAN_BLOCKER_SCRIPT}`;
   html = html
     .replaceAll('V272-20260717-XR-DESKTOP-PARITY-SPEED', UCAN_BUILD)
     .replaceAll('UCAN Academic Mall V272', 'UCAN Academic Mall V275')
     .replaceAll('COMPILACIÓN V272 ACTIVA', 'COMPILACIÓN V275 ACTIVA')
-    .replace('/js/ucan_v272_xr_desktop_parity.js?build=' + UCAN_BUILD, UCAN_XR_SCRIPT)
+    .replace('/js/ucan_v272_xr_desktop_parity.js?build=' + UCAN_BUILD, xrScripts)
     .replace('V272: el entorno VR utiliza la misma escena de computadora y la velocidad normal coincide en 5.0 m/s.', 'V275: bloqueos debajo de todas las escaleras, activación por entrada correcta y acceso estable a la terraza.');
   return html;
 }
@@ -106,7 +108,7 @@ http.createServer = function createCompatibleServer(listener) {
         return sendJson(res, 200, { ok:true, version:UCAN_VERSION, build:UCAN_BUILD });
       }
       if (pathname === '/version') {
-        return sendJson(res, 200, { version:UCAN_VERSION, build:UCAN_BUILD, script:UCAN_SCRIPT, xrScript:UCAN_XR_SCRIPT });
+        return sendJson(res, 200, { version:UCAN_VERSION, build:UCAN_BUILD, script:UCAN_SCRIPT, xrScript:UCAN_XR_SCRIPT, blockerScript:UCAN_BLOCKER_SCRIPT });
       }
       if (pathname === '/campus' && req.method === 'GET' && auth?.getSessionUser?.(req)) {
         return sendHtml(res, 200, campusV275Html());
