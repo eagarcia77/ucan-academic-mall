@@ -1,12 +1,12 @@
 {
-  "name": "ucan-babylon-mall-v272",
-  "version": "2.7.2",
-  "description": "UCAN Academic Mall V272 - paridad visual de escritorio y velocidad equivalente en Meta Quest",
+  "name": "ucan-babylon-mall-v274",
+  "version": "2.7.4",
+  "description": "UCAN Academic Mall V274 - visibilidad inmersiva, barandas transparentes y controles para correr y brincar en Meta Quest",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check lib/auth.js && node --check public/js/ucan_babylon_mall_v265_accounts_avatars.js && node --check public/js/ucan_avatar_shared.js && node --check public/js/ucan_v265_identity.js && node --check public/js/ucan_v270_avatar_studio.js && node --check public/js/ucan_v266_keyboard_jump.js && node --check public/js/ucan_v272_xr_desktop_parity.js && node --check public/js/ucan_v240_features.js && node --check public/js/ucan_v240_voice.js && node --check public/js/ucan_v240_experiences.js",
-    "audit:quest": "node audit_quest_v272.js",
+    "check": "node --check server.js && node --check lib/auth.js && node --check auth-compat-v271.js && node --check public/js/ucan_babylon_mall_v265_accounts_avatars.js && node --check public/js/ucan_avatar_shared.js && node --check public/js/ucan_v265_identity.js && node --check public/js/ucan_v270_avatar_studio.js && node --check public/js/ucan_v266_keyboard_jump.js && node --check public/js/ucan_v274_xr_visibility_run_jump.js && node --check public/js/ucan_v240_features.js && node --check public/js/ucan_v240_voice.js && node --check public/js/ucan_v240_experiences.js",
+    "audit:quest": "node audit_quest_v274.js",
     "audit:accounts": "node audit_accounts_v265.js",
     "audit:floor": "node audit_floor_separation.js",
     "audit:layers": "node audit_layers.js",
@@ -17,7 +17,7 @@
     "audit:text-wrap": "node audit_text_wrap_v265.js",
     "audit:astro-panels": "node audit_astro_panels_v265.js",
     "audit:keyboard-jump": "node audit_keyboard_jump_v266.js",
-    "test:quest-runtime": "node test_quest_runtime_v272.js",
+    "test:quest-runtime": "node test_quest_runtime_v274.js",
     "test": "npm run check && npm run audit:quest && npm run audit:accounts && npm run audit:layers && npm run audit:floor && npm run audit:environment && npm run audit:optimization && npm run audit:stairs && npm run audit:astronomy && npm run audit:text-wrap && npm run audit:astro-panels && npm run audit:keyboard-jump && npm run test:quest-runtime && npm run audit:avatar-v270",
     "audit:avatar-v270": "node audit_avatar_studio_v270.js"
   },
