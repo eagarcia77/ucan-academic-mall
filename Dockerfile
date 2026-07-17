@@ -9,4 +9,4 @@ COPY --chown=node:node . .
 USER node
 ENV HOME=/tmp/ucan-home
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["node", "-r", "./auth-compat-v271.js", "server.js"]
