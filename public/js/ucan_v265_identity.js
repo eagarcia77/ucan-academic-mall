@@ -20,6 +20,53 @@
     localStorage.setItem(`ucan-${kind}-complete:${id}`, new Date().toISOString());
   }
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const MOVEMENT_CODES = new Set(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ShiftLeft','ShiftRight','KeyR','Space']);
+function keyboardTarget(target) { return target instanceof Element ? target : null; }
+function isTextEntryTarget(target) { return Boolean(keyboardTarget(target)?.closest('input,textarea,select,[contenteditable="true"],[contenteditable=""],[role="textbox"]')); }
+function isInteractiveTarget(target) { return Boolean(keyboardTarget(target)?.closest('button,a,summary,option,label,[role="button"],[role="link"]')); }
+function profileOrDialogOpen() { return Boolean(document.querySelector('#ucanProfileModal.open,#boardPanel.open,#livePanelViewer.open')); }
+function releaseMovementKeys() {
+  for (const code of MOVEMENT_CODES) window.dispatchEvent(new KeyboardEvent('keyup',{code,key:code==='Space'?' ':'',bubbles:false}));
+}
+function setupKeyboardAndJump() {
+  if (!state.scene || !state.controllerCamera || window.__UCAN_KEYBOARD_JUMP_AUDIT__?.connected) return;
+  let jumpRequested=false, jumpActive=false, jumpStart=0, jumpBaseY=0;
+  const jumpDuration=760, jumpHeight=1.08;
+  const controlsBlocked=event=>isTextEntryTarget(event.target)||isInteractiveTarget(event.target)||profileOrDialogOpen();
+  document.addEventListener('keydown',event=>{
+    if(!MOVEMENT_CODES.has(event.code))return;
+    if(controlsBlocked(event)){event.stopPropagation();return;}
+    if(event.code==='Space'){
+      event.preventDefault();event.stopPropagation();
+      if(!event.repeat)jumpRequested=true;
+    }
+  },false);
+  document.addEventListener('keyup',event=>{
+    if(!MOVEMENT_CODES.has(event.code))return;
+    if(controlsBlocked(event)||event.code==='Space')event.stopPropagation();
+  },false);
+  document.addEventListener('focusin',event=>{if(isTextEntryTarget(event.target)||isInteractiveTarget(event.target))releaseMovementKeys();});
+  document.addEventListener('pointerdown',event=>{const canvas=event.target?.closest?.('#renderCanvas');if(canvas){canvas.tabIndex=0;canvas.focus({preventScroll:true});}});
+  window.addEventListener('blur',releaseMovementKeys);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseMovementKeys();});
+  state.scene.onBeforeRenderObservable.add(()=>{
+    const riding=window.__ucanV254IsRiding?.()===true;
+    if(jumpRequested&&!jumpActive&&!profileOrDialogOpen()&&!riding){
+      jumpActive=true;jumpRequested=false;jumpStart=performance.now();jumpBaseY=state.controllerCamera.position.y;
+      window.__UCAN_API__?.setStatus?.('Salto activado. Use W, A, S y D para desplazarse.');
+    }
+    if(!jumpActive)return;
+    if(profileOrDialogOpen()||riding){state.controllerCamera.position.y=jumpBaseY;jumpActive=false;jumpRequested=false;return;}
+    const progress=(performance.now()-jumpStart)/jumpDuration;
+    if(progress>=1){state.controllerCamera.position.y=jumpBaseY;jumpActive=false;return;}
+    const t=Math.max(0,Math.min(1,progress));
+    state.controllerCamera.position.y=jumpBaseY+4*jumpHeight*t*(1-t);
+  });
+  const canvas=$('renderCanvas');if(canvas)canvas.tabIndex=0;
+  const status=$('status');if(status)status.textContent='Use W/A/S/D o las flechas para caminar, la barra espaciadora para saltar y R para reubicarse. Los controles se desactivan automáticamente mientras escribe.';
+  window.__UCAN_KEYBOARD_JUMP_AUDIT__={version:'V266',connected:true,formTypingProtected:true,protectedKeys:[...MOVEMENT_CODES],jumpEnabled:true,jumpKey:'Space',durationMs:jumpDuration,height:jumpHeight};
+  console.info('[UCAN V266] Teclado y salto:',window.__UCAN_KEYBOARD_JUMP_AUDIT__);
+}
   async function api(url, options={}) {
     const response = await fetch(url, { ...options, headers:{ 'Content-Type':'application/json', ...(options.headers||{}) } });
     const data = await response.json().catch(() => ({}));
@@ -151,7 +198,7 @@
   }
   async function init() {
     try {
-      const me=await api('/api/auth/me');state.user=me.user;state.options=await api('/api/auth/options');injectStyles();injectInterface();updateUserUI();setupPreview();populateForm(state.user.avatar);bindEvents();await waitForEnvironment();setupSceneAvatar();renderOnlineList([]);presenceLoop();setInterval(presenceLoop,2200);
+      const me=await api('/api/auth/me');state.user=me.user;state.options=await api('/api/auth/options');injectStyles();injectInterface();updateUserUI();setupPreview();populateForm(state.user.avatar);bindEvents();await waitForEnvironment();setupSceneAvatar();setupKeyboardAndJump();renderOnlineList([]);presenceLoop();setInterval(presenceLoop,2200);
       if(entryRequest.avatar||!state.user.avatarConfigured)openModal(false);if(entryRequest.password||state.user.forcePasswordChange)openModal(true);
       window.__UCAN_IDENTITY__={version:'V270',getUser:()=>state.user,getRemoteCount:()=>state.remote.size,openAvatarEditor:()=>openModal(false),toggleThirdPerson};
     } catch(error) { console.error('Identidad UCAN:',error); location.replace('/login'); }
