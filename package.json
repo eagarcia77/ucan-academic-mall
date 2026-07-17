@@ -1,11 +1,11 @@
 {
-  "name": "ucan-babylon-mall-v275",
-  "version": "2.7.5",
-  "description": "UCAN Academic Mall V275 - bloqueos debajo de escaleras y acceso estable a la terraza en Meta Quest",
+  "name": "ucan-babylon-mall-v276",
+  "version": "2.7.6",
+  "description": "UCAN Academic Mall V276 - cielo interactivo en la terraza con planetas y estrellas seleccionables, conservando bloqueos seguros bajo las escaleras",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check lib/auth.js && node --check auth-compat-v271.js && node --check public/js/ucan_babylon_mall_v265_accounts_avatars.js && node --check public/js/ucan_avatar_shared.js && node --check public/js/ucan_v265_identity.js && node --check public/js/ucan_v270_avatar_studio.js && node --check public/js/ucan_v266_keyboard_jump.js && node --check public/js/ucan_v275_xr_stair_blockers.js && node --check public/js/ucan_v275_blocker_pickability.js && node --check public/js/ucan_v240_features.js && node --check public/js/ucan_v240_voice.js && node --check public/js/ucan_v240_experiences.js",
+    "check": "node --check server.js && node --check lib/auth.js && node --check auth-compat-v271.js && node --check public/js/ucan_babylon_mall_v265_accounts_avatars.js && node --check public/js/ucan_avatar_shared.js && node --check public/js/ucan_v265_identity.js && node --check public/js/ucan_v270_avatar_studio.js && node --check public/js/ucan_v266_keyboard_jump.js && node --check public/js/ucan_v275_xr_stair_blockers.js && node --check public/js/ucan_v275_blocker_pickability.js && node --check public/js/ucan_v276_interactive_sky.js && node --check public/js/ucan_v276_sky_refresh.js && node --check public/js/ucan_v240_features.js && node --check public/js/ucan_v240_voice.js && node --check public/js/ucan_v240_experiences.js",
     "audit:quest": "node audit_quest_v275.js",
     "audit:accounts": "node audit_accounts_v265.js",
     "audit:floor": "node audit_floor_separation.js",
@@ -14,11 +14,12 @@
     "audit:optimization": "node audit_optimization.js",
     "audit:stairs": "node audit_rooftop_stairs.js",
     "audit:astronomy": "node audit_astronomy_v265.js",
+    "audit:sky": "node audit_sky_v276.js",
     "audit:text-wrap": "node audit_text_wrap_v265.js",
     "audit:astro-panels": "node audit_astro_panels_v265.js",
     "audit:keyboard-jump": "node audit_keyboard_jump_v266.js",
     "test:quest-runtime": "node test_quest_runtime_v275.js",
-    "test": "npm run check && npm run audit:quest && npm run audit:accounts && npm run audit:layers && npm run audit:floor && npm run audit:environment && npm run audit:optimization && npm run audit:stairs && npm run audit:astronomy && npm run audit:text-wrap && npm run audit:astro-panels && npm run audit:keyboard-jump && npm run test:quest-runtime && npm run audit:avatar-v270",
+    "test": "npm run check && npm run audit:quest && npm run audit:accounts && npm run audit:layers && npm run audit:floor && npm run audit:environment && npm run audit:optimization && npm run audit:stairs && npm run audit:astronomy && npm run audit:sky && npm run audit:text-wrap && npm run audit:astro-panels && npm run audit:keyboard-jump && npm run test:quest-runtime && npm run audit:avatar-v270",
     "audit:avatar-v270": "node audit_avatar_studio_v270.js"
   },
   "dependencies": {}
