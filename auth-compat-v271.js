@@ -5,10 +5,10 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const UCAN_VERSION = 'V273';
-const UCAN_BUILD = 'V273-20260717-XR-NATIVE-POSE-PARITY';
-const UCAN_SCRIPT = '/js/ucan_babylon_mall_v265_accounts_avatars.js?build=V273-20260717-XR-NATIVE-POSE-PARITY';
-const UCAN_XR_SCRIPT = '/js/ucan_v273_xr_native_pose.js?build=V273-20260717-XR-NATIVE-POSE-PARITY';
+const UCAN_VERSION = 'V274';
+const UCAN_BUILD = 'V274-20260717-XR-VISIBLE-RUN-JUMP';
+const UCAN_SCRIPT = '/js/ucan_babylon_mall_v265_accounts_avatars.js?build=V274-20260717-XR-VISIBLE-RUN-JUMP';
+const UCAN_XR_SCRIPT = '/js/ucan_v274_xr_visibility_run_jump.js?build=V274-20260717-XR-VISIBLE-RUN-JUMP';
 
 const originalLoad = Module._load;
 Module._load = function patchedModuleLoad(request, parent, isMain) {
@@ -16,7 +16,7 @@ Module._load = function patchedModuleLoad(request, parent, isMain) {
   let resolved = '';
   try { resolved = Module._resolveFilename(request, parent); } catch (_) {}
 
-  if (/[\\/]lib[\\/]auth\.js$/.test(resolved) && exported && typeof exported.createAuthSystem === 'function' && !exported.__ucanV273Compat) {
+  if (/[\\/]lib[\\/]auth\.js$/.test(resolved) && exported && typeof exported.createAuthSystem === 'function' && !exported.__ucanV274Compat) {
     const originalCreateAuthSystem = exported.createAuthSystem;
     exported.createAuthSystem = function createCompatibleAuthSystem(options) {
       const auth = originalCreateAuthSystem(options);
@@ -29,10 +29,10 @@ Module._load = function patchedModuleLoad(request, parent, isMain) {
           return auth.handleApi(pathname, req, res, parsed, { readJsonBody, sendJson });
         };
       }
-      global.__UCAN_AUTH_SYSTEM_V273__ = auth;
+      global.__UCAN_AUTH_SYSTEM_V274__ = auth;
       return auth;
     };
-    exported.__ucanV273Compat = true;
+    exported.__ucanV274Compat = true;
   }
   return exported;
 };
@@ -60,15 +60,15 @@ function sendHtml(res, status, body) {
   res.end(body);
 }
 
-function campusV273Html() {
+function campusV274Html() {
   const file = path.join(__dirname, 'public', 'campus.html');
   let html = fs.readFileSync(file, 'utf8');
   html = html
     .replaceAll('V272-20260717-XR-DESKTOP-PARITY-SPEED', UCAN_BUILD)
-    .replaceAll('UCAN Academic Mall V272', 'UCAN Academic Mall V273')
-    .replaceAll('COMPILACIÓN V272 ACTIVA', 'COMPILACIÓN V273 ACTIVA')
+    .replaceAll('UCAN Academic Mall V272', 'UCAN Academic Mall V274')
+    .replaceAll('COMPILACIÓN V272 ACTIVA', 'COMPILACIÓN V274 ACTIVA')
     .replace('/js/ucan_v272_xr_desktop_parity.js?build=' + UCAN_BUILD, UCAN_XR_SCRIPT)
-    .replace('V272: el entorno VR utiliza la misma escena de computadora y la velocidad normal coincide en 5.0 m/s.', 'V273: WebXR usa la altura física nativa, escala 1:1, la misma escena y velocidad normal de 5.0 m/s.');
+    .replace('V272: el entorno VR utiliza la misma escena de computadora y la velocidad normal coincide en 5.0 m/s.', 'V274: pantalla negra corregida, barandas transparentes y controles para correr y brincar en Meta Quest.');
   return html;
 }
 
@@ -98,7 +98,7 @@ http.createServer = function createCompatibleServer(listener) {
   if (typeof listener !== 'function') return originalCreateServer.apply(this, arguments);
   return originalCreateServer.call(this, async (req, res) => {
     try {
-      const auth = global.__UCAN_AUTH_SYSTEM_V273__;
+      const auth = global.__UCAN_AUTH_SYSTEM_V274__;
       const parsed = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
       const pathname = decodeURIComponent(parsed.pathname);
 
@@ -109,7 +109,7 @@ http.createServer = function createCompatibleServer(listener) {
         return sendJson(res, 200, { version:UCAN_VERSION, build:UCAN_BUILD, script:UCAN_SCRIPT, xrScript:UCAN_XR_SCRIPT });
       }
       if (pathname === '/campus' && req.method === 'GET' && auth?.getSessionUser?.(req)) {
-        return sendHtml(res, 200, campusV273Html());
+        return sendHtml(res, 200, campusV274Html());
       }
 
       const authManaged = pathname.startsWith('/api/auth/') || pathname === '/api/profile' || pathname.startsWith('/api/profile/') || pathname === '/api/presence' || pathname.startsWith('/api/admin/users');
@@ -119,10 +119,10 @@ http.createServer = function createCompatibleServer(listener) {
       }
       return await listener(req, res);
     } catch (error) {
-      console.error('[UCAN V273 compatibility]', error);
+      console.error('[UCAN V274 auth compatibility]', error);
       if (!res.headersSent && !res.writableEnded) sendJson(res, error.statusCode || 500, { error:error.message || 'Error interno' });
     }
   });
 };
 
-console.info('[UCAN V273] Compatibilidad, versión y página XR sin caché cargadas.');
+console.info('[UCAN V274] Compatibilidad, visibilidad XR y controles Meta Quest cargados.');
