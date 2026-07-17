@@ -2,7 +2,7 @@ const fs=require('fs');
 const main=fs.readFileSync('public/js/ucan_v266_keyboard_jump.js','utf8');
 const html=fs.readFileSync('public/campus.html','utf8');
 const checks={
-  moduleLoaded:/ucan_v266_keyboard_jump\.js\?build=V271-20260717-XR-PARITY-FLOOR-LOCK/.test(html),
+  moduleLoaded:/ucan_v266_keyboard_jump\.js\?build=V272-20260717-XR-DESKTOP-PARITY-SPEED/.test(html),
   formProtection:/isTextEntryTarget/.test(main)&&/event\.stopPropagation/.test(main),
   wasdProtected:/KeyW/.test(main)&&/KeyA/.test(main)&&/KeyS/.test(main)&&/KeyD/.test(main),
   jumpEnabled:/event\.code === 'Space'/.test(main)&&/JUMP_HEIGHT/.test(main)&&/updateJump/.test(main),
