@@ -1,8 +1,8 @@
-# UCAN Academic Mall V265
+# UCAN Academic Mall V270
 
 Campus virtual tridimensional con tres pisos, terraza astronómica, salas académicas, pizarras electrónicas, audio por sala, cuentas de usuario, administración institucional y avatares personalizables.
 
-## Novedades de V265
+## Novedades de V270
 
 - Registro e inicio de sesión.
 - Roles `admin` y `user`.
@@ -16,6 +16,9 @@ Campus virtual tridimensional con tres pisos, terraza astronómica, salas acadé
   - hasta tres accesorios.
 - Vista en primera o tercera persona.
 - Presencia compartida: los usuarios conectados pueden ver los avatares de otros participantes.
+- Los campos de perfil y contraseña aceptan normalmente W, A, S y D sin mover el avatar.
+- Salto del avatar mediante la barra espaciadora.
+- El movimiento se libera automáticamente al entrar en formularios, cuadros de diálogo y botones.
 - Persistencia en `data/users.json` y en el volumen Docker `./data:/app/data`.
 
 ## Ejecutar con Docker
@@ -100,3 +103,17 @@ npm test
 ```
 
 En Windows puede ejecutar `ACTUALIZAR_V265.bat` y luego `VERIFICAR_V265.ps1`.
+
+
+## Meta Quest V270
+
+La navegación VR utiliza joystick izquierdo para caminar, joystick derecho para girar y ajuste automático de altura en escaleras. Consulte `window.__UCAN_QUEST_XR_AUDIT__`.
+
+
+## Avatar Studio V270
+
+El perfil incorpora presets, paletas visuales, generación aleatoria, vista previa 3D y limpieza automática de los parámetros de configuración inicial.
+
+## Movimiento VR V270
+
+Incluye velocidades confort, natural y rápida; giro suave o por pasos; conservación de la apariencia del entorno al entrar en Meta Quest; y navegación estable entre niveles.

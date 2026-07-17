@@ -8,54 +8,18 @@
   };
 
   const $ = id => document.getElementById(id);
+  const entryParams = new URLSearchParams(location.search);
+  const entryRequest = { avatar: entryParams.get('avatar') === '1', password: entryParams.get('password') === 'change' };
+  if (entryRequest.avatar || entryRequest.password) {
+    entryParams.delete('avatar'); entryParams.delete('password');
+    const clean = `${location.pathname}${entryParams.toString() ? `?${entryParams}` : ''}${location.hash}`;
+    history.replaceState({}, document.title, clean);
+  }
+  function markProfileComplete(kind) {
+    const id = state.user?.id || 'local';
+    localStorage.setItem(`ucan-${kind}-complete:${id}`, new Date().toISOString());
+  }
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-  const MOVEMENT_CODES = new Set(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ShiftLeft','ShiftRight','KeyR','Space']);
-function keyboardTarget(target) { return target instanceof Element ? target : null; }
-function isTextEntryTarget(target) { return Boolean(keyboardTarget(target)?.closest('input,textarea,select,[contenteditable="true"],[contenteditable=""],[role="textbox"]')); }
-function isInteractiveTarget(target) { return Boolean(keyboardTarget(target)?.closest('button,a,summary,option,label,[role="button"],[role="link"]')); }
-function profileOrDialogOpen() { return Boolean(document.querySelector('#ucanProfileModal.open,#boardPanel.open,#livePanelViewer.open')); }
-function releaseMovementKeys() {
-  for (const code of MOVEMENT_CODES) window.dispatchEvent(new KeyboardEvent('keyup',{code,key:code==='Space'?' ':'',bubbles:false}));
-}
-function setupKeyboardAndJump() {
-  if (!state.scene || !state.controllerCamera || window.__UCAN_KEYBOARD_JUMP_AUDIT__?.connected) return;
-  let jumpRequested=false, jumpActive=false, jumpStart=0, jumpBaseY=0;
-  const jumpDuration=760, jumpHeight=1.08;
-  const controlsBlocked=event=>isTextEntryTarget(event.target)||isInteractiveTarget(event.target)||profileOrDialogOpen();
-  document.addEventListener('keydown',event=>{
-    if(!MOVEMENT_CODES.has(event.code))return;
-    if(controlsBlocked(event)){event.stopPropagation();return;}
-    if(event.code==='Space'){
-      event.preventDefault();event.stopPropagation();
-      if(!event.repeat)jumpRequested=true;
-    }
-  },false);
-  document.addEventListener('keyup',event=>{
-    if(!MOVEMENT_CODES.has(event.code))return;
-    if(controlsBlocked(event)||event.code==='Space')event.stopPropagation();
-  },false);
-  document.addEventListener('focusin',event=>{if(isTextEntryTarget(event.target)||isInteractiveTarget(event.target))releaseMovementKeys();});
-  document.addEventListener('pointerdown',event=>{const canvas=event.target?.closest?.('#renderCanvas');if(canvas){canvas.tabIndex=0;canvas.focus({preventScroll:true});}});
-  window.addEventListener('blur',releaseMovementKeys);
-  document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseMovementKeys();});
-  state.scene.onBeforeRenderObservable.add(()=>{
-    const riding=window.__ucanV254IsRiding?.()===true;
-    if(jumpRequested&&!jumpActive&&!profileOrDialogOpen()&&!riding){
-      jumpActive=true;jumpRequested=false;jumpStart=performance.now();jumpBaseY=state.controllerCamera.position.y;
-      window.__UCAN_API__?.setStatus?.('Salto activado. Use W, A, S y D para desplazarse.');
-    }
-    if(!jumpActive)return;
-    if(profileOrDialogOpen()||riding){state.controllerCamera.position.y=jumpBaseY;jumpActive=false;jumpRequested=false;return;}
-    const progress=(performance.now()-jumpStart)/jumpDuration;
-    if(progress>=1){state.controllerCamera.position.y=jumpBaseY;jumpActive=false;return;}
-    const t=Math.max(0,Math.min(1,progress));
-    state.controllerCamera.position.y=jumpBaseY+4*jumpHeight*t*(1-t);
-  });
-  const canvas=$('renderCanvas');if(canvas)canvas.tabIndex=0;
-  const status=$('status');if(status)status.textContent='Use W/A/S/D o las flechas para caminar, la barra espaciadora para saltar y R para reubicarse. Los controles se desactivan automáticamente mientras escribe.';
-  window.__UCAN_KEYBOARD_JUMP_AUDIT__={version:'V266',connected:true,formTypingProtected:true,protectedKeys:[...MOVEMENT_CODES],jumpEnabled:true,jumpKey:'Space',durationMs:jumpDuration,height:jumpHeight};
-  console.info('[UCAN V266] Teclado y salto:',window.__UCAN_KEYBOARD_JUMP_AUDIT__);
-}
   async function api(url, options={}) {
     const response = await fetch(url, { ...options, headers:{ 'Content-Type':'application/json', ...(options.headers||{}) } });
     const data = await response.json().catch(() => ({}));
@@ -174,10 +138,10 @@ function setupKeyboardAndJump() {
     document.addEventListener('keydown',event=>{if(event.key==='Escape'){closeModal();$('ucanOnlinePanel').classList.remove('open');}});
     document.querySelectorAll('#ucanProfileModal select').forEach(select=>select.addEventListener('change',()=>{if(select.value.startsWith('#'))select.style.background=`linear-gradient(90deg,${select.value} 0 34px,#fff 34px)`;updatePreview();}));
     $('avatarAccessories').addEventListener('change',event=>{const checked=[...document.querySelectorAll('#avatarAccessories input:checked')];if(checked.length>3){event.target.checked=false;$('ucanAvatarMessage').textContent='Puede seleccionar un máximo de tres accesorios.';}updatePreview();});
-    $('ucanSaveAvatar').onclick=async()=>{const button=$('ucanSaveAvatar');button.disabled=true;$('ucanAvatarMessage').textContent='Guardando avatar…';try{const data=await api('/api/profile/avatar',{method:'PUT',body:JSON.stringify({avatar:currentAvatarForm()})});state.user=data.user;updateUserUI();recreateLocalAvatar();$('ucanAvatarMessage').textContent='Avatar guardado correctamente.';}catch(error){$('ucanAvatarMessage').textContent=error.message;}finally{button.disabled=false;}};
+    $('ucanSaveAvatar').onclick=async()=>{const button=$('ucanSaveAvatar');button.disabled=true;$('ucanAvatarMessage').textContent='Guardando avatar…';try{const data=await api('/api/profile/avatar',{method:'PUT',body:JSON.stringify({avatar:currentAvatarForm()})});state.user=data.user;updateUserUI();recreateLocalAvatar();$('ucanAvatarMessage').textContent='Avatar guardado correctamente.';markProfileComplete('avatar');if(!state.user.forcePasswordChange)setTimeout(closeModal,500);}catch(error){$('ucanAvatarMessage').textContent=error.message;}finally{button.disabled=false;}};
     $('ucanResetAvatar').onclick=()=>{populateForm(state.options.defaultAvatar);$('ucanAvatarMessage').textContent='Diseño restablecido. Presione Guardar avatar para conservarlo.';};
     $('ucanSaveProfile').onclick=async()=>{try{const data=await api('/api/profile',{method:'PATCH',body:JSON.stringify({displayName:$('ucanProfileName').value,email:$('ucanProfileEmail').value})});state.user=data.user;updateUserUI();recreateLocalAvatar();$('ucanAvatarMessage').textContent='Información actualizada.';}catch(error){$('ucanAvatarMessage').textContent=error.message;}};
-    $('ucanChangePassword').onclick=async()=>{const current=$('ucanCurrentPassword').value,newPassword=$('ucanNewPassword').value,confirm=$('ucanConfirmPassword').value;if(newPassword!==confirm){$('ucanPasswordMessage').textContent='Las contraseñas nuevas no coinciden.';return;}try{const data=await api('/api/auth/change-password',{method:'POST',body:JSON.stringify({currentPassword:current,newPassword})});state.user=data.user;updateUserUI();$('ucanPasswordMessage').textContent='Contraseña actualizada.';$('ucanCurrentPassword').value=$('ucanNewPassword').value=$('ucanConfirmPassword').value='';$('ucanRequiredMessage').style.display='none';}catch(error){$('ucanPasswordMessage').textContent=error.message;}};
+    $('ucanChangePassword').onclick=async()=>{const current=$('ucanCurrentPassword').value,newPassword=$('ucanNewPassword').value,confirm=$('ucanConfirmPassword').value;if(newPassword!==confirm){$('ucanPasswordMessage').textContent='Las contraseñas nuevas no coinciden.';return;}try{const data=await api('/api/auth/change-password',{method:'POST',body:JSON.stringify({currentPassword:current,newPassword})});state.user=data.user;updateUserUI();$('ucanPasswordMessage').textContent='Contraseña actualizada.';$('ucanCurrentPassword').value=$('ucanNewPassword').value=$('ucanConfirmPassword').value='';$('ucanRequiredMessage').style.display='none';markProfileComplete('password');if(state.user.avatarConfigured)setTimeout(closeModal,500);}catch(error){$('ucanPasswordMessage').textContent=error.message;}};
     window.addEventListener('beforeunload',()=>{fetch('/api/presence',{method:'DELETE',keepalive:true}).catch(()=>{});});
   }
   function updateUserUI() {$('ucanDisplayName').textContent=state.user.displayName;$('ucanUserInitial').textContent=(state.user.displayName||state.user.username||'U').trim().charAt(0).toUpperCase();$('ucanRoleText').textContent=state.user.role==='admin'?'Administrador':'Usuario del campus';$('ucanAdminBtn').style.display=state.user.role==='admin'?'block':'none';localStorage.setItem('ucanVoiceName',state.user.displayName);localStorage.setItem('ucanExperienceName',state.user.displayName);localStorage.setItem('ucanAccountUserId',state.user.id);}
@@ -187,9 +151,9 @@ function setupKeyboardAndJump() {
   }
   async function init() {
     try {
-      const me=await api('/api/auth/me');state.user=me.user;state.options=await api('/api/auth/options');injectStyles();injectInterface();updateUserUI();setupPreview();populateForm(state.user.avatar);bindEvents();await waitForEnvironment();setupSceneAvatar();setupKeyboardAndJump();renderOnlineList([]);presenceLoop();setInterval(presenceLoop,2200);
-      const params=new URLSearchParams(location.search);if(params.get('avatar')==='1'||!state.user.avatarConfigured)openModal(false);if(params.get('password')==='change'||state.user.forcePasswordChange)openModal(true);
-      window.__UCAN_IDENTITY__={version:'V266',getUser:()=>state.user,getRemoteCount:()=>state.remote.size,openAvatarEditor:()=>openModal(false),toggleThirdPerson};
+      const me=await api('/api/auth/me');state.user=me.user;state.options=await api('/api/auth/options');injectStyles();injectInterface();updateUserUI();setupPreview();populateForm(state.user.avatar);bindEvents();await waitForEnvironment();setupSceneAvatar();renderOnlineList([]);presenceLoop();setInterval(presenceLoop,2200);
+      if(entryRequest.avatar||!state.user.avatarConfigured)openModal(false);if(entryRequest.password||state.user.forcePasswordChange)openModal(true);
+      window.__UCAN_IDENTITY__={version:'V270',getUser:()=>state.user,getRemoteCount:()=>state.remote.size,openAvatarEditor:()=>openModal(false),toggleThirdPerson};
     } catch(error) { console.error('Identidad UCAN:',error); location.replace('/login'); }
   }
   init();

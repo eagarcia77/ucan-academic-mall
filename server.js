@@ -8,9 +8,9 @@ const { spawnSync } = require('child_process');
 const { createAuthSystem } = require('./lib/auth');
 
 const PORT = Number(process.env.PORT || 3000);
-const UCAN_VERSION = 'V265';
-const UCAN_BUILD = String(process.env.UCAN_BUILD || 'V265-20260714-USERS-AVATARS');
-const UCAN_MAIN_SCRIPT = '/js/ucan_babylon_mall_v265_accounts_avatars.js?build=V265-20260714-USERS-AVATARS';
+const UCAN_VERSION = 'V270';
+const UCAN_BUILD = String(process.env.UCAN_BUILD || 'V270-20260715-QUEST-NATURAL');
+const UCAN_MAIN_SCRIPT = '/js/ucan_babylon_mall_v265_accounts_avatars.js?build=V270-20260715-QUEST-NATURAL';
 const ADMIN_PIN = String(process.env.ADMIN_PIN || '');
 const LEGACY_ADMIN_PIN_ENABLED = String(process.env.LEGACY_ADMIN_PIN_ENABLED || 'false').toLowerCase() === 'true';
 const REGISTRATION_ENABLED = String(process.env.REGISTRATION_ENABLED || 'true').toLowerCase() !== 'false';
@@ -213,7 +213,7 @@ async function getCometCalendar(year) {
 
 function diagnostics() {
   const requiredFiles = [
-    'public/campus.html', 'public/login.html', 'public/admin.html', 'public/js/ucan_babylon_mall_v265_accounts_avatars.js', 'public/js/ucan_avatar_shared.js', 'public/js/ucan_v265_identity.js', 'lib/auth.js', 'public/js/ucan_v240_features.js', 'public/js/ucan_v240_voice.js', 'public/js/ucan_v240_experiences.js',
+    'public/campus.html', 'public/login.html', 'public/admin.html', 'public/js/ucan_babylon_mall_v265_accounts_avatars.js', 'public/js/ucan_avatar_shared.js', 'public/js/ucan_v265_identity.js', 'public/js/ucan_v270_avatar_studio.js', 'public/js/ucan_v266_keyboard_jump.js', 'public/js/ucan_v270_quest_natural.js', 'lib/auth.js', 'public/js/ucan_v240_features.js', 'public/js/ucan_v240_voice.js', 'public/js/ucan_v240_experiences.js',
     'public/vendor/babylon.js', 'public/vendor/babylonjs.loaders.min.js', 'public/vendor/jszip.min.js',
     'public/assets/logos/inter_san_german.png', 'public/assets/logos/ucan_ppoha.png', 'public/assets/logos/inter_san_german_v252.png', 'public/assets/logos/ucan_ppoha_v252.png',
     'data/catalog.json', 'data/collaboration.json', 'data/users.json'
@@ -221,11 +221,11 @@ function diagnostics() {
   const files = Object.fromEntries(requiredFiles.map(rel => [rel, fs.existsSync(path.join(__dirname, rel))]));
   const catalog = readCatalog();
   return {
-    ok: Object.values(files).every(Boolean), version: 'v265-users-avatars', build: UCAN_BUILD, mainScript: UCAN_MAIN_SCRIPT, files,
+    ok: Object.values(files).every(Boolean), version: 'v270-quest-natural-avatar-studio', build: UCAN_BUILD, mainScript: UCAN_MAIN_SCRIPT, files,
     libreOffice: commandAvailable('libreoffice'), pdfToPpm: commandAvailable('pdftoppm'),
     persistentAssets: catalog.assets.length, dataDirectory: DATA_DIR,
     collaboration: { enabled:true, spaces:[...COLLAB_SPACES], persistent:true },
-    environment: { forceReload:true, cacheDisabled:true, rooftop:true, rooftopLevel:27.2, dayNightCycle:true, seasons:['spring','summer','autumn','winter'], scenicLandscape:true, additionalLandscapes:true, rooftopAudio:false, raisedTheaterCeiling:true, interiorLightsAlwaysOn:true, defaultInsideBuilding:true, opaqueFloorSeparation:true, obsoleteFloorOpeningsRemoved:true, rooftopStairs:true, rooftopStairAccess:'bidirectional', accessibilityControls:true, automaticQuality:true, architecturalAudit:true, wayfindingDirectories:true, interactiveAstronomyPanels:true, enlargedPanelViewer:true, astronomyPanelClearanceAudit:true, userAccounts:true, administratorRole:true, customizableAvatars:true, multiplayerPresence:true },
+    environment: { forceReload:true, cacheDisabled:true, rooftop:true, rooftopLevel:27.2, dayNightCycle:true, seasons:['spring','summer','autumn','winter'], scenicLandscape:true, additionalLandscapes:true, rooftopAudio:false, raisedTheaterCeiling:true, interiorLightsAlwaysOn:true, defaultInsideBuilding:true, opaqueFloorSeparation:true, obsoleteFloorOpeningsRemoved:true, rooftopStairs:true, rooftopStairAccess:'bidirectional', accessibilityControls:true, automaticQuality:true, architecturalAudit:true, wayfindingDirectories:true, interactiveAstronomyPanels:true, enlargedPanelViewer:true, astronomyPanelClearanceAudit:true, userAccounts:true, administratorRole:true, customizableAvatars:true, multiplayerPresence:true, formTypingProtection:true, avatarJump:true, jumpKey:'Space', questNaturalMovement:true, questVisualParity:true, avatarStudio:'V270' },
     accounts: authSystem.stats(),
     voice: { enabled:true, isolatedByRoom:true, locationAwareClient:true, activeParticipants:VOICE_CLIENTS.size, rooms:voiceRoomCounts(), roomLimit:VOICE_ROOM_LIMIT, stunConfigured:Boolean(VOICE_STUN_URL), turnConfigured:Boolean(VOICE_TURN_URL) },
     node: process.version
@@ -581,7 +581,7 @@ const server = http.createServer(async (req, res) => {
         version: UCAN_VERSION,
         build: UCAN_BUILD,
         mainScript: UCAN_MAIN_SCRIPT,
-        expectedTitle: 'UCAN Academic Mall V265',
+        expectedTitle: 'UCAN Academic Mall V270',
         cache: 'no-store'
       }, {
         'X-UCAN-Version': UCAN_VERSION,

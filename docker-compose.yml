@@ -1,16 +1,16 @@
-name: ucan-academic-mall-v265
+name: ucan-academic-mall-v270
 services:
-  ucan-babylon-mall-v265:
+  ucan-babylon-mall-v270:
     build:
       context: .
-    image: ucan-academic-mall:v265
-    container_name: ucan-babylon-mall-v265
+    image: ucan-academic-mall:v270
+    container_name: ucan-babylon-mall-v270
     ports:
       - "${UCAN_PORT:-3011}:3000"
     environment:
       NODE_ENV: production
       PORT: 3000
-      UCAN_BUILD: V265-20260714-USERS-AVATARS
+      UCAN_BUILD: V270-20260715-QUEST-NATURAL
       REGISTRATION_ENABLED: "${REGISTRATION_ENABLED:-true}"
       ADMIN_INITIAL_USERNAME: "${ADMIN_INITIAL_USERNAME:-admin}"
       ADMIN_INITIAL_PASSWORD: "${ADMIN_INITIAL_PASSWORD:-Cambiar-UCAN-2026!}"
@@ -33,5 +33,5 @@ services:
       retries: 3
       start_period: 45s
     labels:
-      ucan.version: V265
-      ucan.build: V265-20260714-USERS-AVATARS
+      ucan.version: V270
+      ucan.build: V270-20260715-QUEST-NATURAL

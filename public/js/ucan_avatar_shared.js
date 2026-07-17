@@ -1,157 +1,41 @@
 (() => {
   'use strict';
-
-  const DEFAULTS = {
-    skinTone:'#dca27b', hairStyle:'corto', hairColor:'#17110f',
-    topStyle:'camiseta', topColor:'#007b5f', bottomStyle:'pantalón', bottomColor:'#152d30',
-    shoeStyle:'tenis', shoeColor:'#ffffff', accessories:[]
-  };
-
-  function config(value = {}) {
-    return { ...DEFAULTS, ...value, accessories:Array.isArray(value.accessories) ? [...new Set(value.accessories)].slice(0,3) : [] };
+  const DEFAULTS={skinTone:'#dca27b',hairStyle:'corto',hairColor:'#17110f',topStyle:'camiseta',topColor:'#007b5f',bottomStyle:'pantalón',bottomColor:'#152d30',shoeStyle:'tenis',shoeColor:'#ffffff',accessories:[]};
+  function config(value={}){return {...DEFAULTS,...value,accessories:Array.isArray(value.accessories)?[...new Set(value.accessories)].slice(0,3):[]};}
+  function c3(value,fallback){try{return BABYLON.Color3.FromHexString(value||fallback);}catch{return BABYLON.Color3.FromHexString(fallback);}}
+  function mat(scene,name,value,fallback,rough=.72,metal=.02,emissive=0){
+    if(BABYLON.PBRMaterial){const m=new BABYLON.PBRMaterial(name,scene);m.albedoColor=c3(value,fallback);m.roughness=rough;m.metallic=metal;if(emissive)m.emissiveColor=m.albedoColor.scale(emissive);return m;}
+    const m=new BABYLON.StandardMaterial(name,scene);m.diffuseColor=c3(value,fallback);m.specularColor=new BABYLON.Color3(.12,.12,.12);if(emissive)m.emissiveColor=m.diffuseColor.scale(emissive);return m;
   }
-  function color(value, fallback) {
-    try { return BABYLON.Color3.FromHexString(value || fallback); } catch { return BABYLON.Color3.FromHexString(fallback); }
+  function parent(mesh,root,metadata={}){mesh.parent=root;mesh.isPickable=false;mesh.checkCollisions=false;mesh.metadata={avatarPart:true,...metadata};return mesh;}
+  function box(scene,name,size,pos,material,root){const m=BABYLON.MeshBuilder.CreateBox(name,{width:size.x,height:size.y,depth:size.z},scene);m.position.copyFrom(pos);m.material=material;return parent(m,root);}
+  function sphere(scene,name,diameter,pos,material,root,segments=24){const m=BABYLON.MeshBuilder.CreateSphere(name,{diameter,segments},scene);m.position.copyFrom(pos);m.material=material;return parent(m,root);}
+  function cylinder(scene,name,height,diameter,pos,material,root,tess=24){const m=BABYLON.MeshBuilder.CreateCylinder(name,{height,diameter,tessellation:tess},scene);m.position.copyFrom(pos);m.material=material;return parent(m,root);}
+  function capsule(scene,name,height,radius,pos,material,root){let m;if(BABYLON.MeshBuilder.CreateCapsule)m=BABYLON.MeshBuilder.CreateCapsule(name,{height,radius,tessellation:20,capSubdivisions:6},scene);else m=BABYLON.MeshBuilder.CreateCylinder(name,{height,diameter:radius*2,tessellation:24},scene);m.position.copyFrom(pos);m.material=material;return parent(m,root);}
+  function namePlate(scene,root,text,role){const texture=new BABYLON.DynamicTexture(`avatar-name-${root.uniqueId}`,{width:640,height:150},scene,false);const ctx=texture.getContext();const g=ctx.createLinearGradient(0,0,640,150);g.addColorStop(0,'rgba(3,37,32,.94)');g.addColorStop(1,'rgba(0,123,95,.9)');ctx.fillStyle=g;ctx.roundRect?.(10,10,620,130,26);ctx.fill();if(!ctx.roundRect){ctx.fillRect(10,10,620,130);}ctx.strokeStyle=role==='admin'?'#fed141':'#9ce8d4';ctx.lineWidth=6;ctx.strokeRect(12,12,616,126);ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='800 48px Segoe UI,Arial';ctx.fillText(String(text||'Participante').slice(0,28),320,75);texture.update();const material=new BABYLON.StandardMaterial(`avatar-name-mat-${root.uniqueId}`,scene);material.diffuseTexture=texture;material.emissiveTexture=texture;material.disableLighting=true;material.backFaceCulling=false;material.useAlphaFromDiffuseTexture=true;const plane=BABYLON.MeshBuilder.CreatePlane(`avatar-name-${root.uniqueId}`,{width:2.25,height:.53,sideOrientation:BABYLON.Mesh.DOUBLESIDE},scene);plane.position.set(0,3.45,0);plane.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL;plane.material=material;parent(plane,root,{namePlate:true});return plane;}
+  function create(scene,rawConfig={},options={}){
+    const cfg=config(rawConfig);const root=new BABYLON.TransformNode(options.name||`avatar-${Date.now()}`,scene);root.metadata={avatar:true,userId:options.userId||'',local:Boolean(options.local),config:cfg,version:'V270'};root.scaling.setAll(Number(options.scale||1));
+    const skin=mat(scene,`${root.name}-skin`,cfg.skinTone,'#dca27b',.82,.0);const hair=mat(scene,`${root.name}-hair`,cfg.hairColor,'#17110f',.72,.0);const top=mat(scene,`${root.name}-top`,cfg.topColor,'#007b5f',.62,.02);const bottom=mat(scene,`${root.name}-bottom`,cfg.bottomColor,'#152d30',.74,.01);const shoes=mat(scene,`${root.name}-shoes`,cfg.shoeColor,'#ffffff',.38,.04);const dark=mat(scene,`${root.name}-dark`,'#12211f','#12211f',.52,.08);const metal=mat(scene,`${root.name}-metal`,'#a6bbb5','#a6bbb5',.22,.72,.04);const white=mat(scene,`${root.name}-white`,'#f5f6f4','#f5f6f4',.7,.0);const iris=mat(scene,`${root.name}-iris`,'#28433e','#28433e',.35,.0,.12);
+    const parts={};
+    parts.hips=capsule(scene,'avatar-cadera',.44,.34,new BABYLON.Vector3(0,1.05,0),bottom,root);
+    const torsoWidth=cfg.topStyle==='sudadera'?.54:cfg.topStyle==='formal'?.48:.46;parts.torso=capsule(scene,'avatar-torso',1.18,torsoWidth,new BABYLON.Vector3(0,1.72,0),top,root);parts.torso.scaling.z=.58;
+    if(cfg.topStyle==='sudadera'){const hood=BABYLON.MeshBuilder.CreateTorus('avatar-capucha',{diameter:.62,thickness:.12,tessellation:28},scene);hood.position.set(0,2.2,.16);hood.rotation.x=Math.PI/2;hood.material=top;parent(hood,root);box(scene,'avatar-bolsillo',new BABYLON.Vector3(.52,.2,.05),new BABYLON.Vector3(0,1.45,-.31),top,root);}
+    if(cfg.topStyle==='chaqueta'||cfg.topStyle==='formal'){box(scene,'avatar-cierre',new BABYLON.Vector3(.035,.82,.035),new BABYLON.Vector3(0,1.77,-.29),metal,root);const l1=box(scene,'avatar-solapa-i',new BABYLON.Vector3(.16,.58,.04),new BABYLON.Vector3(-.13,1.98,-.3),dark,root);l1.rotation.z=-.28;const l2=box(scene,'avatar-solapa-d',new BABYLON.Vector3(.16,.58,.04),new BABYLON.Vector3(.13,1.98,-.3),dark,root);l2.rotation.z=.28;if(cfg.topStyle==='formal'){box(scene,'avatar-camisa',new BABYLON.Vector3(.25,.58,.045),new BABYLON.Vector3(0,1.96,-.31),white,root);const tie=box(scene,'avatar-corbata',new BABYLON.Vector3(.08,.46,.04),new BABYLON.Vector3(0,1.86,-.34),dark,root);tie.rotation.z=.02;}}
+    parts.neck=cylinder(scene,'avatar-cuello',.22,.23,new BABYLON.Vector3(0,2.36,0),skin,root);
+    parts.head=sphere(scene,'avatar-cabeza',.72,new BABYLON.Vector3(0,2.72,0),skin,root,32);parts.head.scaling.y=1.08;parts.head.scaling.z=.92;
+    sphere(scene,'avatar-oreja-i',.16,new BABYLON.Vector3(-.37,2.72,0),skin,root,16);sphere(scene,'avatar-oreja-d',.16,new BABYLON.Vector3(.37,2.72,0),skin,root,16);
+    parts.eyeLeft=sphere(scene,'avatar-ojo-i',.105,new BABYLON.Vector3(-.14,2.79,-.326),white,root,18);parts.eyeRight=sphere(scene,'avatar-ojo-d',.105,new BABYLON.Vector3(.14,2.79,-.326),white,root,18);sphere(scene,'avatar-iris-i',.052,new BABYLON.Vector3(-.14,2.79,-.372),iris,root,14);sphere(scene,'avatar-iris-d',.052,new BABYLON.Vector3(.14,2.79,-.372),iris,root,14);
+    box(scene,'avatar-ceja-i',new BABYLON.Vector3(.18,.035,.025),new BABYLON.Vector3(-.14,2.91,-.35),hair,root).rotation.z=-.05;box(scene,'avatar-ceja-d',new BABYLON.Vector3(.18,.035,.025),new BABYLON.Vector3(.14,2.91,-.35),hair,root).rotation.z=.05;
+    const nose=capsule(scene,'avatar-nariz',.17,.055,new BABYLON.Vector3(0,2.69,-.365),skin,root);nose.rotation.x=Math.PI/2;
+    const smile=BABYLON.MeshBuilder.CreateTorus('avatar-sonrisa',{diameter:.22,thickness:.024,tessellation:24,arc:.5},scene);smile.position.set(0,2.56,-.362);smile.rotation.x=Math.PI/2;smile.rotation.z=Math.PI;smile.material=dark;parent(smile,root);
+    if(cfg.hairStyle!=='sin-cabello'){const cap=sphere(scene,'avatar-cabello',.75,new BABYLON.Vector3(0,2.91,.025),hair,root,28);cap.scaling.y=cfg.hairStyle==='rapado'?.22:.46;cap.scaling.z=.94;if(cfg.hairStyle==='largo'){for(const x of[-.27,0,.27])capsule(scene,'avatar-mecha-larga',.85,.14,new BABYLON.Vector3(x,2.52,.25),hair,root);}else if(cfg.hairStyle==='rizado'){for(let i=0;i<12;i++){const a=i/12*Math.PI*2;sphere(scene,`avatar-rizo-${i}`,.23,new BABYLON.Vector3(Math.cos(a)*.33,2.96+Math.sin(i*1.7)*.045,Math.sin(a)*.25),hair,root,14);}}else if(cfg.hairStyle==='moño'){sphere(scene,'avatar-moño',.36,new BABYLON.Vector3(0,3.25,.1),hair,root,20);}else if(cfg.hairStyle==='corto'){for(const x of[-.24,-.08,.08,.24]){const strand=box(scene,'avatar-mecha-corta',new BABYLON.Vector3(.11,.25,.08),new BABYLON.Vector3(x,3.06,-.15),hair,root);strand.rotation.z=x*.7;}}}
+    parts.leftArm=capsule(scene,'avatar-brazo-i',1.0,.13,new BABYLON.Vector3(-.58,1.7,0),skin,root);parts.leftArm.rotation.z=-.07;parts.rightArm=capsule(scene,'avatar-brazo-d',1.0,.13,new BABYLON.Vector3(.58,1.7,0),skin,root);parts.rightArm.rotation.z=.07;const sleeve=cfg.topStyle==='camiseta'?.4:.72;capsule(scene,'avatar-manga-i',sleeve,.17,new BABYLON.Vector3(-.56,2.0,0),top,root).rotation.z=-.07;capsule(scene,'avatar-manga-d',sleeve,.17,new BABYLON.Vector3(.56,2.0,0),top,root).rotation.z=.07;sphere(scene,'avatar-mano-i',.25,new BABYLON.Vector3(-.61,1.17,0),skin,root,18);sphere(scene,'avatar-mano-d',.25,new BABYLON.Vector3(.61,1.17,0),skin,root,18);
+    parts.leftLeg=capsule(scene,'avatar-pierna-i',1.06,.16,new BABYLON.Vector3(-.2,.54,0),bottom,root);parts.rightLeg=capsule(scene,'avatar-pierna-d',1.06,.16,new BABYLON.Vector3(.2,.54,0),bottom,root);if(cfg.bottomStyle==='falda'){const skirt=BABYLON.MeshBuilder.CreateCylinder('avatar-falda',{height:.72,diameterTop:.72,diameterBottom:.98,tessellation:32},scene);skirt.position.set(0,.92,0);skirt.material=bottom;parent(skirt,root);}const shoeH=cfg.shoeStyle==='botas'?.32:.2;const shoeD=cfg.shoeStyle==='zapatos'?.5:.62;parts.leftShoe=box(scene,'avatar-zapato-i',new BABYLON.Vector3(.35,shoeH,shoeD),new BABYLON.Vector3(-.2,.05,-.12),shoes,root);parts.rightShoe=box(scene,'avatar-zapato-d',new BABYLON.Vector3(.35,shoeH,shoeD),new BABYLON.Vector3(.2,.05,-.12),shoes,root);if(cfg.shoeStyle==='tenis'){for(const x of[-.2,.2])for(let n=0;n<3;n++)box(scene,'avatar-cordón',new BABYLON.Vector3(.24,.018,.025),new BABYLON.Vector3(x,.15,-.39+n*.07),dark,root);}
+    for(const accessory of cfg.accessories){if(accessory==='gafas'){for(const x of[-.15,.15]){const ring=BABYLON.MeshBuilder.CreateTorus('avatar-gafa',{diameter:.27,thickness:.028,tessellation:22},scene);ring.position.set(x,2.79,-.39);ring.rotation.x=Math.PI/2;ring.material=metal;parent(ring,root);}box(scene,'avatar-puente-gafas',new BABYLON.Vector3(.12,.025,.025),new BABYLON.Vector3(0,2.79,-.405),metal,root);}else if(accessory==='gorra'){cylinder(scene,'avatar-gorra',.18,.76,new BABYLON.Vector3(0,3.15,0),top,root,30);box(scene,'avatar-visera',new BABYLON.Vector3(.54,.055,.34),new BABYLON.Vector3(0,3.11,-.37),top,root);}else if(accessory==='sombrero'){cylinder(scene,'avatar-sombrero-copa',.34,.65,new BABYLON.Vector3(0,3.2,0),top,root,30);cylinder(scene,'avatar-sombrero-ala',.06,1.12,new BABYLON.Vector3(0,3.07,0),top,root,36);}else if(accessory==='mochila'){const pack=box(scene,'avatar-mochila',new BABYLON.Vector3(.62,.82,.28),new BABYLON.Vector3(0,1.73,.37),mat(scene,`${root.name}-pack`,'#3f514c','#3f514c',.7,.01),root);pack.rotation.x=.02;}else if(accessory==='audífonos'){const band=BABYLON.MeshBuilder.CreateTorus('avatar-audifonos',{diameter:.78,thickness:.07,tessellation:28},scene);band.position.set(0,2.86,0);band.rotation.z=Math.PI/2;band.scaling.y=.72;band.material=metal;parent(band,root);box(scene,'avatar-audifono-i',new BABYLON.Vector3(.13,.31,.18),new BABYLON.Vector3(-.4,2.72,0),dark,root);box(scene,'avatar-audifono-d',new BABYLON.Vector3(.13,.31,.18),new BABYLON.Vector3(.4,2.72,0),dark,root);}else if(accessory==='bufanda'){const scarf=BABYLON.MeshBuilder.CreateTorus('avatar-bufanda',{diameter:.47,thickness:.105,tessellation:28},scene);scarf.position.set(0,2.32,0);scarf.rotation.x=Math.PI/2;scarf.material=top;parent(scarf,root);}}
+    if(options.label!==false)parts.namePlate=namePlate(scene,root,options.displayName||'Participante',options.role||'user');let lastWalk=0;
+    function animate(walking,elapsed){const phase=elapsed*7.4;const amount=walking?Math.sin(phase)*.46:Math.sin(elapsed*1.4)*.025;parts.leftArm.rotation.x=amount;parts.rightArm.rotation.x=-amount;parts.leftLeg.rotation.x=walking?-amount*.62:0;parts.rightLeg.rotation.x=walking?amount*.62:0;parts.leftShoe.rotation.x=parts.leftLeg.rotation.x;parts.rightShoe.rotation.x=parts.rightLeg.rotation.x;parts.torso.scaling.y=1+Math.sin(elapsed*1.8)*.008;const blink=(elapsed%4.6)>4.48;parts.eyeLeft.scaling.y=blink?.12:1;parts.eyeRight.scaling.y=blink?.12:1;lastWalk=amount;}
+    function dispose(){try{root.getChildMeshes().forEach(mesh=>{try{mesh.material?.diffuseTexture?.dispose?.();}catch{}try{mesh.material?.dispose?.();}catch{}mesh.dispose();});}catch{}root.dispose();}
+    return{root,parts,config:cfg,animate,dispose,setVisible(value){root.setEnabled(Boolean(value));},get lastWalk(){return lastWalk;}};
   }
-  function material(scene, name, value, fallback, emissive = 0) {
-    const mat = new BABYLON.StandardMaterial(name, scene);
-    mat.diffuseColor = color(value, fallback);
-    mat.specularColor = new BABYLON.Color3(.08,.08,.08);
-    if (emissive) mat.emissiveColor = mat.diffuseColor.scale(emissive);
-    return mat;
-  }
-  function parent(mesh, root, metadata = {}) {
-    mesh.parent = root;
-    mesh.isPickable = false;
-    mesh.checkCollisions = false;
-    mesh.metadata = { avatarPart:true, ...metadata };
-    return mesh;
-  }
-  function box(scene, name, size, position, mat, root) {
-    const mesh = BABYLON.MeshBuilder.CreateBox(name, { width:size.x, height:size.y, depth:size.z }, scene);
-    mesh.position.copyFrom(position); mesh.material = mat; return parent(mesh, root);
-  }
-  function sphere(scene, name, diameter, position, mat, root, segments = 18) {
-    const mesh = BABYLON.MeshBuilder.CreateSphere(name, { diameter, segments }, scene);
-    mesh.position.copyFrom(position); mesh.material = mat; return parent(mesh, root);
-  }
-  function cylinder(scene, name, height, diameter, position, mat, root, tessellation = 18) {
-    const mesh = BABYLON.MeshBuilder.CreateCylinder(name, { height, diameter, tessellation }, scene);
-    mesh.position.copyFrom(position); mesh.material = mat; return parent(mesh, root);
-  }
-  function namePlate(scene, root, text, role) {
-    const texture = new BABYLON.DynamicTexture(`avatar-name-${root.uniqueId}`, {width:512,height:128}, scene, false);
-    const ctx = texture.getContext();
-    ctx.clearRect(0,0,512,128);
-    ctx.fillStyle='rgba(4,24,23,.88)'; ctx.fillRect(8,8,496,112);
-    ctx.strokeStyle=role==='admin'?'#fed141':'#8ad8c6'; ctx.lineWidth=6; ctx.strokeRect(8,8,496,112);
-    ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font='bold 44px Segoe UI, Arial';
-    ctx.fillText(String(text||'Participante').slice(0,28),256,64); texture.update();
-    const mat = new BABYLON.StandardMaterial(`avatar-name-mat-${root.uniqueId}`,scene);
-    mat.diffuseTexture=texture; mat.emissiveTexture=texture; mat.disableLighting=true; mat.backFaceCulling=false; mat.useAlphaFromDiffuseTexture=true;
-    const plane = BABYLON.MeshBuilder.CreatePlane(`avatar-name-${root.uniqueId}`,{width:2.15,height:.54,sideOrientation:BABYLON.Mesh.DOUBLESIDE},scene);
-    plane.position.set(0,3.35,0); plane.billboardMode=BABYLON.Mesh.BILLBOARDMODE_ALL; plane.material=mat; parent(plane,root,{namePlate:true});
-    return plane;
-  }
-
-  function create(scene, rawConfig = {}, options = {}) {
-    const cfg = config(rawConfig);
-    const root = new BABYLON.TransformNode(options.name || `avatar-${Date.now()}`, scene);
-    root.metadata = { avatar:true, userId:options.userId || '', local:Boolean(options.local), config:cfg };
-    root.scaling.setAll(Number(options.scale || 1));
-
-    const skin = material(scene,`${root.name}-skin`,cfg.skinTone,'#dca27b');
-    const hair = material(scene,`${root.name}-hair`,cfg.hairColor,'#17110f');
-    const top = material(scene,`${root.name}-top`,cfg.topColor,'#007b5f');
-    const bottom = material(scene,`${root.name}-bottom`,cfg.bottomColor,'#152d30');
-    const shoes = material(scene,`${root.name}-shoes`,cfg.shoeColor,'#ffffff');
-    const dark = material(scene,`${root.name}-dark`,'#13211f','#13211f');
-    const metal = material(scene,`${root.name}-metal`,'#9fb5b0','#9fb5b0',.08);
-
-    const parts = {};
-    parts.hips = box(scene,'avatar-cadera',new BABYLON.Vector3(.68,.34,.38),new BABYLON.Vector3(0,1.08,0),bottom,root);
-    const torsoSize = cfg.topStyle==='formal' ? new BABYLON.Vector3(.9,1.18,.46) : cfg.topStyle==='sudadera' ? new BABYLON.Vector3(.96,1.14,.5) : new BABYLON.Vector3(.82,1.12,.42);
-    parts.torso = box(scene,'avatar-torso',torsoSize,new BABYLON.Vector3(0,1.73,0),top,root);
-    if (cfg.topStyle==='chaqueta' || cfg.topStyle==='formal') {
-      const lapel = box(scene,'avatar-solapa',new BABYLON.Vector3(.12,.62,.04),new BABYLON.Vector3(-.12,1.82,-.24),dark,root); lapel.rotation.z=-.25;
-      const lapel2 = box(scene,'avatar-solapa',new BABYLON.Vector3(.12,.62,.04),new BABYLON.Vector3(.12,1.82,-.24),dark,root); lapel2.rotation.z=.25;
-    }
-    parts.neck = cylinder(scene,'avatar-cuello',.22,.24,new BABYLON.Vector3(0,2.35,0),skin,root);
-    parts.head = sphere(scene,'avatar-cabeza',.78,new BABYLON.Vector3(0,2.72,0),skin,root,24);
-    // Ojos y rostro mirando hacia -Z.
-    const eyeMat = material(scene,`${root.name}-eyes`,'#182525','#182525',.2);
-    box(scene,'avatar-ojo-izq',new BABYLON.Vector3(.08,.05,.035),new BABYLON.Vector3(-.14,2.79,-.385),eyeMat,root);
-    box(scene,'avatar-ojo-der',new BABYLON.Vector3(.08,.05,.035),new BABYLON.Vector3(.14,2.79,-.385),eyeMat,root);
-    box(scene,'avatar-boca',new BABYLON.Vector3(.18,.025,.025),new BABYLON.Vector3(0,2.57,-.39),dark,root);
-
-    // Cabello.
-    if (cfg.hairStyle !== 'sin-cabello') {
-      const hairCap = sphere(scene,'avatar-cabello',.81,new BABYLON.Vector3(0,2.84,.02),hair,root,20);
-      hairCap.scaling.y = cfg.hairStyle==='rapado' ? .28 : .48; hairCap.position.y = cfg.hairStyle==='rapado' ? 2.93 : 2.88;
-      if (cfg.hairStyle==='largo') {
-        const back = box(scene,'avatar-cabello-largo',new BABYLON.Vector3(.68,.9,.22),new BABYLON.Vector3(0,2.46,.26),hair,root); back.rotation.x=.05;
-      } else if (cfg.hairStyle==='rizado') {
-        for (let i=0;i<8;i++) {
-          const angle=(i/8)*Math.PI*2; sphere(scene,`avatar-rizo-${i}`,.25,new BABYLON.Vector3(Math.cos(angle)*.34,2.94+Math.sin(i)*.05,Math.sin(angle)*.25),hair,root,10);
-        }
-      } else if (cfg.hairStyle==='moño') {
-        sphere(scene,'avatar-moño',.34,new BABYLON.Vector3(0,3.25,.12),hair,root,14);
-      }
-    }
-
-    // Brazos y piernas.
-    parts.leftArm = cylinder(scene,'avatar-brazo-izq',1.03,.25,new BABYLON.Vector3(-.57,1.72,0),skin,root); parts.leftArm.rotation.z=-.08;
-    parts.rightArm = cylinder(scene,'avatar-brazo-der',1.03,.25,new BABYLON.Vector3(.57,1.72,0),skin,root); parts.rightArm.rotation.z=.08;
-    const sleeveHeight = cfg.topStyle==='camiseta' ? .38 : .68;
-    cylinder(scene,'avatar-manga-izq',sleeveHeight,.31,new BABYLON.Vector3(-.54,2.02,0),top,root).rotation.z=-.08;
-    cylinder(scene,'avatar-manga-der',sleeveHeight,.31,new BABYLON.Vector3(.54,2.02,0),top,root).rotation.z=.08;
-    parts.leftLeg = cylinder(scene,'avatar-pierna-izq',1.08,.3,new BABYLON.Vector3(-.21,.55,0),bottom,root);
-    parts.rightLeg = cylinder(scene,'avatar-pierna-der',1.08,.3,new BABYLON.Vector3(.21,.55,0),bottom,root);
-    const shoeDepth = cfg.shoeStyle==='botas' ? .5 : .58;
-    parts.leftShoe = box(scene,'avatar-zapato-izq',new BABYLON.Vector3(.34,cfg.shoeStyle==='botas'?.3:.22,shoeDepth),new BABYLON.Vector3(-.21,.05,-.1),shoes,root);
-    parts.rightShoe = box(scene,'avatar-zapato-der',new BABYLON.Vector3(.34,cfg.shoeStyle==='botas'?.3:.22,shoeDepth),new BABYLON.Vector3(.21,.05,-.1),shoes,root);
-
-    // Accesorios acumulables.
-    for (const accessory of cfg.accessories) {
-      if (accessory==='gafas') {
-        const left = BABYLON.MeshBuilder.CreateTorus('avatar-gafa-izq',{diameter:.26,thickness:.035,tessellation:18},scene); left.position.set(-.15,2.78,-.4); left.rotation.x=Math.PI/2; left.material=dark; parent(left,root);
-        const right = BABYLON.MeshBuilder.CreateTorus('avatar-gafa-der',{diameter:.26,thickness:.035,tessellation:18},scene); right.position.set(.15,2.78,-.4); right.rotation.x=Math.PI/2; right.material=dark; parent(right,root);
-        box(scene,'avatar-puente-gafas',new BABYLON.Vector3(.12,.035,.035),new BABYLON.Vector3(0,2.78,-.42),dark,root);
-      } else if (accessory==='gorra') {
-        const cap = cylinder(scene,'avatar-gorra',.18,.82,new BABYLON.Vector3(0,3.12,0),top,root,24);
-        box(scene,'avatar-visera',new BABYLON.Vector3(.55,.06,.34),new BABYLON.Vector3(0,3.08,-.38),top,root);
-      } else if (accessory==='sombrero') {
-        cylinder(scene,'avatar-sombrero-copa',.35,.68,new BABYLON.Vector3(0,3.2,0),top,root,24);
-        cylinder(scene,'avatar-sombrero-ala',.08,1.15,new BABYLON.Vector3(0,3.06,0),top,root,32);
-      } else if (accessory==='mochila') {
-        const pack = box(scene,'avatar-mochila',new BABYLON.Vector3(.64,.88,.28),new BABYLON.Vector3(0,1.72,.35),top,root);
-        pack.material = material(scene,`${root.name}-pack`,'#4b3d31','#4b3d31');
-      } else if (accessory==='audífonos') {
-        const band = BABYLON.MeshBuilder.CreateTorus('avatar-audifonos',{diameter:.78,thickness:.08,tessellation:24},scene); band.position.set(0,2.84,0); band.rotation.z=Math.PI/2; band.scaling.y=.7; band.material=metal; parent(band,root);
-        box(scene,'avatar-audifono-izq',new BABYLON.Vector3(.12,.32,.16),new BABYLON.Vector3(-.41,2.75,0),dark,root);
-        box(scene,'avatar-audifono-der',new BABYLON.Vector3(.12,.32,.16),new BABYLON.Vector3(.41,2.75,0),dark,root);
-      } else if (accessory==='bufanda') {
-        const scarf = BABYLON.MeshBuilder.CreateTorus('avatar-bufanda',{diameter:.48,thickness:.11,tessellation:24},scene); scarf.position.set(0,2.32,0); scarf.rotation.x=Math.PI/2; scarf.material=top; parent(scarf,root);
-      }
-    }
-
-    if (options.label !== false) parts.namePlate = namePlate(scene,root,options.displayName || 'Participante',options.role || 'user');
-
-    let lastWalk = 0;
-    function animate(walking, elapsedSeconds) {
-      const phase = elapsedSeconds * 7;
-      const amount = walking ? Math.sin(phase) * .42 : 0;
-      parts.leftArm.rotation.x = amount; parts.rightArm.rotation.x = -amount;
-      parts.leftLeg.rotation.x = -amount * .6; parts.rightLeg.rotation.x = amount * .6;
-      parts.leftShoe.rotation.x = parts.leftLeg.rotation.x; parts.rightShoe.rotation.x = parts.rightLeg.rotation.x;
-      lastWalk = amount;
-    }
-    function dispose() {
-      try { root.getChildMeshes().forEach(mesh => { try { mesh.material?.diffuseTexture?.dispose?.(); } catch {} try { mesh.material?.dispose?.(); } catch {} mesh.dispose(); }); } catch {}
-      root.dispose();
-    }
-    return { root, parts, config:cfg, animate, dispose, setVisible(value){ root.setEnabled(Boolean(value)); }, get lastWalk(){ return lastWalk; } };
-  }
-
-  window.UCANAvatar = { create, defaults:DEFAULTS, normalize:config };
+  window.UCANAvatar={create,defaults:DEFAULTS,normalize:config,version:'V270'};
 })();

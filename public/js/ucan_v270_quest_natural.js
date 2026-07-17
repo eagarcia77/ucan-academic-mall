@@ -1,23 +1,24 @@
 (() => {
   'use strict';
 
-  const VERSION = 'V269';
-  const BUILD = 'V269-20260715-QUEST-GROUNDED';
+  const VERSION = 'V270';
+  const BUILD = 'V270-20260715-QUEST-NATURAL';
   const B = window.BABYLON;
   if (!B?.Scene?.prototype?.createDefaultXRExperienceAsync) {
-    console.warn('[UCAN V269] Babylon WebXR no está disponible.');
+    console.warn('[UCAN V270] Babylon WebXR no está disponible.');
     return;
   }
 
   const LEVEL = Object.freeze({ one: 0, two: 8.2, three: 16.4, rooftop: 27.2 });
   const FLOORS = Object.freeze([LEVEL.one, LEVEL.two, LEVEL.three, LEVEL.rooftop]);
   const WORLD = Object.freeze({ minX: -73, maxX: 73, minZ: -59, maxZ: 59 });
-  const WALK_SPEED = 1.85;
-  const ACCELERATION = 8.5;
-  const BRAKING = 10.5;
-  const DEAD_ZONE = 0.18;
+  const SPEED_MODES = Object.freeze({ comfort: 2.05, natural: 3.15, fast: 4.35 });
+  const ACCELERATION = 10.8;
+  const BRAKING = 13.5;
+  const DEAD_ZONE = 0.16;
   const SNAP_TURN = Math.PI / 6;
   const SNAP_THRESHOLD = 0.72;
+  const SMOOTH_TURN_SPEED = 1.85;
   const EYE_HEIGHT_DEFAULT = 1.65;
 
   const STAIR_LANES = Object.freeze([
@@ -49,13 +50,131 @@
     lastSafe: null,
     adjustedStairCollisions: 0,
     blockedFrames: 0,
-    installedAt: null
+    installedAt: null,
+    speedMode: localStorage.getItem('ucanVrSpeedMode') || 'natural',
+    turnMode: localStorage.getItem('ucanVrTurnMode') || 'smooth',
+    visualSnapshot: null,
+    visualMeshes: [],
+    engine: null,
+    originalSetHardwareScalingLevel: null,
+    allowScalingChange: false
   };
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const lerp = (a, b, t) => a + (b - a) * t;
   const nearestFloor = y => FLOORS.reduce((best, floor) => Math.abs(y - floor) < Math.abs(y - best) ? floor : best, FLOORS[0]);
   const finite = value => Number.isFinite(Number(value));
+
+
+  function activeSpeed() {
+    return SPEED_MODES[state.speedMode] || SPEED_MODES.natural;
+  }
+
+  function cloneColor(value) {
+    try { return value?.clone?.() || value; } catch (_) { return value; }
+  }
+
+  function captureVisualEnvironment(scene, desktopCamera) {
+    const engine = scene.getEngine();
+    const ip = scene.imageProcessingConfiguration;
+    const environmentPattern = /cielo|sky|nube|cloud|sol|sun|luna|moon|estrella|star|montaña|mountain|árbol|arbol|tree|río|rio|river|lago|lake|paisaje|panorámica|panoramica|terreno|ground exterior|césped|cesped|vegetación|vegetacion|jardín|jardin|rooftop/i;
+    state.visualMeshes = (scene.meshes || []).filter(mesh => environmentPattern.test(String(mesh?.name || ''))).map(mesh => ({ mesh, enabled: mesh.isEnabled?.() !== false, visible: mesh.isVisible !== false, visibility: Number(mesh.visibility ?? 1) }));
+    state.visualSnapshot = {
+      scaling: engine.getHardwareScalingLevel(),
+      clearColor: cloneColor(scene.clearColor),
+      ambientColor: cloneColor(scene.ambientColor),
+      fogMode: scene.fogMode,
+      fogDensity: scene.fogDensity,
+      fogStart: scene.fogStart,
+      fogEnd: scene.fogEnd,
+      fogColor: cloneColor(scene.fogColor),
+      environmentIntensity: scene.environmentIntensity,
+      contrast: ip?.contrast,
+      exposure: ip?.exposure,
+      toneMappingEnabled: ip?.toneMappingEnabled,
+      cameraLayerMask: desktopCamera?.layerMask,
+      cameraMaxZ: desktopCamera?.maxZ,
+      cameraMinZ: desktopCamera?.minZ
+    };
+    window.__UCAN_XR_VISUAL_LOCK__ = { active: true, build: BUILD, capturedMeshes: state.visualMeshes.length, scaling: state.visualSnapshot.scaling };
+  }
+
+  function installScalingGuard(engine) {
+    if (state.originalSetHardwareScalingLevel) return;
+    state.engine = engine;
+    state.originalSetHardwareScalingLevel = engine.setHardwareScalingLevel.bind(engine);
+    engine.setHardwareScalingLevel = function guardedHardwareScaling(value) {
+      if (state.inXR && !state.allowScalingChange) return engine.getHardwareScalingLevel();
+      return state.originalSetHardwareScalingLevel(value);
+    };
+  }
+
+  function applyVisualEnvironmentLock() {
+    if (!state.inXR || !state.visualSnapshot || !state.scene || !state.xrCamera) return;
+    const scene = state.scene;
+    const snap = state.visualSnapshot;
+    if (snap.clearColor) scene.clearColor = cloneColor(snap.clearColor);
+    if (snap.ambientColor) scene.ambientColor = cloneColor(snap.ambientColor);
+    scene.fogMode = snap.fogMode;
+    scene.fogDensity = snap.fogDensity;
+    scene.fogStart = snap.fogStart;
+    scene.fogEnd = snap.fogEnd;
+    if (snap.fogColor) scene.fogColor = cloneColor(snap.fogColor);
+    scene.environmentIntensity = snap.environmentIntensity;
+    const ip = scene.imageProcessingConfiguration;
+    if (ip) {
+      if (finite(snap.contrast)) ip.contrast = snap.contrast;
+      if (finite(snap.exposure)) ip.exposure = snap.exposure;
+      if (typeof snap.toneMappingEnabled === 'boolean') ip.toneMappingEnabled = snap.toneMappingEnabled;
+    }
+    state.xrCamera.layerMask = snap.cameraLayerMask ?? state.xrCamera.layerMask;
+    state.xrCamera.maxZ = Math.max(Number(snap.cameraMaxZ || 0), 2500);
+    state.xrCamera.minZ = Math.max(0.05, Math.min(Number(snap.cameraMinZ || 0.08), 0.12));
+    for (const item of state.visualMeshes) {
+      if (!item.mesh || item.mesh.isDisposed?.()) continue;
+      if (typeof item.mesh.setEnabled === 'function' && item.mesh.isEnabled() !== item.enabled) item.mesh.setEnabled(item.enabled);
+      item.mesh.isVisible = item.visible;
+      item.mesh.visibility = item.visibility;
+    }
+    if (state.engine && Math.abs(state.engine.getHardwareScalingLevel() - snap.scaling) > 0.01) {
+      state.allowScalingChange = true;
+      try { state.originalSetHardwareScalingLevel(snap.scaling); } finally { state.allowScalingChange = false; }
+    }
+  }
+
+  function releaseVisualEnvironmentLock() {
+    if (window.__UCAN_XR_VISUAL_LOCK__) window.__UCAN_XR_VISUAL_LOCK__.active = false;
+  }
+
+  function ensureXRControlButtons() {
+    const grid = document.querySelector('.control-grid');
+    if (!grid || document.getElementById('ucanVrSpeedBtn')) return;
+    const speed = document.createElement('button');
+    speed.id = 'ucanVrSpeedBtn';
+    speed.className = 'secondary';
+    const labels = { comfort:'VR: confort', natural:'VR: natural', fast:'VR: rápido' };
+    const refreshSpeed = () => { speed.textContent = labels[state.speedMode] || labels.natural; speed.setAttribute('aria-label', `Velocidad de movimiento ${state.speedMode}`); };
+    speed.onclick = () => {
+      state.speedMode = state.speedMode === 'comfort' ? 'natural' : state.speedMode === 'natural' ? 'fast' : 'comfort';
+      localStorage.setItem('ucanVrSpeedMode', state.speedMode);
+      refreshSpeed();
+      setStatus(`Velocidad VR: ${state.speedMode}. Máximo ${activeSpeed().toFixed(1)} metros por segundo.`);
+    };
+    refreshSpeed();
+    const turn = document.createElement('button');
+    turn.id = 'ucanVrTurnBtn';
+    turn.className = 'secondary';
+    const refreshTurn = () => { turn.textContent = state.turnMode === 'smooth' ? 'Giro VR: suave' : 'Giro VR: 30°'; };
+    turn.onclick = () => {
+      state.turnMode = state.turnMode === 'smooth' ? 'snap' : 'smooth';
+      localStorage.setItem('ucanVrTurnMode', state.turnMode);
+      state.rightStickLatched = false;
+      refreshTurn();
+      setStatus(state.turnMode === 'smooth' ? 'Giro suave activado en Meta Quest.' : 'Giro por pasos de 30 grados activado.');
+    };
+    refreshTurn();
+    grid.append(speed, turn);
+  }
 
   function setStatus(message) {
     window.__UCAN_API__?.setStatus?.(message);
@@ -175,8 +294,10 @@
     const left = readAxes('left');
     const { forward, right } = horizontalBasis(camera);
     const desired = right.scale(left.x).add(forward.scale(-left.y));
+    const stickMagnitude = Math.min(1, Math.hypot(left.x, left.y));
     if (desired.lengthSquared() > 1) desired.normalize();
-    desired.scaleInPlace(WALK_SPEED);
+    const speed = activeSpeed() * (0.58 + 0.42 * stickMagnitude);
+    desired.scaleInPlace(speed);
 
     const moving = desired.lengthSquared() > 0.0001;
     const response = 1 - Math.exp(-(moving ? ACCELERATION : BRAKING) * dt);
@@ -185,7 +306,7 @@
     if (state.velocity.lengthSquared() < 0.0004) state.velocity.set(0, 0, 0);
 
     let step = state.velocity.scale(dt);
-    const maxStep = WALK_SPEED * 0.05;
+    const maxStep = activeSpeed() * 0.05;
     if (step.length() > maxStep) step = step.normalize().scale(maxStep);
     if (step.lengthSquared() < 1e-8) return;
 
@@ -214,13 +335,21 @@
     }
   }
 
-  function applySnapTurn() {
+  function applyTurn(dt) {
     const right = readAxes('right');
+    const camera = state.xrCamera;
+    if (state.turnMode === 'smooth') {
+      state.rightStickLatched = false;
+      if (Math.abs(right.x) < 0.16) return;
+      const amount = right.x * SMOOTH_TURN_SPEED * dt;
+      if (camera.cameraRotation) camera.cameraRotation.y += amount;
+      else if (camera.rotation) camera.rotation.y += amount;
+      return;
+    }
     if (Math.abs(right.x) < 0.35) { state.rightStickLatched = false; return; }
     if (state.rightStickLatched || Math.abs(right.x) < SNAP_THRESHOLD) return;
     state.rightStickLatched = true;
     const amount = right.x > 0 ? SNAP_TURN : -SNAP_TURN;
-    const camera = state.xrCamera;
     if (camera.cameraRotation) camera.cameraRotation.y += amount;
     else if (camera.rotation) camera.rotation.y += amount;
   }
@@ -306,8 +435,9 @@
     const dt = clamp((state.scene?.getEngine?.().getDeltaTime?.() || 16) / 1000, 0.001, 0.033);
     if (state.xrCamera.cameraDirection) state.xrCamera.cameraDirection.y = 0;
     applyHorizontalMovement(dt);
-    applySnapTurn();
+    applyTurn(dt);
     updateGroundHeight(dt);
+    applyVisualEnvironmentLock();
     safetyCheck();
     syncDesktopAndAvatar();
   }
@@ -318,8 +448,8 @@
   }
 
   function install(scene, helper) {
-    if (!helper || helper.__ucanQuestGroundedV269) return helper;
-    helper.__ucanQuestGroundedV269 = true;
+    if (!helper || helper.__ucanQuestNaturalV270) return helper;
+    helper.__ucanQuestNaturalV270 = true;
     state.scene = scene;
     state.helper = helper;
     state.nonXrCamera = scene.activeCamera;
@@ -328,6 +458,8 @@
     state.lastSafe = new B.Vector3(0, EYE_HEIGHT_DEFAULT, 42);
     state.installedAt = new Date().toISOString();
     state.adjustedStairCollisions = disableStairStepCollisions(scene);
+    installScalingGuard(scene.getEngine());
+    ensureXRControlButtons();
 
     disableConflictingFeatures(helper);
     const xrCamera = state.xrCamera;
@@ -340,6 +472,7 @@
       state.inXR = xrState === B.WebXRState.IN_XR;
       if (state.inXR) {
         disableConflictingFeatures(helper);
+        captureVisualEnvironment(scene, state.nonXrCamera);
         state.currentFloor = initialFloorFromDesktop();
         state.groundY = state.currentFloor;
         state.calibrationFrames = 0;
@@ -353,9 +486,11 @@
         const physicalEye = observedEyeHeight(xrCamera);
         xrCamera.position.y = state.currentFloor + physicalEye;
         state.lastSafe.copyFrom(xrCamera.position);
-        setStatus('Meta Quest V269: joystick izquierdo para caminar y joystick derecho para girar. Movimiento fijado al suelo.');
+        applyVisualEnvironmentLock();
+        setStatus(`Meta Quest V270: movimiento ${state.speedMode} y giro ${state.turnMode === 'smooth' ? 'suave' : 'de 30 grados'}. El entorno visual se conserva.`);
       } else if (xrState === B.WebXRState.NOT_IN_XR && state.nonXrCamera) {
         state.velocity.set(0, 0, 0);
+        releaseVisualEnvironmentLock();
         state.nonXrCamera.position.x = xrCamera.position.x;
         state.nonXrCamera.position.z = xrCamera.position.z;
         state.nonXrCamera.position.y = state.currentFloor + 1.72;
@@ -369,10 +504,17 @@
       build: BUILD,
       installed: true,
       groundedLocomotion: true,
+      naturalMovement: true,
+      visualParityLock: true,
       builtInMovementDisabled: true,
       verticalInputDisabled: true,
-      leftStick: 'movimiento horizontal',
-      rightStick: 'giro de 30 grados',
+      leftStick: 'movimiento horizontal natural',
+      rightStick: 'giro suave o de 30 grados',
+      speedModes: SPEED_MODES,
+      getSpeedMode: () => state.speedMode,
+      setSpeedMode: mode => { if (SPEED_MODES[mode]) { state.speedMode = mode; localStorage.setItem('ucanVrSpeedMode', mode); } },
+      getTurnMode: () => state.turnMode,
+      setTurnMode: mode => { if (['smooth','snap'].includes(mode)) { state.turnMode = mode; localStorage.setItem('ucanVrTurnMode', mode); } },
       collisionProbes: true,
       safetyClamp: true,
       desktopAvatarSync: true,
@@ -387,21 +529,21 @@
         cameraPosition: state.xrCamera?.position?.asArray?.() || null
       })
     };
-    console.info('[UCAN V269] Locomoción Meta Quest estabilizada:', window.__UCAN_QUEST_XR_AUDIT__);
+    console.info('[UCAN V270] Locomoción Meta Quest natural y entorno preservado:', window.__UCAN_QUEST_XR_AUDIT__);
     return helper;
   }
 
   const original = B.Scene.prototype.createDefaultXRExperienceAsync;
-  if (original.__ucanQuestGroundedV269Patched) return;
+  if (original.__ucanQuestNaturalV270Patched) return;
 
   async function patchedCreateDefaultXRExperienceAsync(options = {}) {
     const helper = await original.call(this, { ...options, disableTeleportation: true });
     return install(this, helper);
   }
-  patchedCreateDefaultXRExperienceAsync.__ucanQuestGroundedV269Patched = true;
+  patchedCreateDefaultXRExperienceAsync.__ucanQuestNaturalV270Patched = true;
   patchedCreateDefaultXRExperienceAsync.__ucanOriginal = original;
   B.Scene.prototype.createDefaultXRExperienceAsync = patchedCreateDefaultXRExperienceAsync;
 
-  window.__UCAN_QUEST_XR_BOOT__ = { version:VERSION, build:BUILD, patched:true, grounded:true };
-  console.info('[UCAN V269] Interceptor WebXR estable preparado.');
+  window.__UCAN_QUEST_XR_BOOT__ = { version:VERSION, build:BUILD, patched:true, grounded:true, visualParity:true, naturalSpeed:true };
+  console.info('[UCAN V270] Interceptor WebXR natural preparado.');
 })();
