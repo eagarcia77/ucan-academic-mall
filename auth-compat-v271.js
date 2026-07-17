@@ -11,6 +11,7 @@ const UCAN_SCRIPT = '/js/ucan_babylon_mall_v265_accounts_avatars.js?build=V276-2
 const UCAN_XR_SCRIPT = '/js/ucan_v275_xr_stair_blockers.js?build=V276-20260717-INTERACTIVE-TERRACE-SKY';
 const UCAN_BLOCKER_SCRIPT = '/js/ucan_v275_blocker_pickability.js?build=V276-20260717-INTERACTIVE-TERRACE-SKY';
 const UCAN_SKY_SCRIPT = '/js/ucan_v276_interactive_sky.js?build=V276-20260717-INTERACTIVE-TERRACE-SKY';
+const UCAN_SKY_REFRESH_SCRIPT = '/js/ucan_v276_sky_refresh.js?build=V276-20260717-INTERACTIVE-TERRACE-SKY';
 
 const originalLoad = Module._load;
 Module._load = function patchedModuleLoad(request, parent, isMain) {
@@ -66,7 +67,7 @@ function campusV276Html() {
   const file = path.join(__dirname, 'public', 'campus.html');
   let html = fs.readFileSync(file, 'utf8');
   const xrScripts = `${UCAN_XR_SCRIPT}"></script>\n  <script src="${UCAN_BLOCKER_SCRIPT}`;
-  const mainWithSky = `${UCAN_SCRIPT}"></script>\n  <script src="${UCAN_SKY_SCRIPT}`;
+  const mainWithSky = `${UCAN_SCRIPT}"></script>\n  <script src="${UCAN_SKY_SCRIPT}"></script>\n  <script src="${UCAN_SKY_REFRESH_SCRIPT}`;
   html = html
     .replaceAll('V272-20260717-XR-DESKTOP-PARITY-SPEED', UCAN_BUILD)
     .replaceAll('UCAN Academic Mall V272', 'UCAN Academic Mall V276')
@@ -117,7 +118,8 @@ http.createServer = function createCompatibleServer(listener) {
           script:UCAN_SCRIPT,
           xrScript:UCAN_XR_SCRIPT,
           blockerScript:UCAN_BLOCKER_SCRIPT,
-          skyScript:UCAN_SKY_SCRIPT
+          skyScript:UCAN_SKY_SCRIPT,
+          skyRefreshScript:UCAN_SKY_REFRESH_SCRIPT
         });
       }
       if (pathname === '/campus' && req.method === 'GET' && auth?.getSessionUser?.(req)) {
