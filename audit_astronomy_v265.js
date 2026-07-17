@@ -7,7 +7,7 @@ const js = fs.readFileSync(main,'utf8');
 const srv = fs.readFileSync(server,'utf8');
 const page = fs.readFileSync(html,'utf8');
 const checks = {
-  activeScript:/ucan_babylon_mall_v265_accounts_avatars\.js\?build=V271-20260717-XR-PARITY-FLOOR-LOCK/.test(page),
+  activeScript:/ucan_babylon_mall_v265_accounts_avatars\.js\?build=V272-20260717-XR-DESKTOP-PARITY-SPEED/.test(page),
   siderealTime:/function localSiderealDegrees/.test(js),
   altitudeAzimuth:/function raDecToAltAz/.test(js),
   lowPrecisionPlanets:/function planetRaDec/.test(js),
@@ -21,5 +21,5 @@ const checks = {
   normalScale:/horizonWorldPoint\(altitude, azimuth, 210\)/.test(js)
 };
 const ok=Object.values(checks).every(Boolean);
-console.log(JSON.stringify({ok,version:'V271',checks},null,2));
+console.log(JSON.stringify({ok,version:'V272',checks},null,2));
 if(!ok) process.exit(1);
