@@ -10,23 +10,27 @@ const required = [
 ];
 const files = Object.fromEntries(required.map(rel => [rel, fs.existsSync(path.join(root, rel))]));
 const server = fs.readFileSync(path.join(root,'server.js'),'utf8');
+const compat = fs.readFileSync(path.join(root,'auth-compat-v271.js'),'utf8');
+const auth = fs.readFileSync(path.join(root,'lib/auth.js'),'utf8');
 const identity = fs.readFileSync(path.join(root,'public/js/ucan_v265_identity.js'),'utf8');
 const avatar = fs.readFileSync(path.join(root,'public/js/ucan_avatar_shared.js'),'utf8');
 const report = {
-  version:'V265',
+  sceneVersion:'V265',
+  serverVersion:'V282',
   files,
   authEndpoints:[
     '/api/auth/register','/api/auth/login','/api/auth/logout','/api/auth/me','/api/auth/change-password',
     '/api/profile/avatar','/api/admin/users','/api/presence'
-  ].every(route => server.includes(route) || fs.readFileSync(path.join(root,'lib/auth.js'),'utf8').includes(route)),
-  securePasswordHashing: fs.readFileSync(path.join(root,'lib/auth.js'),'utf8').includes('crypto.scryptSync'),
-  httpOnlyCookie: fs.readFileSync(path.join(root,'lib/auth.js'),'utf8').includes('HttpOnly'),
-  roles: fs.readFileSync(path.join(root,'lib/auth.js'),'utf8').includes("role === 'admin'"),
+  ].every(route => server.includes(route) || auth.includes(route)),
+  securePasswordHashing: auth.includes('crypto.scryptSync'),
+  httpOnlyCookie: auth.includes('HttpOnly'),
+  roles: auth.includes("role === 'admin'"),
   avatarCustomization:['hairStyle','hairColor','topStyle','topColor','shoeStyle','shoeColor','accessories'].every(key => avatar.includes(key)),
   thirdPersonMode: identity.includes('FollowCamera') && identity.includes('toggleThirdPerson'),
-  multiplayerPresence: identity.includes('/api/presence') && server.includes('multiplayerPresence:true'),
+  multiplayerPresence: identity.includes('/api/presence') && auth.includes('const presence = new Map()') && auth.includes('presenceSnapshot'),
+  layeredServerActive: /V282-20260720-QUEST-BROWSER-ONE-WAY-ESCALATOR-PARITY/.test(compat),
   publicationReady: required.slice(7).every(rel => files[rel])
 };
-report.ok = Object.values(files).every(Boolean) && report.authEndpoints && report.securePasswordHashing && report.httpOnlyCookie && report.roles && report.avatarCustomization && report.thirdPersonMode && report.multiplayerPresence && report.publicationReady;
+report.ok = Object.values(files).every(Boolean) && report.authEndpoints && report.securePasswordHashing && report.httpOnlyCookie && report.roles && report.avatarCustomization && report.thirdPersonMode && report.multiplayerPresence && report.layeredServerActive && report.publicationReady;
 console.log(JSON.stringify(report,null,2));
 if (!report.ok) process.exit(1);
