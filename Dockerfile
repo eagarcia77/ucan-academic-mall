@@ -1,6 +1,7 @@
 FROM node:20-bookworm-slim
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    git openssh-client ca-certificates \
     libreoffice-impress libreoffice-core libreoffice-common poppler-utils fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /app/data /app/generated /tmp/ucan-home \
