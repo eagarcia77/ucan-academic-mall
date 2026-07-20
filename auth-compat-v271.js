@@ -5,11 +5,12 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const UCAN_VERSION = 'V278';
-const UCAN_BUILD = 'V278-20260720-SCROLL-DIRECT-AVATAR-ACCESS';
+const UCAN_VERSION = 'V279';
+const UCAN_BUILD = 'V279-20260720-XR-FULL-VISUAL-PARITY';
 const UCAN_SCRIPT = `/js/ucan_babylon_mall_v265_accounts_avatars.js?build=${UCAN_BUILD}`;
 const UCAN_XR_SCRIPT = `/js/ucan_v277_xr_navigation_recovery.js?build=${UCAN_BUILD}`;
 const UCAN_BLOCKER_SCRIPT = `/js/ucan_v275_blocker_pickability.js?build=${UCAN_BUILD}`;
+const UCAN_PARITY_SCRIPT = `/js/ucan_v279_xr_visual_parity.js?build=${UCAN_BUILD}`;
 const UCAN_SKY_SCRIPT = `/js/ucan_v276_interactive_sky.js?build=${UCAN_BUILD}`;
 const UCAN_SKY_REFRESH_SCRIPT = `/js/ucan_v276_sky_refresh.js?build=${UCAN_BUILD}`;
 const UCAN_AVATAR_STUDIO_SCRIPT = `/js/ucan_v270_avatar_studio.js?build=${UCAN_BUILD}`;
@@ -47,14 +48,14 @@ function repairCompletionFile(dataDir) {
       }
     }
     if (repaired) {
-      const tmp = `${file}.v278.tmp`;
+      const tmp = `${file}.v279.tmp`;
       fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
       fs.renameSync(tmp, file);
-      console.info(`[UCAN V278] Se repararon ${repaired} indicadores persistentes; ${directAccess} cuenta(s) recibieron acceso directo por avatar.`);
+      console.info(`[UCAN V279] Se repararon ${repaired} indicadores persistentes; ${directAccess} cuenta(s) recibieron acceso directo por avatar.`);
     }
     return { checked:true, repaired, directAccess };
   } catch (error) {
-    console.warn('[UCAN V278] No se pudo revisar la persistencia de perfiles:', error.message);
+    console.warn('[UCAN V279] No se pudo revisar la persistencia de perfiles:', error.message);
     return { checked:false, repaired:0, directAccess:0, error:error.message };
   }
 }
@@ -66,7 +67,7 @@ Module._load = function patchedModuleLoad(request, parent, isMain) {
   let resolved = '';
   try { resolved = Module._resolveFilename(request, parent); } catch (_) {}
 
-  if (/[\\/]lib[\\/]auth\.js$/.test(resolved) && exported && typeof exported.createAuthSystem === 'function' && !exported.__ucanV278Compat) {
+  if (/[\\/]lib[\\/]auth\.js$/.test(resolved) && exported && typeof exported.createAuthSystem === 'function' && !exported.__ucanV279Compat) {
     const originalCreateAuthSystem = exported.createAuthSystem;
     exported.createAuthSystem = function createCompatibleAuthSystem(options) {
       persistenceAudit = repairCompletionFile(options?.dataDir);
@@ -78,10 +79,10 @@ Module._load = function patchedModuleLoad(request, parent, isMain) {
           return auth.handleApi(pathname, req, res, parsed, { readJsonBody, sendJson });
         };
       }
-      global.__UCAN_AUTH_SYSTEM_V278__ = auth;
+      global.__UCAN_AUTH_SYSTEM_V279__ = auth;
       return auth;
     };
-    exported.__ucanV278Compat = true;
+    exported.__ucanV279Compat = true;
   }
   return exported;
 };
@@ -109,20 +110,20 @@ function sendHtml(res, status, body) {
   res.end(body);
 }
 
-function campusV278Html() {
+function campusV279Html() {
   const file = path.join(__dirname, 'public', 'campus.html');
   let html = fs.readFileSync(file, 'utf8');
-  const xrScripts = `${UCAN_XR_SCRIPT}"></script>\n  <script src="${UCAN_BLOCKER_SCRIPT}`;
+  const xrScripts = `${UCAN_XR_SCRIPT}"></script>\n  <script src="${UCAN_BLOCKER_SCRIPT}"></script>\n  <script src="${UCAN_PARITY_SCRIPT}`;
   const mainWithSky = `${UCAN_SCRIPT}"></script>\n  <script src="${UCAN_SKY_SCRIPT}"></script>\n  <script src="${UCAN_SKY_REFRESH_SCRIPT}`;
   const studioWithRollbackAndScroll = `${UCAN_AVATAR_STUDIO_SCRIPT}"></script>\n  <script src="${UCAN_ROLLBACK_SCRIPT}"></script>\n  <script src="${UCAN_SCROLL_ACCESS_SCRIPT}`;
   html = html
     .replaceAll('V272-20260717-XR-DESKTOP-PARITY-SPEED', UCAN_BUILD)
-    .replaceAll('UCAN Academic Mall V272', 'UCAN Academic Mall V278')
-    .replaceAll('COMPILACIÓN V272 ACTIVA', 'COMPILACIÓN V278 ACTIVA')
+    .replaceAll('UCAN Academic Mall V272', 'UCAN Academic Mall V279')
+    .replaceAll('COMPILACIÓN V272 ACTIVA', 'COMPILACIÓN V279 ACTIVA')
     .replace('/js/ucan_v272_xr_desktop_parity.js?build=' + UCAN_BUILD, xrScripts)
     .replace(UCAN_SCRIPT, mainWithSky)
     .replace(UCAN_AVATAR_STUDIO_SCRIPT, studioWithRollbackAndScroll)
-    .replace('V272: el entorno VR utiliza la misma escena de computadora y la velocidad normal coincide en 5.0 m/s.', 'V278: acceso directo al reconocer el avatar y barras visibles para recorrer perfil, información, cielo y pizarras.');
+    .replace('V272: el entorno VR utiliza la misma escena de computadora y la velocidad normal coincide en 5.0 m/s.', 'V279: paridad visual completa entre computadora y WebXR, con luces, materiales, cielo, texturas y calidad protegidos durante la sesión inmersiva.');
   return html;
 }
 
@@ -152,12 +153,12 @@ http.createServer = function createCompatibleServer(listener) {
   if (typeof listener !== 'function') return originalCreateServer.apply(this, arguments);
   return originalCreateServer.call(this, async (req, res) => {
     try {
-      const auth = global.__UCAN_AUTH_SYSTEM_V278__;
+      const auth = global.__UCAN_AUTH_SYSTEM_V279__;
       const parsed = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
       const pathname = decodeURIComponent(parsed.pathname);
 
       if (pathname === '/health' || pathname === '/healthz') {
-        return sendJson(res, 200, { ok:true, version:UCAN_VERSION, build:UCAN_BUILD, persistence:persistenceAudit });
+        return sendJson(res, 200, { ok:true, version:UCAN_VERSION, build:UCAN_BUILD, persistence:persistenceAudit, immersiveVisualParity:true });
       }
       if (pathname === '/version') {
         return sendJson(res, 200, {
@@ -166,16 +167,19 @@ http.createServer = function createCompatibleServer(listener) {
           script:UCAN_SCRIPT,
           xrScript:UCAN_XR_SCRIPT,
           blockerScript:UCAN_BLOCKER_SCRIPT,
+          parityScript:UCAN_PARITY_SCRIPT,
           skyScript:UCAN_SKY_SCRIPT,
           skyRefreshScript:UCAN_SKY_REFRESH_SCRIPT,
           rollbackScript:UCAN_ROLLBACK_SCRIPT,
           scrollAccessScript:UCAN_SCROLL_ACCESS_SCRIPT,
+          immersiveVisualParity:true,
+          sameSceneAsDesktop:true,
           directAccessWhenAvatarConfigured:true,
           persistenceRepair:persistenceAudit
         });
       }
       if (pathname === '/campus' && req.method === 'GET' && auth?.getSessionUser?.(req)) {
-        return sendHtml(res, 200, campusV278Html());
+        return sendHtml(res, 200, campusV279Html());
       }
 
       const authManaged = pathname.startsWith('/api/auth/') || pathname === '/api/profile' || pathname.startsWith('/api/profile/') || pathname === '/api/presence' || pathname.startsWith('/api/admin/users');
@@ -185,10 +189,10 @@ http.createServer = function createCompatibleServer(listener) {
       }
       return await listener(req, res);
     } catch (error) {
-      console.error('[UCAN V278 auth compatibility]', error);
+      console.error('[UCAN V279 auth compatibility]', error);
       if (!res.headersSent && !res.writableEnded) sendJson(res, error.statusCode || 500, { error:error.message || 'Error interno' });
     }
   });
 };
 
-console.info('[UCAN V278] Acceso directo por avatar y barras de desplazamiento cargados.');
+console.info('[UCAN V279] Paridad visual inmersiva, acceso y persistencia cargados.');
