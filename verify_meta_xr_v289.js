@@ -15,7 +15,7 @@ try {
   syntaxError = error.message;
 }
 
-const xrIndex = compat.indexOf('ucan_v283_unified_xr_runtime.js');
+const xrIndex = compat.indexOf('ucan_v290_quest_controls_interaction.js');
 const questIndex = compat.indexOf('ucan_v289_quest_xr_compat.js');
 const mainIndex = compat.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');
 
@@ -43,6 +43,7 @@ const checks = {
   questPerformanceGuard:/setHardwareScalingLevel\(Math\.max\(current, 1\.25\)\)/.test(quest),
   auditApi:/__UCAN_QUEST_XR_AUDIT__/.test(quest),
   injectedByServer:/QUEST_XR_SCRIPT/.test(compat) && /questXrVersion = 'V289'/.test(compat),
+  controlsV290Served:/UNIFIED_XR_SCRIPT = `\/js\/ucan_v290_quest_controls_interaction/.test(compat),
   permissionsPolicy:/xr-spatial-tracking=\(self\)/.test(compat),
   injectionOrder:xrIndex >= 0 && questIndex > xrIndex && mainIndex >= 0,
   packageChecksScript:pkg.scripts?.check?.includes('public/js/ucan_v289_quest_xr_compat.js'),
