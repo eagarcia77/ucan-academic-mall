@@ -1,7 +1,7 @@
 'use strict';
 
 const fs = require('fs');
-const { VERSION, BUILD, ORIGINAL_BLOCK, patchMainScene } = require('./lib/direct-floor-fix-v286');
+const { VERSION, BUILD, countOriginalTargets, patchMainScene } = require('./lib/direct-floor-fix-v286');
 
 const source = fs.readFileSync('public/js/ucan_babylon_mall_v265_accounts_avatars.js', 'utf8');
 const compat = fs.readFileSync('auth-compat-v286.js', 'utf8');
@@ -11,7 +11,7 @@ const result = patchMainScene(source);
 const checks = {
   version:VERSION === 'V286',
   build:BUILD === 'V286-20260720-DIRECT-FLOOR-FIX',
-  originalBugPresentInRepository:source.includes(ORIGINAL_BLOCK),
+  originalBugPresentInRepository:countOriginalTargets(source) === 1,
   patchApplied:result.patched === true,
   exactlyOneTarget:result.originalOccurrences === 1,
   directFloorCondition:result.code.includes('if (onFloorThree && (inCenterAisle || inSideAisle))'),
