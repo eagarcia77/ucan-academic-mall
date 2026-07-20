@@ -20,12 +20,7 @@ jobs:
       matrix:
         script:
           - check
-          - audit:quest
-          - audit:xr-floor-stairs
-          - audit:quest-visual-rooftop
-          - audit:environment-escalators
-          - audit:visual-parity
-          - test:visual-parity
+          - audit:unified-xr
           - audit:profile
           - audit:access-scroll
           - audit:sky
