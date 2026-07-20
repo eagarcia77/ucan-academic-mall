@@ -13,6 +13,8 @@ const MAIN_PATH = '/js/ucan_babylon_mall_v265_accounts_avatars.js';
 const MAIN_FILE = path.join(__dirname, 'public', 'js', 'ucan_babylon_mall_v265_accounts_avatars.js');
 const MAIN_SCRIPT = `${MAIN_PATH}?build=${BUILD}`;
 const SKY_SCRIPT = `/js/ucan_v287_rooftop_sky.js?build=${BUILD}`;
+const CELESTIAL_WINDOW_BUILD = 'V288-20260720-COMPACT-CELESTIAL-WINDOW';
+const CELESTIAL_WINDOW_SCRIPT = `/js/ucan_v288_celestial_info_window.js?build=${CELESTIAL_WINDOW_BUILD}`;
 let patchAudit = { checked:false, patched:false, reason:'Todavía no solicitado.' };
 
 function sendPatchedMainScene(res) {
@@ -96,6 +98,13 @@ function transformCampusHtml(text) {
     /\s*<script src="\/js\/ucan_v28[45]_desktop_floor_(?:guard|lock)\.js[^"']*"><\/script>/g,
     ''
   );
+
+  if (!html.includes('/js/ucan_v288_celestial_info_window.js')) {
+    const skyTag = `<script src="${SKY_SCRIPT}"></script>`;
+    const infoTag = `<script src="${CELESTIAL_WINDOW_SCRIPT}"></script>`;
+    if (html.includes(skyTag)) html = html.replace(skyTag, `${skyTag}\n  ${infoTag}`);
+    else html = html.replace('</body>', `  ${infoTag}\n</body>`);
+  }
   return html;
 }
 
@@ -106,6 +115,15 @@ function transformVersionData(data) {
   data.script = MAIN_SCRIPT;
   data.skyScript = SKY_SCRIPT;
   data.skyRefreshScript = null;
+  data.celestialInfoWindowScript = CELESTIAL_WINDOW_SCRIPT;
+  data.celestialInfoWindowVersion = 'V288';
+  data.desktopCelestialWindowCompact = true;
+  data.xrCelestialWindowCompact = true;
+  data.celestialWindowClosableDesktop = true;
+  data.celestialWindowClosableXR = true;
+  data.legacyLargeCelestialPlaneDisabled = true;
+  data.celestialWindowWidthMeters = 2.85;
+  data.celestialWindowHeightMeters = 1.78;
   data.mainSceneServedPatched = true;
   data.floorControlStrategy = 'explicit-state-machine';
   data.explicitFloorState = true;
@@ -175,4 +193,4 @@ if (!http.ServerResponse.prototype.__ucanV287FloorSkyPatched) {
   http.ServerResponse.prototype.__ucanV287FloorSkyPatched = true;
 }
 
-console.info('[UCAN V287] Estado explícito de pisos y cielo optimizado cargados.');
+console.info('[UCAN V287/V288] Pisos, cielo optimizado y ventana celeste compacta cargados.');
