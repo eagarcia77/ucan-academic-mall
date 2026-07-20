@@ -11,10 +11,35 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    name: Node checks and environment audits
+  audit:
+    name: ${{ matrix.script }}
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        script:
+          - check
+          - audit:quest
+          - audit:xr-floor-stairs
+          - audit:quest-visual-rooftop
+          - audit:environment-escalators
+          - audit:visual-parity
+          - test:visual-parity
+          - audit:profile
+          - audit:access-scroll
+          - audit:sky
+          - audit:accounts
+          - audit:layers
+          - audit:floor
+          - audit:environment
+          - audit:optimization
+          - audit:stairs
+          - audit:astronomy
+          - audit:text-wrap
+          - audit:astro-panels
+          - audit:keyboard-jump
+          - audit:avatar-v270
 
     steps:
       - name: Checkout repository
@@ -25,43 +50,5 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies
-        run: npm install --ignore-scripts
-
-      - name: JavaScript syntax
-        run: npm run check
-
-      - name: Meta Quest navigation
-        run: npm run audit:quest
-
-      - name: XR floor and stairs
-        run: npm run audit:xr-floor-stairs
-
-      - name: Quest visual and rooftop movement
-        run: npm run audit:quest-visual-rooftop
-
-      - name: Browser and Quest escalator parity
-        run: npm run audit:environment-escalators
-
-      - name: Immersive visual parity
-        run: npm run audit:visual-parity
-
-      - name: Visual parity runtime boot
-        run: npm run test:visual-parity
-
-      - name: Remaining legacy audits
-        run: |
-          npm run audit:profile && \
-          npm run audit:access-scroll && \
-          npm run audit:sky && \
-          npm run audit:accounts && \
-          npm run audit:layers && \
-          npm run audit:floor && \
-          npm run audit:environment && \
-          npm run audit:optimization && \
-          npm run audit:stairs && \
-          npm run audit:astronomy && \
-          npm run audit:text-wrap && \
-          npm run audit:astro-panels && \
-          npm run audit:keyboard-jump && \
-          npm run audit:avatar-v270
+      - name: Run ${{ matrix.script }}
+        run: npm run "${{ matrix.script }}"
