@@ -4,7 +4,7 @@ const access=fs.readFileSync('public/js/ucan_v278_scroll_direct_access.js','utf8
 const compat=fs.readFileSync('auth-compat-v271.js','utf8');
 const checks={
   layerBuild:/V278-20260720-SCROLL-DIRECT-AVATAR-ACCESS/.test(access),
-  currentServerBuild:/V282-20260720-QUEST-BROWSER-ONE-WAY-ESCALATOR-PARITY/.test(compat),
+  currentServerBuild:/V283-20260720-UNIFIED-XR-DESKTOP-PARITY/.test(compat),
   noPasswordRedirect:!/campus\?password=change/.test(login),
   avatarDirectLogin:/avatarReady\?['"]\/campus['"]:['"]\/campus\?avatar=1['"]/.test(login),
   serverClearsGate:/avatarReady && user\.forcePasswordChange === true/.test(compat)&&/user\.forcePasswordChange = false/.test(compat),
@@ -17,8 +17,9 @@ const checks={
   gamepadScrolling:/navigator\.getGamepads/.test(access)&&/gamepadScrolling:true/.test(access),
   touchScrolling:/touch-action:pan-y/.test(access)&&/-webkit-overflow-scrolling:touch/.test(access),
   directAvatarGuard:/directAccessWhenAvatarConfigured:true/.test(access)&&/user\.avatarConfigured = true/.test(access),
-  loadedByCampus:/UCAN_SCROLL_ACCESS_SCRIPT/.test(compat)&&/studioWithRollbackAndScroll/.test(compat)
+  loadedByCampus:/UCAN_SCROLL_ACCESS_SCRIPT/.test(compat)&&/studioWithRollbackAndScroll/.test(compat),
+  unifiedXrPreserved:/UCAN_UNIFIED_XR_SCRIPT/.test(compat)&&/singleUnifiedXrController:true/.test(compat)
 };
 const ok=Object.values(checks).every(Boolean);
-console.log(JSON.stringify({ok,layerVersion:'V278',serverVersion:'V282',checks},null,2));
+console.log(JSON.stringify({ok,layerVersion:'V278',serverVersion:'V283',checks},null,2));
 if(!ok)process.exit(1);
