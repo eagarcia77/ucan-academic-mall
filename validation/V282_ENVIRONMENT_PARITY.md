@@ -10,3 +10,4 @@ Validation scope:
 - Down escalators cannot be used to ascend
 - Up escalators cannot be used to descend
 - Rooftop conventional stairs remain bidirectional
+- Workflow rerun after removing the package-lock cache dependency
