@@ -5,7 +5,8 @@ const compat = fs.readFileSync('auth-compat-v271.js', 'utf8');
 
 const checks = {
   version: /const VERSION = 'V281'/.test(parity),
-  build: /V281-20260720-QUEST-VISUAL-ROOFTOP-PARITY/.test(parity) && /V281-20260720-QUEST-VISUAL-ROOFTOP-PARITY/.test(compat),
+  layerBuild: /V281-20260720-QUEST-VISUAL-ROOFTOP-PARITY/.test(parity),
+  currentServerBuild: /V282-20260720-QUEST-BROWSER-ONE-WAY-ESCALATOR-PARITY/.test(compat),
   questExposureCalibration: /DEFAULT_EXPOSURE_FACTOR = 0\.86/.test(parity) && /applyQuestVisualCalibration/.test(parity),
   desktopVisualRestore: /restoreDesktopVisual/.test(parity) && /image\.exposure = state\.desktopVisual\.exposure/.test(parity),
   rooftopDetection: /onRooftop/.test(parity) && /const ROOFTOP = 27\.2/.test(parity),
@@ -19,5 +20,5 @@ const checks = {
 };
 
 const ok = Object.values(checks).every(Boolean);
-console.log(JSON.stringify({ ok, version:'V281', checks }, null, 2));
+console.log(JSON.stringify({ ok, layerVersion:'V281', serverVersion:'V282', checks }, null, 2));
 if (!ok) process.exit(1);
