@@ -14,3 +14,4 @@ Validation scope:
 - Diagnostic run with independent audit steps
 - Strict run that stops on the first failing audit
 - Rerun after updating the layered V277/V282 navigation audit
+- Rerun after updating layered V278, V280 and V281 audits
