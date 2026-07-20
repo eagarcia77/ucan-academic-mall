@@ -8,7 +8,7 @@ const checks = {
   layerBuild: /V280-20260720-XR-HEIGHT-STAIRS-FLOOR-SNAP/.test(alignment),
   currentServerBuild: /V282-20260720-QUEST-BROWSER-ONE-WAY-ESCALATOR-PARITY/.test(compat),
   realWorldHeight: /realWorldHeight/.test(alignment) && /readEyeHeight/.test(alignment),
-  headAndFloorSeparated: /camera\.position\.y = Number\(value\) \+ state\.eyeHeight/.test(alignment) && /feetY\(state\)/.test(alignment),
+  headAndFloorSeparated: /state\.xr\.position\.y = Number\(value\) \+ state\.eyeHeight/.test(alignment) && /feetY\(state\)/.test(alignment),
   stairEntryExpanded: /const ENTRY_DEPTH = 6\.4/.test(alignment) && /widenStairEntry/.test(alignment),
   stairProgressAlignment: /activeStairGround/.test(alignment) && /lerp\(lane\.low, lane\.high, progress\)/.test(alignment),
   postTransitionSnap: /floorSnapRecovery/.test(alignment) && /post-transition-floor-snap/.test(alignment),
