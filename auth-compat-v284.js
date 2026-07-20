@@ -34,10 +34,9 @@ if (!http.ServerResponse.prototype.__ucanV284FloorGuardPatched) {
     let body = chunk;
     try {
       if (typeof body === 'string' || Buffer.isBuffer(body)) {
-        let text = Buffer.isBuffer(body) ? body.toString(encoding && typeof encoding === 'string' ? encoding : 'utf8') : body;
-        const contentType = String(this.getHeader('Content-Type') || this.getHeader('content-type') || '');
+        let text = Buffer.isBuffer(body) ? body.toString(typeof encoding === 'string' ? encoding : 'utf8') : body;
 
-        if (/text\/html/i.test(contentType) && text.includes('UCAN Academic Mall V283')) {
+        if (text.includes('UCAN Academic Mall V283')) {
           text = text
             .replaceAll(PREVIOUS_BUILD, BUILD)
             .replaceAll('UCAN Academic Mall V283', 'UCAN Academic Mall V284')
@@ -51,7 +50,7 @@ if (!http.ServerResponse.prototype.__ucanV284FloorGuardPatched) {
             );
           }
           body = text;
-        } else if (/application\/json/i.test(contentType)) {
+        } else if (/^\s*[\[{]/.test(text)) {
           try {
             const data = JSON.parse(text);
             if (data?.version === 'V283' && data?.build === PREVIOUS_BUILD) {
