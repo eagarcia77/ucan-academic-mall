@@ -21,10 +21,9 @@ jobs:
         script:
           - check
           - audit:unified-xr
-          - audit:direct-floor-fix
+          - audit:floor-sky
           - audit:profile
           - audit:access-scroll
-          - audit:sky
           - audit:accounts
           - audit:layers
           - audit:floor
