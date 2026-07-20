@@ -21,6 +21,7 @@ jobs:
         script:
           - check
           - audit:unified-xr
+          - audit:desktop-floor-guard
           - audit:profile
           - audit:access-scroll
           - audit:sky
