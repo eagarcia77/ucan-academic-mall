@@ -30,9 +30,15 @@ jobs:
           curl -fsS "http://127.0.0.1:3011/js/ucan_babylon_mall_v265_accounts_avatars.js?build=V287-20260720-FLOOR-STATE-SKY-OPT" > /tmp/main-scene.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v287_rooftop_sky.js?build=V287-20260720-FLOOR-STATE-SKY-OPT" > /tmp/sky.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v288_celestial_info_window.js?build=V288-20260720-COMPACT-CELESTIAL-WINDOW" > /tmp/celestial-window.js
-          curl -fsS http://127.0.0.1:3011/campus > /tmp/campus.html
           curl -fsS http://127.0.0.1:3011/version > /tmp/version.json
           curl -fsS http://127.0.0.1:3011/api/auth/options > /tmp/auth-options.json
+
+          CI_USER="ciwindow${GITHUB_RUN_ID}"
+          curl -fsS -c /tmp/cookies.txt \
+            -H 'Content-Type: application/json' \
+            -d "{\"username\":\"${CI_USER}\",\"displayName\":\"CI Celestial Window\",\"email\":\"${CI_USER}@example.test\",\"password\":\"CI-Window-2026!\"}" \
+            http://127.0.0.1:3011/api/auth/register > /tmp/register.json
+          curl -fsS -b /tmp/cookies.txt http://127.0.0.1:3011/campus > /tmp/campus.html
 
           node --check /tmp/main-scene.js
           node --check /tmp/sky.js
