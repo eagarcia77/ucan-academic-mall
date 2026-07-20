@@ -12,6 +12,9 @@ const PREVIOUS_BUILD = 'V283-20260720-UNIFIED-XR-DESKTOP-PARITY';
 const MAIN_PATH = '/js/ucan_babylon_mall_v265_accounts_avatars.js';
 const MAIN_FILE = path.join(__dirname, 'public', 'js', 'ucan_babylon_mall_v265_accounts_avatars.js');
 const MAIN_SCRIPT = `${MAIN_PATH}?build=${BUILD}`;
+const UNIFIED_XR_SCRIPT = `/js/ucan_v283_unified_xr_runtime.js?build=${BUILD}`;
+const QUEST_XR_BUILD = 'V289-20260720-QUEST-XR-COMPAT-DIAGNOSTICS';
+const QUEST_XR_SCRIPT = `/js/ucan_v289_quest_xr_compat.js?build=${QUEST_XR_BUILD}`;
 const SKY_SCRIPT = `/js/ucan_v287_rooftop_sky.js?build=${BUILD}`;
 const CELESTIAL_WINDOW_BUILD = 'V288-20260720-COMPACT-CELESTIAL-WINDOW';
 const CELESTIAL_WINDOW_SCRIPT = `/js/ucan_v288_celestial_info_window.js?build=${CELESTIAL_WINDOW_BUILD}`;
@@ -37,7 +40,8 @@ function sendPatchedMainScene(res) {
       'Cache-Control':'no-store, no-cache, must-revalidate, max-age=0',
       'Pragma':'no-cache',
       'Expires':'0',
-      'X-UCAN-Floor-State':VERSION
+      'X-UCAN-Floor-State':VERSION,
+      'X-UCAN-XR-Compat':'V289'
     });
     res.end(body);
   } catch (error) {
@@ -83,7 +87,7 @@ function transformCampusHtml(text) {
     .replaceAll(`COMPILACIÓN ${PREVIOUS_VERSION} ACTIVA`, `COMPILACIÓN ${VERSION} ACTIVA`)
     .replace(
       'V283: un solo controlador comparte iluminación, movimiento, altura, colisiones y escaleras entre Meta Quest y el browser.',
-      'V287: cada piso mantiene un estado explícito y el cielo optimizado de la terraza reduce geometría, texturas y actualizaciones.'
+      'V289: Meta Quest usa entrada WebXR directa, diagnóstico visible y la misma lógica de pisos, movimiento e iluminación.'
     );
 
   html = html.replace(
@@ -99,6 +103,13 @@ function transformCampusHtml(text) {
     ''
   );
 
+  if (!html.includes('/js/ucan_v289_quest_xr_compat.js')) {
+    const xrTag = `<script src="${UNIFIED_XR_SCRIPT}"></script>`;
+    const questTag = `<script src="${QUEST_XR_SCRIPT}"></script>`;
+    if (html.includes(xrTag)) html = html.replace(xrTag, `${xrTag}\n  ${questTag}`);
+    else html = html.replace(`<script src="${MAIN_SCRIPT}"></script>`, `${questTag}\n  <script src="${MAIN_SCRIPT}"></script>`);
+  }
+
   if (!html.includes('/js/ucan_v288_celestial_info_window.js')) {
     const skyTag = `<script src="${SKY_SCRIPT}"></script>`;
     const infoTag = `<script src="${CELESTIAL_WINDOW_SCRIPT}"></script>`;
@@ -113,6 +124,21 @@ function transformVersionData(data) {
   data.version = VERSION;
   data.build = BUILD;
   data.script = MAIN_SCRIPT;
+  data.unifiedXrScript = UNIFIED_XR_SCRIPT;
+  data.questXrScript = QUEST_XR_SCRIPT;
+  data.questXrVersion = 'V289';
+  data.questXrBuild = QUEST_XR_BUILD;
+  data.questDirectUserGestureEntry = true;
+  data.questDefaultBabylonXrUiDisabled = true;
+  data.questSessionMode = 'immersive-vr';
+  data.questReferenceSpace = 'local-floor';
+  data.questOptionalFeaturesArray = true;
+  data.questPreflightSecureContext = true;
+  data.questPreflightTopLevel = true;
+  data.questPreflightSessionSupport = true;
+  data.questVisibleDiagnostics = true;
+  data.questWebglContextRecoveryMessage = true;
+  data.permissionsPolicyXrSpatialTracking = true;
   data.skyScript = SKY_SCRIPT;
   data.skyRefreshScript = null;
   data.celestialInfoWindowScript = CELESTIAL_WINDOW_SCRIPT;
@@ -166,6 +192,12 @@ if (!http.ServerResponse.prototype.__ucanV287FloorSkyPatched) {
       for (const key of Object.keys(nextHeaders)) {
         if (key.toLowerCase() === 'content-length') delete nextHeaders[key];
       }
+      const contentTypeKey = Object.keys(nextHeaders).find(key => key.toLowerCase() === 'content-type');
+      const contentType = contentTypeKey ? String(nextHeaders[contentTypeKey]) : '';
+      if (/text\/html/i.test(contentType)) {
+        nextHeaders['Permissions-Policy'] = 'xr-spatial-tracking=(self)';
+        nextHeaders['X-UCAN-XR-Compat'] = 'V289';
+      }
     }
     if (message === undefined) return originalWriteHead.call(this, statusCode, nextHeaders);
     return originalWriteHead.call(this, statusCode, message, nextHeaders);
@@ -185,7 +217,7 @@ if (!http.ServerResponse.prototype.__ucanV287FloorSkyPatched) {
         }
       }
     } catch (error) {
-      console.error('[UCAN V287 response compatibility]', error);
+      console.error('[UCAN V287/V289 response compatibility]', error);
     }
     return originalEnd.call(this, body, encoding, callback);
   };
@@ -193,4 +225,4 @@ if (!http.ServerResponse.prototype.__ucanV287FloorSkyPatched) {
   http.ServerResponse.prototype.__ucanV287FloorSkyPatched = true;
 }
 
-console.info('[UCAN V287/V288] Pisos, cielo optimizado y ventana celeste compacta cargados.');
+console.info('[UCAN V287/V288/V289] Pisos, cielo, ventana celeste y compatibilidad Meta Quest cargados.');
