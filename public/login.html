@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-store" />
-  <title>Acceso | UCAN Academic Mall V270</title>
+  <title>Acceso | UCAN Academic Mall V278</title>
   <style>
     :root{--green:#007b5f;--green2:#0b5446;--yellow:#fed141;--ink:#0d1b18;--muted:#5c746e;--paper:#f4f7f5;--danger:#a42727}
     *{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Inter,Segoe UI,Arial,sans-serif;background:radial-gradient(circle at 20% 10%,#e7f5ef 0,#f5f7f6 42%,#dfeae6 100%);color:var(--ink);display:grid;place-items:center;padding:24px}
@@ -42,7 +42,7 @@
         <div><label for="confirmPassword">Confirmar contraseña</label><input id="confirmPassword" type="password" autocomplete="new-password" minlength="10" required></div>
         <button class="primary" type="submit">Crear cuenta y diseñar avatar</button>
       </form>
-      <div class="version">UCAN Academic Mall V270 · Acceso protegido</div>
+      <div class="version">UCAN Academic Mall V278 · Acceso directo después de crear el avatar</div>
     </section>
   </main>
 <script>
@@ -60,18 +60,23 @@
     const response=await fetch(url,{...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
     const data=await response.json().catch(()=>({})); if(!response.ok) throw new Error(data.error||`HTTP ${response.status}`); return data;
   }
-  fetch('/api/auth/me').then(r=>r.ok?r.json():null).then(data=>{if(data?.authenticated)location.replace('/campus');}).catch(()=>{});
+  fetch('/api/auth/me').then(r=>r.ok?r.json():null).then(data=>{if(data?.authenticated)location.replace(data.user?.avatarConfigured?'/campus':'/campus?avatar=1');}).catch(()=>{});
   fetch('/api/auth/options').then(r=>r.json()).then(data=>{if(data.registrationEnabled===false){$('registerTab').disabled=true;$('registerTab').title='El registro público está desactivado.';}}).catch(()=>{});
   $('loginForm').addEventListener('submit',async event=>{
     event.preventDefault(); const button=event.submitter; button.disabled=true; show('Validando la cuenta…');
-    try{const data=await json('/api/auth/login',{method:'POST',body:JSON.stringify({login:$('login').value,password:$('password').value})});show('Acceso correcto. Abriendo el campus…','ok');location.replace(data.user?.forcePasswordChange?'/campus?password=change':'/campus');}
+    try{
+      const data=await json('/api/auth/login',{method:'POST',body:JSON.stringify({login:$('login').value,password:$('password').value})});
+      const avatarReady=data.user?.avatarConfigured===true||Boolean(data.user?.avatarConfiguredAt);
+      show(avatarReady?'Acceso correcto. Abriendo directamente el campus…':'Acceso correcto. Complete su avatar una sola vez.','ok');
+      location.replace(avatarReady?'/campus':'/campus?avatar=1');
+    }
     catch(error){show(error.message,'error');}finally{button.disabled=false;}
   });
   $('registerForm').addEventListener('submit',async event=>{
     event.preventDefault(); const button=event.submitter;
     if($('newPassword').value!==$('confirmPassword').value){show('Las contraseñas no coinciden.','error');return;}
     button.disabled=true;show('Creando la cuenta…');
-    try{await json('/api/auth/register',{method:'POST',body:JSON.stringify({displayName:$('displayName').value,username:$('username').value,email:$('email').value,password:$('newPassword').value})});show('Cuenta creada. Ahora diseñará su avatar.','ok');location.replace('/campus?avatar=1');}
+    try{await json('/api/auth/register',{method:'POST',body:JSON.stringify({displayName:$('displayName').value,username:$('username').value,email:$('email').value,password:$('newPassword').value})});show('Cuenta creada. Ahora diseñará su avatar una sola vez.','ok');location.replace('/campus?avatar=1');}
     catch(error){show(error.message,'error');}finally{button.disabled=false;}
   });
 })();
