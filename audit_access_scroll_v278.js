@@ -3,7 +3,8 @@ const login=fs.readFileSync('public/login.html','utf8');
 const access=fs.readFileSync('public/js/ucan_v278_scroll_direct_access.js','utf8');
 const compat=fs.readFileSync('auth-compat-v271.js','utf8');
 const checks={
-  version:/V278-20260720-SCROLL-DIRECT-AVATAR-ACCESS/.test(access)&&/V278-20260720-SCROLL-DIRECT-AVATAR-ACCESS/.test(compat),
+  layerBuild:/V278-20260720-SCROLL-DIRECT-AVATAR-ACCESS/.test(access),
+  currentServerBuild:/V282-20260720-QUEST-BROWSER-ONE-WAY-ESCALATOR-PARITY/.test(compat),
   noPasswordRedirect:!/campus\?password=change/.test(login),
   avatarDirectLogin:/avatarReady\?['"]\/campus['"]:['"]\/campus\?avatar=1['"]/.test(login),
   serverClearsGate:/avatarReady && user\.forcePasswordChange === true/.test(compat)&&/user\.forcePasswordChange = false/.test(compat),
@@ -19,5 +20,5 @@ const checks={
   loadedByCampus:/UCAN_SCROLL_ACCESS_SCRIPT/.test(compat)&&/studioWithRollbackAndScroll/.test(compat)
 };
 const ok=Object.values(checks).every(Boolean);
-console.log(JSON.stringify({ok,version:'V278',checks},null,2));
+console.log(JSON.stringify({ok,layerVersion:'V278',serverVersion:'V282',checks},null,2));
 if(!ok)process.exit(1);
