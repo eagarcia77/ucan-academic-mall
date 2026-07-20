@@ -14,7 +14,7 @@ jobs:
   test:
     name: Node checks and environment audits
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
 
     steps:
       - name: Checkout repository
@@ -28,5 +28,76 @@ jobs:
       - name: Install dependencies
         run: npm install --ignore-scripts
 
-      - name: Run complete validation
-        run: npm test
+      - name: JavaScript syntax
+        id: syntax
+        continue-on-error: true
+        run: npm run check
+
+      - name: Meta Quest navigation
+        id: quest
+        continue-on-error: true
+        run: npm run audit:quest
+
+      - name: XR floor and stairs
+        id: floors
+        continue-on-error: true
+        run: npm run audit:xr-floor-stairs
+
+      - name: Quest visual and rooftop movement
+        id: rooftop
+        continue-on-error: true
+        run: npm run audit:quest-visual-rooftop
+
+      - name: Browser and Quest escalator parity
+        id: escalators
+        continue-on-error: true
+        run: npm run audit:environment-escalators
+
+      - name: Immersive visual parity
+        id: visual
+        continue-on-error: true
+        run: npm run audit:visual-parity
+
+      - name: Visual parity runtime boot
+        id: visual_runtime
+        continue-on-error: true
+        run: npm run test:visual-parity
+
+      - name: Remaining legacy audits
+        id: legacy
+        continue-on-error: true
+        run: |
+          npm run audit:profile && \
+          npm run audit:access-scroll && \
+          npm run audit:sky && \
+          npm run audit:accounts && \
+          npm run audit:layers && \
+          npm run audit:floor && \
+          npm run audit:environment && \
+          npm run audit:optimization && \
+          npm run audit:stairs && \
+          npm run audit:astronomy && \
+          npm run audit:text-wrap && \
+          npm run audit:astro-panels && \
+          npm run audit:keyboard-jump && \
+          npm run audit:avatar-v270
+
+      - name: Validation result
+        if: always()
+        run: |
+          echo "syntax=${{ steps.syntax.outcome }}"
+          echo "quest=${{ steps.quest.outcome }}"
+          echo "floors=${{ steps.floors.outcome }}"
+          echo "rooftop=${{ steps.rooftop.outcome }}"
+          echo "escalators=${{ steps.escalators.outcome }}"
+          echo "visual=${{ steps.visual.outcome }}"
+          echo "visual_runtime=${{ steps.visual_runtime.outcome }}"
+          echo "legacy=${{ steps.legacy.outcome }}"
+          test "${{ steps.syntax.outcome }}" = "success"
+          test "${{ steps.quest.outcome }}" = "success"
+          test "${{ steps.floors.outcome }}" = "success"
+          test "${{ steps.rooftop.outcome }}" = "success"
+          test "${{ steps.escalators.outcome }}" = "success"
+          test "${{ steps.visual.outcome }}" = "success"
+          test "${{ steps.visual_runtime.outcome }}" = "success"
+          test "${{ steps.legacy.outcome }}" = "success"
