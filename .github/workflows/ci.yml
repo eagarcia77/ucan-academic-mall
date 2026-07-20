@@ -16,7 +16,7 @@ jobs:
           node-version: 20
       - name: Validar JavaScript y auditorías
         run: npm test
-      - name: Probar servidor, pisos, cielo y autenticación
+      - name: Probar servidor, pisos, cielo, ventana y autenticación
         env:
           PORT: 3011
           ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
@@ -29,11 +29,14 @@ jobs:
           done
           curl -fsS "http://127.0.0.1:3011/js/ucan_babylon_mall_v265_accounts_avatars.js?build=V287-20260720-FLOOR-STATE-SKY-OPT" > /tmp/main-scene.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v287_rooftop_sky.js?build=V287-20260720-FLOOR-STATE-SKY-OPT" > /tmp/sky.js
+          curl -fsS "http://127.0.0.1:3011/js/ucan_v288_celestial_info_window.js?build=V288-20260720-COMPACT-CELESTIAL-WINDOW" > /tmp/celestial-window.js
+          curl -fsS http://127.0.0.1:3011/campus > /tmp/campus.html
           curl -fsS http://127.0.0.1:3011/version > /tmp/version.json
           curl -fsS http://127.0.0.1:3011/api/auth/options > /tmp/auth-options.json
 
           node --check /tmp/main-scene.js
           node --check /tmp/sky.js
+          node --check /tmp/celestial-window.js
           grep -F "window.__UCAN_FLOOR_STATE_V287__" /tmp/main-scene.js
           grep -F "ucanStableFloorV287 === LEVEL.three && (inCenterAisle || inSideAisle)" /tmp/main-scene.js
           grep -F "camera.position.y = expectedY;" /tmp/main-scene.js
@@ -53,7 +56,14 @@ jobs:
             exit 1
           fi
 
-          node -e "const fs=require('fs');const h=JSON.parse(fs.readFileSync('/tmp/health.json'));const v=JSON.parse(fs.readFileSync('/tmp/version.json'));if(h.version!=='V287'||v.version!=='V287'||h.singleUnifiedXrController!==true||v.deprecatedXrLayersLoaded!==false||h.sameLightingAcrossEnvironments!==true||h.sameMovementAcrossEnvironments!==true||v.noQuestSpecificExposure!==true||v.downEscalatorsCannotAscend!==true||v.upEscalatorsCannotDescend!==true||h.explicitFloorState!==true||v.mainSceneServedPatched!==true||v.floorControlStrategy!=='explicit-state-machine'||v.transientHeightInference!==false||v.onlyExplicitFloorTransitions!==true||v.floorOneLocked!==true||v.floorTwoLocked!==true||v.theaterRampOnlyOnFloorThree!==true||v.xrFloorSynchronization!==true||v.accidentalCrossFloorJumpFixed!==true||v.rooftopSkyOptimized!==true||v.skyDomeSegments!==20||v.skyTextureResolution!=='1024x512'||v.skyStarBudget!==14||v.skyFrameThrottleMs!==250||v.skyRefreshIntervalMs!==600000||v.duplicateSkyRefreshTimerRemoved!==true||v.skyRefreshScript!==null)process.exit(1);console.log(JSON.stringify({health:h,version:v},null,2));"
+          grep -F "const VERSION = 'V288';" /tmp/celestial-window.js
+          grep -F "width:2.85" /tmp/celestial-window.js
+          grep -F "height:1.78" /tmp/celestial-window.js
+          grep -F "celestialWindowCloseV288:true" /tmp/celestial-window.js
+          grep -F "legacy.setEnabled(false)" /tmp/celestial-window.js
+          grep -F "ucan_v288_celestial_info_window.js?build=V288-20260720-COMPACT-CELESTIAL-WINDOW" /tmp/campus.html
+
+          node -e "const fs=require('fs');const h=JSON.parse(fs.readFileSync('/tmp/health.json'));const v=JSON.parse(fs.readFileSync('/tmp/version.json'));if(h.version!=='V287'||v.version!=='V287'||h.singleUnifiedXrController!==true||v.deprecatedXrLayersLoaded!==false||h.sameLightingAcrossEnvironments!==true||h.sameMovementAcrossEnvironments!==true||v.noQuestSpecificExposure!==true||v.downEscalatorsCannotAscend!==true||v.upEscalatorsCannotDescend!==true||h.explicitFloorState!==true||v.mainSceneServedPatched!==true||v.floorControlStrategy!=='explicit-state-machine'||v.transientHeightInference!==false||v.onlyExplicitFloorTransitions!==true||v.floorOneLocked!==true||v.floorTwoLocked!==true||v.theaterRampOnlyOnFloorThree!==true||v.xrFloorSynchronization!==true||v.accidentalCrossFloorJumpFixed!==true||v.rooftopSkyOptimized!==true||v.skyDomeSegments!==20||v.skyTextureResolution!=='1024x512'||v.skyStarBudget!==14||v.skyFrameThrottleMs!==250||v.skyRefreshIntervalMs!==600000||v.duplicateSkyRefreshTimerRemoved!==true||v.skyRefreshScript!==null||v.celestialInfoWindowVersion!=='V288'||v.desktopCelestialWindowCompact!==true||v.xrCelestialWindowCompact!==true||v.celestialWindowClosableDesktop!==true||v.celestialWindowClosableXR!==true||v.legacyLargeCelestialPlaneDisabled!==true||v.celestialWindowWidthMeters!==2.85||v.celestialWindowHeightMeters!==1.78)process.exit(1);console.log(JSON.stringify({health:h,version:v},null,2));"
           kill "$(cat /tmp/ucan.pid)"
       - name: Construir imagen Docker
         run: docker build -t ucan-academic-mall:test .
