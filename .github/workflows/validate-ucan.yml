@@ -22,6 +22,7 @@ jobs:
           - check
           - audit:unified-xr
           - audit:floor-sky
+          - audit:celestial-window
           - audit:profile
           - audit:access-scroll
           - audit:accounts
