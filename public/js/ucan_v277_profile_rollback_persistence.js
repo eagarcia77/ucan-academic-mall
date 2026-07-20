@@ -113,14 +113,13 @@
     updateStatus();
   }
 
-  function enforceCompletionPersistence(){
+  function enforceCompletionPersistence(closeInitialStalePrompt=false){
     const u=user();if(!u)return;
     if(u.avatarConfigured||u.avatarConfiguredAt)localStorage.setItem(`ucan-avatar-complete:${u.id}`,u.avatarConfiguredAt||new Date().toISOString());
     if(!u.forcePasswordChange&&u.passwordChangedAt)localStorage.setItem(`ucan-password-complete:${u.id}`,u.passwordChangedAt);
-
     const required=$('ucanRequiredMessage');
     if(required&&!u.forcePasswordChange)required.style.display='none';
-
+    if(!closeInitialStalePrompt)return;
     const modal=$('ucanProfileModal');
     if(modal?.classList.contains('open')&&u.avatarConfigured&&!u.forcePasswordChange){
       setTimeout(()=>{
@@ -132,8 +131,8 @@
 
   function install(){
     if(installed||!window.__UCAN_IDENTITY__||!$('ucanProfileModal')||!$('ucanSaveAvatar'))return false;
-    installed=true;installHistoryUI();enforceCompletionPersistence();
-    const observer=new MutationObserver(()=>{updateStatus();enforceCompletionPersistence();});
+    installed=true;installHistoryUI();enforceCompletionPersistence(true);
+    const observer=new MutationObserver(()=>{updateStatus();enforceCompletionPersistence(false);});
     observer.observe($('ucanProfileModal'),{attributes:true,attributeFilter:['class']});
     window.addEventListener('storage',updateStatus);
     window.__UCAN_PROFILE_ROLLBACK__={
