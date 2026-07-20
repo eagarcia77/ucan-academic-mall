@@ -12,3 +12,4 @@ Validation scope:
 - Rooftop conventional stairs remain bidirectional
 - Workflow rerun after removing the package-lock cache dependency
 - Diagnostic run with independent audit steps
+- Strict run that stops on the first failing audit
