@@ -1,0 +1,1 @@
+# Validación final de arranque
