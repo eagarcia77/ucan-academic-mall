@@ -12,7 +12,8 @@ const PREVIOUS_BUILD = 'V283-20260720-UNIFIED-XR-DESKTOP-PARITY';
 const MAIN_PATH = '/js/ucan_babylon_mall_v265_accounts_avatars.js';
 const MAIN_FILE = path.join(__dirname, 'public', 'js', 'ucan_babylon_mall_v265_accounts_avatars.js');
 const MAIN_SCRIPT = `${MAIN_PATH}?build=${BUILD}`;
-const UNIFIED_XR_SCRIPT = `/js/ucan_v283_unified_xr_runtime.js?build=${BUILD}`;
+const UNIFIED_XR_BUILD = 'V290-20260720-QUEST-CONTROLS-STAIRS-INFO';
+const UNIFIED_XR_SCRIPT = `/js/ucan_v290_quest_controls_interaction.js?build=${UNIFIED_XR_BUILD}`;
 const QUEST_XR_BUILD = 'V289-20260720-QUEST-XR-COMPAT-DIAGNOSTICS';
 const QUEST_XR_SCRIPT = `/js/ucan_v289_quest_xr_compat.js?build=${QUEST_XR_BUILD}`;
 const SKY_SCRIPT = `/js/ucan_v287_rooftop_sky.js?build=${BUILD}`;
@@ -41,7 +42,8 @@ function sendPatchedMainScene(res) {
       'Pragma':'no-cache',
       'Expires':'0',
       'X-UCAN-Floor-State':VERSION,
-      'X-UCAN-XR-Compat':'V289'
+      'X-UCAN-XR-Compat':'V289',
+      'X-UCAN-XR-Controls':'V290'
     });
     res.end(body);
   } catch (error) {
@@ -56,7 +58,6 @@ function sendPatchedMainScene(res) {
   }
 }
 
-// Intercepta la escena principal antes de que el servidor estático use createReadStream.
 const priorCreateServer = http.createServer;
 http.createServer = function createV287Server(listener) {
   if (typeof listener !== 'function') return priorCreateServer.apply(this, arguments);
@@ -87,7 +88,7 @@ function transformCampusHtml(text) {
     .replaceAll(`COMPILACIÓN ${PREVIOUS_VERSION} ACTIVA`, `COMPILACIÓN ${VERSION} ACTIVA`)
     .replace(
       'V283: un solo controlador comparte iluminación, movimiento, altura, colisiones y escaleras entre Meta Quest y el browser.',
-      'V289: Meta Quest usa entrada WebXR directa, diagnóstico visible y la misma lógica de pisos, movimiento e iluminación.'
+      'V290: Meta Quest usa joysticks nativos, giro por pasos, gatillo interactivo, escaleras robustas y ventanas legibles.'
     );
 
   html = html.replace(
@@ -99,14 +100,27 @@ function transformCampusHtml(text) {
     ''
   );
   html = html.replace(
-    /\s*<script src="\/js\/ucan_v28[45]_desktop_floor_(?:guard|lock)\.js[^"']*"><\/script>/g,
-    ''
+    /\s*<script src="\/js\/ucan_v28[345]_.*?\.js[^"']*"><\/script>/g,
+    match => /ucan_v289_quest_xr_compat/.test(match) ? match : ''
   );
 
+  const oldUnifiedTags = [
+    /<script src="\/js\/ucan_v283_unified_xr_runtime\.js\?build=[^"]+"><\/script>/g,
+    /<script src="\/js\/ucan_v290_quest_controls_interaction\.js\?build=[^"]+"><\/script>/g
+  ];
+  for (const pattern of oldUnifiedTags) html = html.replace(pattern, '');
+
+  if (!html.includes('/js/ucan_v290_quest_controls_interaction.js')) {
+    const questTagExisting = html.match(/<script src="\/js\/ucan_v289_quest_xr_compat\.js\?build=[^"]+"><\/script>/)?.[0];
+    const unifiedTag = `<script src="${UNIFIED_XR_SCRIPT}"></script>`;
+    if (questTagExisting) html = html.replace(questTagExisting, `${unifiedTag}\n  ${questTagExisting}`);
+    else html = html.replace(`<script src="${MAIN_SCRIPT}"></script>`, `${unifiedTag}\n  <script src="${QUEST_XR_SCRIPT}"></script>\n  <script src="${MAIN_SCRIPT}"></script>`);
+  }
+
   if (!html.includes('/js/ucan_v289_quest_xr_compat.js')) {
-    const xrTag = `<script src="${UNIFIED_XR_SCRIPT}"></script>`;
+    const unifiedTag = `<script src="${UNIFIED_XR_SCRIPT}"></script>`;
     const questTag = `<script src="${QUEST_XR_SCRIPT}"></script>`;
-    if (html.includes(xrTag)) html = html.replace(xrTag, `${xrTag}\n  ${questTag}`);
+    if (html.includes(unifiedTag)) html = html.replace(unifiedTag, `${unifiedTag}\n  ${questTag}`);
     else html = html.replace(`<script src="${MAIN_SCRIPT}"></script>`, `${questTag}\n  <script src="${MAIN_SCRIPT}"></script>`);
   }
 
@@ -125,6 +139,21 @@ function transformVersionData(data) {
   data.build = BUILD;
   data.script = MAIN_SCRIPT;
   data.unifiedXrScript = UNIFIED_XR_SCRIPT;
+  data.unifiedXrVersion = 'V290';
+  data.unifiedXrBuild = UNIFIED_XR_BUILD;
+  data.questControlsVersion = 'V290';
+  data.questNativeThumbstickComponents = true;
+  data.questLeftStickMovement = true;
+  data.questRightStickSnapTurn = true;
+  data.questSnapTurnDegrees = 30;
+  data.questTriggerRaySelection = true;
+  data.questVisibleControllerRays = true;
+  data.questReadableSigns = true;
+  data.questCelestialInformation = true;
+  data.questCompactInformationWindow = true;
+  data.rooftopStairsExpandedTriggers = true;
+  data.rooftopStairsTriggerMarkers = true;
+  data.rooftopStairsBidirectional = true;
   data.questXrScript = QUEST_XR_SCRIPT;
   data.questXrVersion = 'V289';
   data.questXrBuild = QUEST_XR_BUILD;
@@ -169,13 +198,12 @@ function transformVersionData(data) {
   data.skyRefreshIntervalMs = 600000;
   data.duplicateSkyRefreshTimerRemoved = true;
   data.skyReconcilesObjectsInPlace = true;
+  data.v283MovementControllerReplaced = true;
   data.v284V285V286Replaced = true;
   data.patchAudit = patchAudit;
   return data;
 }
 
-// Las rutas /health, /version y /campus son producidas por la envoltura V283.
-// Se transforman sin conservar el Content-Length anterior.
 if (!http.ServerResponse.prototype.__ucanV287FloorSkyPatched) {
   const originalWriteHead = http.ServerResponse.prototype.writeHead;
   const originalEnd = http.ServerResponse.prototype.end;
@@ -197,6 +225,7 @@ if (!http.ServerResponse.prototype.__ucanV287FloorSkyPatched) {
       if (/text\/html/i.test(contentType)) {
         nextHeaders['Permissions-Policy'] = 'xr-spatial-tracking=(self)';
         nextHeaders['X-UCAN-XR-Compat'] = 'V289';
+        nextHeaders['X-UCAN-XR-Controls'] = 'V290';
       }
     }
     if (message === undefined) return originalWriteHead.call(this, statusCode, nextHeaders);
@@ -217,7 +246,7 @@ if (!http.ServerResponse.prototype.__ucanV287FloorSkyPatched) {
         }
       }
     } catch (error) {
-      console.error('[UCAN V287/V289 response compatibility]', error);
+      console.error('[UCAN V287/V290 response compatibility]', error);
     }
     return originalEnd.call(this, body, encoding, callback);
   };
@@ -225,4 +254,4 @@ if (!http.ServerResponse.prototype.__ucanV287FloorSkyPatched) {
   http.ServerResponse.prototype.__ucanV287FloorSkyPatched = true;
 }
 
-console.info('[UCAN V287/V288/V289] Pisos, cielo, ventana celeste y compatibilidad Meta Quest cargados.');
+console.info('[UCAN V287/V288/V289/V290] Pisos, cielo, ventanas, diagnóstico y controles Meta Quest cargados.');
