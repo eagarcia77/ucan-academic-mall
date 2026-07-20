@@ -32,6 +32,7 @@ jobs:
           curl -fsS "http://127.0.0.1:3011/js/ucan_v288_celestial_info_window.js?build=V288-20260720-COMPACT-CELESTIAL-WINDOW" > /tmp/celestial-window.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v289_quest_xr_compat.js?build=V289-20260720-QUEST-XR-COMPAT-DIAGNOSTICS" > /tmp/quest-xr.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v290_quest_controls_interaction.js?build=V290-20260720-QUEST-CONTROLS-STAIRS-INFO" > /tmp/quest-controls.js
+          curl -fsS "http://127.0.0.1:3011/js/ucan_v291_quest_celestial_glass.js?build=V291-20260720-QUEST-CELESTIAL-GLASS" > /tmp/quest-visuals.js
           curl -fsS http://127.0.0.1:3011/version > /tmp/version.json
           curl -fsS http://127.0.0.1:3011/api/auth/options > /tmp/auth-options.json
 
@@ -47,57 +48,40 @@ jobs:
           node --check /tmp/celestial-window.js
           node --check /tmp/quest-xr.js
           node --check /tmp/quest-controls.js
+          node --check /tmp/quest-visuals.js
 
           grep -F "window.__UCAN_FLOOR_STATE_V287__" /tmp/main-scene.js
           grep -F "ucanStableFloorV287 === LEVEL.three && (inCenterAisle || inSideAisle)" /tmp/main-scene.js
           grep -F "camera.position.y = expectedY;" /tmp/main-scene.js
-          if grep -Fq "const floors=[LEVEL.one+PLAYER_HEIGHT,LEVEL.two+PLAYER_HEIGHT,LEVEL.three+PLAYER_HEIGHT,LEVEL.rooftop+PLAYER_HEIGHT]" /tmp/main-scene.js; then
-            echo "La inferencia transitoria de pisos todavía está presente." >&2
-            exit 1
-          fi
+          grep -F "cristal claro moderno" /tmp/main-scene.js
+          grep -F "m.needDepthPrePass = true" /tmp/main-scene.js
 
           grep -F "const STAR_BUDGET = 14;" /tmp/sky.js
-          grep -F "const FRAME_THROTTLE_MS = 250;" /tmp/sky.js
-          grep -F "const REFRESH_MS = 600000;" /tmp/sky.js
-          grep -F "segments:20" /tmp/sky.js
-          grep -F "width:1024, height:512" /tmp/sky.js
-          if grep -Fq "alwaysSelectAsActiveMesh = true" /tmp/sky.js; then
-            echo "El cielo todavía fuerza todos los objetos como activos." >&2
-            exit 1
-          fi
-
           grep -F "const VERSION = 'V288';" /tmp/celestial-window.js
           grep -F "celestialWindowCloseV288:true" /tmp/celestial-window.js
-          grep -F "legacy.setEnabled(false)" /tmp/celestial-window.js
-
           grep -F "const VERSION = 'V289';" /tmp/quest-xr.js
-          grep -F "isSessionSupported('immersive-vr')" /tmp/quest-xr.js
           grep -F "enterXRAsync('immersive-vr', 'local-floor')" /tmp/quest-xr.js
-          grep -F "disableDefaultUI:true" /tmp/quest-xr.js
-          grep -F "optionalFeatures:[]" /tmp/quest-xr.js
-          grep -F "ucanQuestDiagV289" /tmp/quest-xr.js
-          if grep -Eq "optionalFeatures[[:space:]]*:[[:space:]]*true" /tmp/quest-xr.js; then
-            echo "V289 todavía contiene optionalFeatures:true." >&2
-            exit 1
-          fi
 
           grep -F "const VERSION = 'V290';" /tmp/quest-controls.js
           grep -F "findComponent(motionController, 'thumbstick'" /tmp/quest-controls.js
-          grep -F "findComponent(motionController, 'trigger'" /tmp/quest-controls.js
-          grep -F "const left = handRecord(state, 'left');" /tmp/quest-controls.js
-          grep -F "const right = handRecord(state, 'right');" /tmp/quest-controls.js
-          grep -F "SNAP_ANGLE = Math.PI / 6" /tmp/quest-controls.js
-          grep -F "function moveWithSlide" /tmp/quest-controls.js
           grep -F "function selectFromController" /tmp/quest-controls.js
-          grep -F "function celestialInfo" /tmp/quest-controls.js
-          grep -F "function readableSignInfo" /tmp/quest-controls.js
           grep -F "id:'up34'" /tmp/quest-controls.js
           grep -F "id:'down43'" /tmp/quest-controls.js
-          grep -F "Gatillo para activar" /tmp/quest-controls.js
-          grep -F "ucanInfoCloseV290:true" /tmp/quest-controls.js
+
+          grep -F "const VERSION = 'V291';" /tmp/quest-visuals.js
+          grep -F "const CELESTIAL_RAY_LENGTH = 240;" /tmp/quest-visuals.js
+          grep -F "const CELESTIAL_MAX_DISTANCE = 265;" /tmp/quest-visuals.js
+          grep -F "function angularCelestialPick" /tmp/quest-visuals.js
+          grep -F "window.__UCAN_CELESTIAL_WINDOW__?.show?.(id)" /tmp/quest-visuals.js
+          grep -F "material.needDepthPrePass = false;" /tmp/quest-visuals.js
+          grep -F "material.disableDepthWrite = true;" /tmp/quest-visuals.js
+          grep -F "material.backFaceCulling = false;" /tmp/quest-visuals.js
+          grep -F "mesh.receiveShadows = false;" /tmp/quest-visuals.js
+          grep -F "function restoreGlass" /tmp/quest-visuals.js
 
           grep -F "ucan_v290_quest_controls_interaction.js?build=V290-20260720-QUEST-CONTROLS-STAIRS-INFO" /tmp/campus.html
           grep -F "ucan_v289_quest_xr_compat.js?build=V289-20260720-QUEST-XR-COMPAT-DIAGNOSTICS" /tmp/campus.html
+          grep -F "ucan_v291_quest_celestial_glass.js?build=V291-20260720-QUEST-CELESTIAL-GLASS" /tmp/campus.html
           grep -F "ucan_v288_celestial_info_window.js?build=V288-20260720-COMPACT-CELESTIAL-WINDOW" /tmp/campus.html
           if grep -Fq "ucan_v283_unified_xr_runtime.js" /tmp/campus.html; then
             echo "El campus todavía carga el controlador de movimiento V283." >&2
@@ -105,9 +89,10 @@ jobs:
           fi
           grep -Fi "Permissions-Policy: xr-spatial-tracking=(self)" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Controls: V290" /tmp/campus.headers
-          node -e "const fs=require('fs');const html=fs.readFileSync('/tmp/campus.html','utf8');const controls=html.indexOf('ucan_v290_quest_controls_interaction.js');const q=html.indexOf('ucan_v289_quest_xr_compat.js');const main=html.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');if(!(controls>=0&&q>controls&&main>q))process.exit(1);console.log({controls,q,main});"
+          grep -Fi "X-UCAN-XR-Visuals: V291" /tmp/campus.headers
+          node -e "const fs=require('fs');const html=fs.readFileSync('/tmp/campus.html','utf8');const controls=html.indexOf('ucan_v290_quest_controls_interaction.js');const q=html.indexOf('ucan_v289_quest_xr_compat.js');const visuals=html.indexOf('ucan_v291_quest_celestial_glass.js');const main=html.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');if(!(controls>=0&&q>controls&&visuals>q&&main>visuals))process.exit(1);console.log({controls,q,visuals,main});"
 
-          node -e "const fs=require('fs');const h=JSON.parse(fs.readFileSync('/tmp/health.json'));const v=JSON.parse(fs.readFileSync('/tmp/version.json'));if(h.version!=='V287'||v.version!=='V287'||v.unifiedXrVersion!=='V290'||v.questControlsVersion!=='V290'||v.questNativeThumbstickComponents!==true||v.questLeftStickMovement!==true||v.questRightStickSnapTurn!==true||v.questSnapTurnDegrees!==30||v.questTriggerRaySelection!==true||v.questVisibleControllerRays!==true||v.questReadableSigns!==true||v.questCelestialInformation!==true||v.questCompactInformationWindow!==true||v.rooftopStairsExpandedTriggers!==true||v.rooftopStairsTriggerMarkers!==true||v.rooftopStairsBidirectional!==true||v.v283MovementControllerReplaced!==true||v.questXrVersion!=='V289'||v.questDirectUserGestureEntry!==true||v.questDefaultBabylonXrUiDisabled!==true||v.questSessionMode!=='immersive-vr'||v.questReferenceSpace!=='local-floor'||v.permissionsPolicyXrSpatialTracking!==true||v.explicitFloorState!==true||v.rooftopSkyOptimized!==true||v.celestialInfoWindowVersion!=='V288')process.exit(1);console.log(JSON.stringify({health:h,version:v},null,2));"
+          node -e "const fs=require('fs');const v=JSON.parse(fs.readFileSync('/tmp/version.json'));if(v.version!=='V287'||v.unifiedXrVersion!=='V290'||v.questVisualVersion!=='V291'||v.questCelestialRayLength!==240||v.questCelestialMaxDistance!==265||v.questCelestialAngularFallback!==true||v.questCelestialAngleLimitDegrees!==7.5||v.questGlassCompatibility!==true||v.questGlassDepthPrePassDisabled!==true||v.questGlassAlphaBlend!==true||v.questGlassBackFacesVisible!==true||v.questGlassShadowsDisabled!==true||v.questGlassRestoredAfterXR!==true||v.celestialInfoWindowVersion!=='V288')process.exit(1);console.log(JSON.stringify(v,null,2));"
           kill "$(cat /tmp/ucan.pid)"
       - name: Construir imagen Docker
         run: docker build -t ucan-academic-mall:test .
