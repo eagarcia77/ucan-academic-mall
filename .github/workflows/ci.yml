@@ -16,7 +16,7 @@ jobs:
           node-version: 20
       - name: Validar JavaScript y auditorías
         run: npm test
-      - name: Probar servidor, archivo principal y autenticación
+      - name: Probar servidor, pisos, cielo y autenticación
         env:
           PORT: 3011
           ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
@@ -27,16 +27,33 @@ jobs:
             curl -fsS http://127.0.0.1:3011/health > /tmp/health.json && break
             sleep 1
           done
+          curl -fsS "http://127.0.0.1:3011/js/ucan_babylon_mall_v265_accounts_avatars.js?build=V287-20260720-FLOOR-STATE-SKY-OPT" > /tmp/main-scene.js
+          curl -fsS "http://127.0.0.1:3011/js/ucan_v287_rooftop_sky.js?build=V287-20260720-FLOOR-STATE-SKY-OPT" > /tmp/sky.js
           curl -fsS http://127.0.0.1:3011/version > /tmp/version.json
           curl -fsS http://127.0.0.1:3011/api/auth/options > /tmp/auth-options.json
-          curl -fsS "http://127.0.0.1:3011/js/ucan_babylon_mall_v265_accounts_avatars.js?build=V286-20260720-DIRECT-FLOOR-FIX" > /tmp/main-scene.js
-          grep -F "const onFloorThree = camera.position.y >= LEVEL.three + PLAYER_HEIGHT - 0.75" /tmp/main-scene.js
-          grep -F "if (onFloorThree && (inCenterAisle || inSideAisle))" /tmp/main-scene.js
-          if grep -Fq "if (inCenterAisle || inSideAisle) {" /tmp/main-scene.js; then
-            echo "La condición defectuosa todavía está presente en el archivo servido." >&2
+
+          node --check /tmp/main-scene.js
+          node --check /tmp/sky.js
+          grep -F "window.__UCAN_FLOOR_STATE_V287__" /tmp/main-scene.js
+          grep -F "ucanStableFloorV287 === LEVEL.three && (inCenterAisle || inSideAisle)" /tmp/main-scene.js
+          grep -F "camera.position.y = expectedY;" /tmp/main-scene.js
+          grep -F 'setStableFloorFromEyeYV287(camera.position.y, `route:${zone.id}`)' /tmp/main-scene.js
+          if grep -Fq "const floors=[LEVEL.one+PLAYER_HEIGHT,LEVEL.two+PLAYER_HEIGHT,LEVEL.three+PLAYER_HEIGHT,LEVEL.rooftop+PLAYER_HEIGHT]" /tmp/main-scene.js; then
+            echo "La inferencia transitoria de pisos todavía está presente." >&2
             exit 1
           fi
-          node -e "const fs=require('fs');const h=JSON.parse(fs.readFileSync('/tmp/health.json'));const v=JSON.parse(fs.readFileSync('/tmp/version.json'));if(h.version!=='V286'||v.version!=='V286'||h.singleUnifiedXrController!==true||v.deprecatedXrLayersLoaded!==false||h.sameLightingAcrossEnvironments!==true||h.sameMovementAcrossEnvironments!==true||v.noQuestSpecificExposure!==true||v.downEscalatorsCannotAscend!==true||v.upEscalatorsCannotDescend!==true||h.directSourceFloorFix!==true||v.mainSceneServedPatched!==true||v.floorFixStrategy!=='intercept-main-script-before-static-stream'||v.theaterHeightRequiresActualFloorThree!==true||v.floorOneCenterProtected!==true||v.floorTwoCenterProtected!==true||v.accidentalFloorThreeLiftFixed!==true)process.exit(1);console.log(JSON.stringify({health:h,version:v},null,2));"
+
+          grep -F "const STAR_BUDGET = 14;" /tmp/sky.js
+          grep -F "const FRAME_THROTTLE_MS = 250;" /tmp/sky.js
+          grep -F "const REFRESH_MS = 600000;" /tmp/sky.js
+          grep -F "segments:20" /tmp/sky.js
+          grep -F "width:1024, height:512" /tmp/sky.js
+          if grep -Fq "alwaysSelectAsActiveMesh = true" /tmp/sky.js; then
+            echo "El cielo todavía fuerza todos los objetos como activos." >&2
+            exit 1
+          fi
+
+          node -e "const fs=require('fs');const h=JSON.parse(fs.readFileSync('/tmp/health.json'));const v=JSON.parse(fs.readFileSync('/tmp/version.json'));if(h.version!=='V287'||v.version!=='V287'||h.singleUnifiedXrController!==true||v.deprecatedXrLayersLoaded!==false||h.sameLightingAcrossEnvironments!==true||h.sameMovementAcrossEnvironments!==true||v.noQuestSpecificExposure!==true||v.downEscalatorsCannotAscend!==true||v.upEscalatorsCannotDescend!==true||h.explicitFloorState!==true||v.mainSceneServedPatched!==true||v.floorControlStrategy!=='explicit-state-machine'||v.transientHeightInference!==false||v.onlyExplicitFloorTransitions!==true||v.floorOneLocked!==true||v.floorTwoLocked!==true||v.theaterRampOnlyOnFloorThree!==true||v.xrFloorSynchronization!==true||v.accidentalCrossFloorJumpFixed!==true||v.rooftopSkyOptimized!==true||v.skyDomeSegments!==20||v.skyTextureResolution!=='1024x512'||v.skyStarBudget!==14||v.skyFrameThrottleMs!==250||v.skyRefreshIntervalMs!==600000||v.duplicateSkyRefreshTimerRemoved!==true||v.skyRefreshScript!==null)process.exit(1);console.log(JSON.stringify({health:h,version:v},null,2));"
           kill "$(cat /tmp/ucan.pid)"
       - name: Construir imagen Docker
         run: docker build -t ucan-academic-mall:test .
