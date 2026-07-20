@@ -21,14 +21,15 @@ jobs:
           PORT: 3011
           ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
         run: |
-          node server.js > /tmp/ucan.log 2>&1 &
+          npm start > /tmp/ucan.log 2>&1 &
           echo $! > /tmp/ucan.pid
           for i in {1..30}; do
-            curl -fsS http://127.0.0.1:3011/health && break
+            curl -fsS http://127.0.0.1:3011/health > /tmp/health.json && break
             sleep 1
           done
-          curl -fsS http://127.0.0.1:3011/version
-          curl -fsS http://127.0.0.1:3011/api/auth/options
+          curl -fsS http://127.0.0.1:3011/version > /tmp/version.json
+          curl -fsS http://127.0.0.1:3011/api/auth/options > /tmp/auth-options.json
+          node -e "const fs=require('fs');const h=JSON.parse(fs.readFileSync('/tmp/health.json'));const v=JSON.parse(fs.readFileSync('/tmp/version.json'));if(h.version!=='V282'||v.version!=='V282'||h.downEscalatorsCannotAscend!==true||v.upEscalatorsCannotDescend!==true||v.browserQuestEnvironmentParity!==true)process.exit(1);console.log(JSON.stringify({health:h,version:v},null,2));"
           kill "$(cat /tmp/ucan.pid)"
       - name: Construir imagen Docker
         run: docker build -t ucan-academic-mall:test .
