@@ -18,3 +18,4 @@ Validation scope:
 - Rerun after correcting the V280 XR height assertion
 - Matrix run with every audit isolated
 - Final matrix rerun after updating environment, accounts and sky audits
+- Final green-matrix run after updating profile persistence audit
