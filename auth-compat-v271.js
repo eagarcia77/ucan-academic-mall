@@ -5,13 +5,14 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const UCAN_VERSION = 'V280';
-const UCAN_BUILD = 'V280-20260720-XR-HEIGHT-STAIRS-FLOOR-SNAP';
+const UCAN_VERSION = 'V281';
+const UCAN_BUILD = 'V281-20260720-QUEST-VISUAL-ROOFTOP-PARITY';
 const UCAN_SCRIPT = `/js/ucan_babylon_mall_v265_accounts_avatars.js?build=${UCAN_BUILD}`;
 const UCAN_XR_SCRIPT = `/js/ucan_v277_xr_navigation_recovery.js?build=${UCAN_BUILD}`;
 const UCAN_BLOCKER_SCRIPT = `/js/ucan_v275_blocker_pickability.js?build=${UCAN_BUILD}`;
 const UCAN_PARITY_SCRIPT = `/js/ucan_v279_xr_visual_parity.js?build=${UCAN_BUILD}`;
 const UCAN_ALIGNMENT_SCRIPT = `/js/ucan_v280_xr_floor_stair_alignment.js?build=${UCAN_BUILD}`;
+const UCAN_QUEST_PARITY_SCRIPT = `/js/ucan_v281_quest_visual_rooftop_parity.js?build=${UCAN_BUILD}`;
 const UCAN_SKY_SCRIPT = `/js/ucan_v276_interactive_sky.js?build=${UCAN_BUILD}`;
 const UCAN_SKY_REFRESH_SCRIPT = `/js/ucan_v276_sky_refresh.js?build=${UCAN_BUILD}`;
 const UCAN_AVATAR_STUDIO_SCRIPT = `/js/ucan_v270_avatar_studio.js?build=${UCAN_BUILD}`;
@@ -49,14 +50,14 @@ function repairCompletionFile(dataDir) {
       }
     }
     if (repaired) {
-      const tmp = `${file}.v280.tmp`;
+      const tmp = `${file}.v281.tmp`;
       fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
       fs.renameSync(tmp, file);
-      console.info(`[UCAN V280] Se repararon ${repaired} indicadores persistentes; ${directAccess} cuenta(s) recibieron acceso directo por avatar.`);
+      console.info(`[UCAN V281] Se repararon ${repaired} indicadores persistentes; ${directAccess} cuenta(s) recibieron acceso directo por avatar.`);
     }
     return { checked:true, repaired, directAccess };
   } catch (error) {
-    console.warn('[UCAN V280] No se pudo revisar la persistencia de perfiles:', error.message);
+    console.warn('[UCAN V281] No se pudo revisar la persistencia de perfiles:', error.message);
     return { checked:false, repaired:0, directAccess:0, error:error.message };
   }
 }
@@ -68,7 +69,7 @@ Module._load = function patchedModuleLoad(request, parent, isMain) {
   let resolved = '';
   try { resolved = Module._resolveFilename(request, parent); } catch (_) {}
 
-  if (/[\\/]lib[\\/]auth\.js$/.test(resolved) && exported && typeof exported.createAuthSystem === 'function' && !exported.__ucanV280Compat) {
+  if (/[\\/]lib[\\/]auth\.js$/.test(resolved) && exported && typeof exported.createAuthSystem === 'function' && !exported.__ucanV281Compat) {
     const originalCreateAuthSystem = exported.createAuthSystem;
     exported.createAuthSystem = function createCompatibleAuthSystem(options) {
       persistenceAudit = repairCompletionFile(options?.dataDir);
@@ -80,10 +81,10 @@ Module._load = function patchedModuleLoad(request, parent, isMain) {
           return auth.handleApi(pathname, req, res, parsed, { readJsonBody, sendJson });
         };
       }
-      global.__UCAN_AUTH_SYSTEM_V280__ = auth;
+      global.__UCAN_AUTH_SYSTEM_V281__ = auth;
       return auth;
     };
-    exported.__ucanV280Compat = true;
+    exported.__ucanV281Compat = true;
   }
   return exported;
 };
@@ -111,20 +112,20 @@ function sendHtml(res, status, body) {
   res.end(body);
 }
 
-function campusV280Html() {
+function campusV281Html() {
   const file = path.join(__dirname, 'public', 'campus.html');
   let html = fs.readFileSync(file, 'utf8');
-  const xrScripts = `${UCAN_XR_SCRIPT}"></script>\n  <script src="${UCAN_BLOCKER_SCRIPT}"></script>\n  <script src="${UCAN_PARITY_SCRIPT}"></script>\n  <script src="${UCAN_ALIGNMENT_SCRIPT}`;
+  const xrScripts = `${UCAN_XR_SCRIPT}"></script>\n  <script src="${UCAN_BLOCKER_SCRIPT}"></script>\n  <script src="${UCAN_PARITY_SCRIPT}"></script>\n  <script src="${UCAN_ALIGNMENT_SCRIPT}"></script>\n  <script src="${UCAN_QUEST_PARITY_SCRIPT}`;
   const mainWithSky = `${UCAN_SCRIPT}"></script>\n  <script src="${UCAN_SKY_SCRIPT}"></script>\n  <script src="${UCAN_SKY_REFRESH_SCRIPT}`;
   const studioWithRollbackAndScroll = `${UCAN_AVATAR_STUDIO_SCRIPT}"></script>\n  <script src="${UCAN_ROLLBACK_SCRIPT}"></script>\n  <script src="${UCAN_SCROLL_ACCESS_SCRIPT}`;
   html = html
     .replaceAll('V272-20260717-XR-DESKTOP-PARITY-SPEED', UCAN_BUILD)
-    .replaceAll('UCAN Academic Mall V272', 'UCAN Academic Mall V280')
-    .replaceAll('COMPILACIÓN V272 ACTIVA', 'COMPILACIÓN V280 ACTIVA')
+    .replaceAll('UCAN Academic Mall V272', 'UCAN Academic Mall V281')
+    .replaceAll('COMPILACIÓN V272 ACTIVA', 'COMPILACIÓN V281 ACTIVA')
     .replace('/js/ucan_v272_xr_desktop_parity.js?build=' + UCAN_BUILD, xrScripts)
     .replace(UCAN_SCRIPT, mainWithSky)
     .replace(UCAN_AVATAR_STUDIO_SCRIPT, studioWithRollbackAndScroll)
-    .replace('V272: el entorno VR utiliza la misma escena de computadora y la velocidad normal coincide en 5.0 m/s.', 'V280: altura real del avatar separada del nivel del piso, entrada ampliada a escaleras y ajuste automático al completar cada cambio de nivel.');
+    .replace('V272: el entorno VR utiliza la misma escena de computadora y la velocidad normal coincide en 5.0 m/s.', 'V281: exposición calibrada para Meta Quest y movimiento de la terraza con la misma velocidad, frenado y colisiones de la versión del browser.');
   return html;
 }
 
@@ -154,7 +155,7 @@ http.createServer = function createCompatibleServer(listener) {
   if (typeof listener !== 'function') return originalCreateServer.apply(this, arguments);
   return originalCreateServer.call(this, async (req, res) => {
     try {
-      const auth = global.__UCAN_AUTH_SYSTEM_V280__;
+      const auth = global.__UCAN_AUTH_SYSTEM_V281__;
       const parsed = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
       const pathname = decodeURIComponent(parsed.pathname);
 
@@ -167,7 +168,10 @@ http.createServer = function createCompatibleServer(listener) {
           immersiveVisualParity:true,
           xrHeadHeightAware:true,
           automaticStairAlignment:true,
-          floorSnapRecovery:true
+          floorSnapRecovery:true,
+          questExposureCalibrated:true,
+          rooftopDesktopMovement:true,
+          rooftopNativeCollisions:true
         });
       }
       if (pathname === '/version') {
@@ -179,6 +183,7 @@ http.createServer = function createCompatibleServer(listener) {
           blockerScript:UCAN_BLOCKER_SCRIPT,
           parityScript:UCAN_PARITY_SCRIPT,
           alignmentScript:UCAN_ALIGNMENT_SCRIPT,
+          questParityScript:UCAN_QUEST_PARITY_SCRIPT,
           skyScript:UCAN_SKY_SCRIPT,
           skyRefreshScript:UCAN_SKY_REFRESH_SCRIPT,
           rollbackScript:UCAN_ROLLBACK_SCRIPT,
@@ -188,12 +193,17 @@ http.createServer = function createCompatibleServer(listener) {
           xrHeadHeightAware:true,
           automaticStairAlignment:true,
           floorSnapRecovery:true,
+          questExposureCalibrated:true,
+          questExposureFactor:0.86,
+          rooftopDesktopMovement:true,
+          rooftopNativeCollisions:true,
+          rooftopImmediateStop:true,
           directAccessWhenAvatarConfigured:true,
           persistenceRepair:persistenceAudit
         });
       }
       if (pathname === '/campus' && req.method === 'GET' && auth?.getSessionUser?.(req)) {
-        return sendHtml(res, 200, campusV280Html());
+        return sendHtml(res, 200, campusV281Html());
       }
 
       const authManaged = pathname.startsWith('/api/auth/') || pathname === '/api/profile' || pathname.startsWith('/api/profile/') || pathname === '/api/presence' || pathname.startsWith('/api/admin/users');
@@ -203,10 +213,10 @@ http.createServer = function createCompatibleServer(listener) {
       }
       return await listener(req, res);
     } catch (error) {
-      console.error('[UCAN V280 auth compatibility]', error);
+      console.error('[UCAN V281 auth compatibility]', error);
       if (!res.headersSent && !res.writableEnded) sendJson(res, error.statusCode || 500, { error:error.message || 'Error interno' });
     }
   });
 };
 
-console.info('[UCAN V280] Altura XR, escaleras automáticas, paridad visual, acceso y persistencia cargados.');
+console.info('[UCAN V281] Paridad visual Quest, movimiento de terraza, altura XR, escaleras, acceso y persistencia cargados.');
