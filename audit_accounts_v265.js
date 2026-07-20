@@ -16,7 +16,7 @@ const identity = fs.readFileSync(path.join(root,'public/js/ucan_v265_identity.js
 const avatar = fs.readFileSync(path.join(root,'public/js/ucan_avatar_shared.js'),'utf8');
 const report = {
   sceneVersion:'V265',
-  serverVersion:'V282',
+  serverVersion:'V283',
   files,
   authEndpoints:[
     '/api/auth/register','/api/auth/login','/api/auth/logout','/api/auth/me','/api/auth/change-password',
@@ -28,9 +28,9 @@ const report = {
   avatarCustomization:['hairStyle','hairColor','topStyle','topColor','shoeStyle','shoeColor','accessories'].every(key => avatar.includes(key)),
   thirdPersonMode: identity.includes('FollowCamera') && identity.includes('toggleThirdPerson'),
   multiplayerPresence: identity.includes('/api/presence') && auth.includes('const presence = new Map()') && auth.includes('presenceSnapshot'),
-  layeredServerActive: /V282-20260720-QUEST-BROWSER-ONE-WAY-ESCALATOR-PARITY/.test(compat),
+  unifiedServerActive: /V283-20260720-UNIFIED-XR-DESKTOP-PARITY/.test(compat) && /__UCAN_AUTH_SYSTEM_V283__/.test(compat) && /singleUnifiedXrController:true/.test(compat),
   publicationReady: required.slice(7).every(rel => files[rel])
 };
-report.ok = Object.values(files).every(Boolean) && report.authEndpoints && report.securePasswordHashing && report.httpOnlyCookie && report.roles && report.avatarCustomization && report.thirdPersonMode && report.multiplayerPresence && report.layeredServerActive && report.publicationReady;
+report.ok = Object.values(files).every(Boolean) && report.authEndpoints && report.securePasswordHashing && report.httpOnlyCookie && report.roles && report.avatarCustomization && report.thirdPersonMode && report.multiplayerPresence && report.unifiedServerActive && report.publicationReady;
 console.log(JSON.stringify(report,null,2));
 if (!report.ok) process.exit(1);
