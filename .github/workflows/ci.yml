@@ -29,7 +29,7 @@ jobs:
           done
           curl -fsS http://127.0.0.1:3011/version > /tmp/version.json
           curl -fsS http://127.0.0.1:3011/api/auth/options > /tmp/auth-options.json
-          node -e "const fs=require('fs');const h=JSON.parse(fs.readFileSync('/tmp/health.json'));const v=JSON.parse(fs.readFileSync('/tmp/version.json'));if(h.version!=='V283'||v.version!=='V283'||h.singleUnifiedXrController!==true||v.deprecatedXrLayersLoaded!==false||h.sameLightingAcrossEnvironments!==true||h.sameMovementAcrossEnvironments!==true||v.noQuestSpecificExposure!==true||v.downEscalatorsCannotAscend!==true||v.upEscalatorsCannotDescend!==true)process.exit(1);console.log(JSON.stringify({health:h,version:v},null,2));"
+          node -e "const fs=require('fs');const h=JSON.parse(fs.readFileSync('/tmp/health.json'));const v=JSON.parse(fs.readFileSync('/tmp/version.json'));if(h.version!=='V284'||v.version!=='V284'||h.singleUnifiedXrController!==true||v.deprecatedXrLayersLoaded!==false||h.sameLightingAcrossEnvironments!==true||h.sameMovementAcrossEnvironments!==true||v.noQuestSpecificExposure!==true||v.downEscalatorsCannotAscend!==true||v.upEscalatorsCannotDescend!==true||h.desktopFloorGuard!==true||v.theaterHeightRequiresFloorThree!==true||v.floorOneCenterProtected!==true||v.floorTwoCenterProtected!==true||v.accidentalFloorThreeLiftFixed!==true)process.exit(1);console.log(JSON.stringify({health:h,version:v},null,2));"
           kill "$(cat /tmp/ucan.pid)"
       - name: Construir imagen Docker
         run: docker build -t ucan-academic-mall:test .
