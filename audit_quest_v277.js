@@ -3,7 +3,9 @@ const xr=fs.readFileSync('public/js/ucan_v277_xr_navigation_recovery.js','utf8')
 const compat=fs.readFileSync('auth-compat-v271.js','utf8');
 const checks={
  version:/const VERSION = 'V277'/.test(xr),
- build:/V277-20260720-XR-NAV-ROLLBACK-PERSISTENCE/.test(xr)&&/V277-20260720-XR-NAV-ROLLBACK-PERSISTENCE/.test(compat),
+ xrBuild:/V277-20260720-XR-NAV-ROLLBACK-PERSISTENCE/.test(xr),
+ currentServerBuild:/V282-20260720-QUEST-BROWSER-ONE-WAY-ESCALATOR-PARITY/.test(compat),
+ xrLayerLoaded:/UCAN_XR_SCRIPT/.test(compat)&&/ucan_v277_xr_navigation_recovery\.js/.test(compat),
  terraceDestination:/rooftop:\{ floor:LEVEL\.roof/.test(xr),
  immersiveButtonCapture:/stopImmediatePropagation\(\)/.test(xr)&&/destinationGo/.test(xr),
  apiNavigation:/api\.goToArea=key=>state\.inXR\?teleportTo/.test(xr),
@@ -16,5 +18,5 @@ const checks={
  persistenceRepair:/repairCompletionFile/.test(compat)&&/passwordChangedAt/.test(compat)&&/avatarConfiguredAt/.test(compat)
 };
 const ok=Object.values(checks).every(Boolean);
-console.log(JSON.stringify({ok,version:'V277',checks},null,2));
+console.log(JSON.stringify({ok,layerVersion:'V277',serverVersion:'V282',checks},null,2));
 if(!ok)process.exit(1);
