@@ -1,5 +1,5 @@
 {
-  "name": "UCAN Academic Mall V270",
+  "name": "UCAN Academic Mall V287",
   "build": {
     "dockerfile": "../Dockerfile",
     "context": ".."
@@ -8,7 +8,7 @@
   "forwardPorts": [3000],
   "portsAttributes": {
     "3000": {
-      "label": "UCAN Academic Mall",
+      "label": "UCAN Academic Mall V287",
       "onAutoForward": "openBrowser",
       "visibility": "public"
     }
@@ -17,7 +17,7 @@
   "postStartCommand": "bash .devcontainer/start-codespace.sh",
   "remoteEnv": {
     "PORT": "3000",
-    "UCAN_BUILD": "V270-CODESPACES",
+    "UCAN_BUILD": "V287-20260720-FLOOR-STATE-SKY-OPT",
     "REGISTRATION_ENABLED": "true"
   }
 }
