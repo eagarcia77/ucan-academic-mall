@@ -18,6 +18,8 @@ const QUEST_XR_BUILD = 'V289-20260720-QUEST-XR-COMPAT-DIAGNOSTICS';
 const QUEST_XR_SCRIPT = `/js/ucan_v289_quest_xr_compat.js?build=${QUEST_XR_BUILD}`;
 const QUEST_VISUAL_BUILD = 'V291-20260720-QUEST-CELESTIAL-GLASS';
 const QUEST_VISUAL_SCRIPT = `/js/ucan_v291_quest_celestial_glass.js?build=${QUEST_VISUAL_BUILD}`;
+const UNIVERSAL_SIGN_BUILD = 'V292-20260721-UNIVERSAL-SIGN-WINDOW-CLOCK';
+const UNIVERSAL_SIGN_SCRIPT = `/js/ucan_v292_universal_sign_window.js?build=${UNIVERSAL_SIGN_BUILD}`;
 const SKY_SCRIPT = `/js/ucan_v287_rooftop_sky.js?build=${BUILD}`;
 const CELESTIAL_WINDOW_BUILD = 'V288-20260720-COMPACT-CELESTIAL-WINDOW';
 const CELESTIAL_WINDOW_SCRIPT = `/js/ucan_v288_celestial_info_window.js?build=${CELESTIAL_WINDOW_BUILD}`;
@@ -46,7 +48,8 @@ function sendPatchedMainScene(res) {
       'X-UCAN-Floor-State':VERSION,
       'X-UCAN-XR-Compat':'V289',
       'X-UCAN-XR-Controls':'V290',
-      'X-UCAN-XR-Visuals':'V291'
+      'X-UCAN-XR-Visuals':'V291',
+      'X-UCAN-XR-UI':'V292'
     });
     res.end(body);
   } catch (error) {
@@ -91,7 +94,7 @@ function transformCampusHtml(text) {
     .replaceAll(`COMPILACIÓN ${PREVIOUS_VERSION} ACTIVA`, `COMPILACIÓN ${VERSION} ACTIVA`)
     .replace(
       'V283: un solo controlador comparte iluminación, movimiento, altura, colisiones y escaleras entre Meta Quest y el browser.',
-      'V291: Meta Quest usa selección celeste de largo alcance y cristales transparentes compatibles con WebXR.'
+      'V292: planetas, calendarios, mapas, agenda, clima y reloj usan una ventana universal legible y cerrable en todos los entornos.'
     );
 
   html = html.replace(
@@ -110,7 +113,8 @@ function transformCampusHtml(text) {
   const oldRuntimeTags = [
     /<script src="\/js\/ucan_v283_unified_xr_runtime\.js\?build=[^"]+"><\/script>/g,
     /<script src="\/js\/ucan_v290_quest_controls_interaction\.js\?build=[^"]+"><\/script>/g,
-    /<script src="\/js\/ucan_v291_quest_celestial_glass\.js\?build=[^"]+"><\/script>/g
+    /<script src="\/js\/ucan_v291_quest_celestial_glass\.js\?build=[^"]+"><\/script>/g,
+    /<script src="\/js\/ucan_v292_universal_sign_window\.js\?build=[^"]+"><\/script>/g
   ];
   for (const pattern of oldRuntimeTags) html = html.replace(pattern, '');
 
@@ -133,6 +137,13 @@ function transformCampusHtml(text) {
     const visualTag = `<script src="${QUEST_VISUAL_SCRIPT}"></script>`;
     if (html.includes(questTag)) html = html.replace(questTag, `${questTag}\n  ${visualTag}`);
     else html = html.replace(`<script src="${MAIN_SCRIPT}"></script>`, `${visualTag}\n  <script src="${MAIN_SCRIPT}"></script>`);
+  }
+
+  if (!html.includes('/js/ucan_v292_universal_sign_window.js')) {
+    const visualTag = `<script src="${QUEST_VISUAL_SCRIPT}"></script>`;
+    const universalTag = `<script src="${UNIVERSAL_SIGN_SCRIPT}"></script>`;
+    if (html.includes(visualTag)) html = html.replace(visualTag, `${visualTag}\n  ${universalTag}`);
+    else html = html.replace(`<script src="${MAIN_SCRIPT}"></script>`, `${universalTag}\n  <script src="${MAIN_SCRIPT}"></script>`);
   }
 
   if (!html.includes('/js/ucan_v288_celestial_info_window.js')) {
@@ -192,6 +203,22 @@ function transformVersionData(data) {
   data.questGlassBackFacesVisible = true;
   data.questGlassShadowsDisabled = true;
   data.questGlassRestoredAfterXR = true;
+  data.universalSignScript = UNIVERSAL_SIGN_SCRIPT;
+  data.universalSignVersion = 'V292';
+  data.universalSignBuild = UNIVERSAL_SIGN_BUILD;
+  data.universalWindowDesktop = true;
+  data.universalWindowXR = true;
+  data.universalWindowSeparateFrontBack = true;
+  data.mirroredInformationFixed = true;
+  data.livePanelsOpenActualContent = true;
+  data.livePanelsTriggerActivation = true;
+  data.livePanelsJoystickClickActivation = true;
+  data.livePanelsPrimaryButtonActivation = true;
+  data.universalWindowClosableDesktop = true;
+  data.universalWindowClosableXR = true;
+  data.legacyInformationWindowsSuppressed = true;
+  data.rooftopClockRelocated = true;
+  data.rooftopClockPosition = { x:-17, y:31.75, z:49 };
   data.skyScript = SKY_SCRIPT;
   data.skyRefreshScript = null;
   data.celestialInfoWindowScript = CELESTIAL_WINDOW_SCRIPT;
@@ -251,6 +278,7 @@ if (!http.ServerResponse.prototype.__ucanV287FloorSkyPatched) {
         nextHeaders['X-UCAN-XR-Compat'] = 'V289';
         nextHeaders['X-UCAN-XR-Controls'] = 'V290';
         nextHeaders['X-UCAN-XR-Visuals'] = 'V291';
+        nextHeaders['X-UCAN-XR-UI'] = 'V292';
       }
     }
     if (message === undefined) return originalWriteHead.call(this, statusCode, nextHeaders);
@@ -271,7 +299,7 @@ if (!http.ServerResponse.prototype.__ucanV287FloorSkyPatched) {
         }
       }
     } catch (error) {
-      console.error('[UCAN V287/V291 response compatibility]', error);
+      console.error('[UCAN V287/V292 response compatibility]', error);
     }
     return originalEnd.call(this, body, encoding, callback);
   };
@@ -279,4 +307,4 @@ if (!http.ServerResponse.prototype.__ucanV287FloorSkyPatched) {
   http.ServerResponse.prototype.__ucanV287FloorSkyPatched = true;
 }
 
-console.info('[UCAN V287/V288/V289/V290/V291] Pisos, cielo, ventanas, controles y visuales Meta Quest cargados.');
+console.info('[UCAN V287/V288/V289/V290/V291/V292] Pisos, cielo, ventanas, controles, visuales y paneles universales cargados.');
