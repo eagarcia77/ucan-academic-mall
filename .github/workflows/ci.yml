@@ -16,7 +16,7 @@ jobs:
           node-version: 20
       - name: Validar JavaScript y auditorías
         run: npm test
-      - name: Probar servidor, pisos, cielo, ventana, Meta Quest y autenticación
+      - name: Probar servidor, pisos, cielo, paneles, Meta Quest y autenticación
         env:
           PORT: 3011
           ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
@@ -33,6 +33,7 @@ jobs:
           curl -fsS "http://127.0.0.1:3011/js/ucan_v289_quest_xr_compat.js?build=V289-20260720-QUEST-XR-COMPAT-DIAGNOSTICS" > /tmp/quest-xr.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v290_quest_controls_interaction.js?build=V290-20260720-QUEST-CONTROLS-STAIRS-INFO" > /tmp/quest-controls.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v291_quest_celestial_glass.js?build=V291-20260720-QUEST-CELESTIAL-GLASS" > /tmp/quest-visuals.js
+          curl -fsS "http://127.0.0.1:3011/js/ucan_v292_universal_sign_window.js?build=V292-20260721-UNIVERSAL-SIGN-WINDOW-CLOCK" > /tmp/universal-signs.js
           curl -fsS http://127.0.0.1:3011/version > /tmp/version.json
           curl -fsS http://127.0.0.1:3011/api/auth/options > /tmp/auth-options.json
 
@@ -49,39 +50,32 @@ jobs:
           node --check /tmp/quest-xr.js
           node --check /tmp/quest-controls.js
           node --check /tmp/quest-visuals.js
+          node --check /tmp/universal-signs.js
 
           grep -F "window.__UCAN_FLOOR_STATE_V287__" /tmp/main-scene.js
-          grep -F "ucanStableFloorV287 === LEVEL.three && (inCenterAisle || inSideAisle)" /tmp/main-scene.js
-          grep -F "camera.position.y = expectedY;" /tmp/main-scene.js
-          grep -F "cristal claro moderno" /tmp/main-scene.js
-          grep -F "m.needDepthPrePass = true" /tmp/main-scene.js
-
-          grep -F "const STAR_BUDGET = 14;" /tmp/sky.js
-          grep -F "const VERSION = 'V288';" /tmp/celestial-window.js
-          grep -F "celestialWindowCloseV288:true" /tmp/celestial-window.js
-          grep -F "const VERSION = 'V289';" /tmp/quest-xr.js
-          grep -F "enterXRAsync('immersive-vr', 'local-floor')" /tmp/quest-xr.js
-
+          grep -F "Reloj San Germán', 5.8, 2.8" /tmp/main-scene.js
           grep -F "const VERSION = 'V290';" /tmp/quest-controls.js
-          grep -F "findComponent(motionController, 'thumbstick'" /tmp/quest-controls.js
-          grep -F "function selectFromController" /tmp/quest-controls.js
-          grep -F "id:'up34'" /tmp/quest-controls.js
-          grep -F "id:'down43'" /tmp/quest-controls.js
-
           grep -F "const VERSION = 'V291';" /tmp/quest-visuals.js
-          grep -F "const CELESTIAL_RAY_LENGTH = 240;" /tmp/quest-visuals.js
-          grep -F "const CELESTIAL_MAX_DISTANCE = 265;" /tmp/quest-visuals.js
-          grep -F "function angularCelestialPick" /tmp/quest-visuals.js
-          grep -F "window.__UCAN_CELESTIAL_WINDOW__?.show?.(id)" /tmp/quest-visuals.js
-          grep -F "material.needDepthPrePass = false;" /tmp/quest-visuals.js
-          grep -F "material.disableDepthWrite = true;" /tmp/quest-visuals.js
-          grep -F "material.backFaceCulling = false;" /tmp/quest-visuals.js
-          grep -F "mesh.receiveShadows = false;" /tmp/quest-visuals.js
-          grep -F "function restoreGlass" /tmp/quest-visuals.js
+
+          grep -F "const VERSION = 'V292';" /tmp/universal-signs.js
+          grep -F "const RAY_LENGTH = 265;" /tmp/universal-signs.js
+          grep -F "ventana universal frente V292" /tmp/universal-signs.js
+          grep -F "ventana universal reverso V292" /tmp/universal-signs.js
+          grep -F "botón cerrar universal frente V292" /tmp/universal-signs.js
+          grep -F "botón cerrar universal reverso V292" /tmp/universal-signs.js
+          grep -F "ucanUniversalCloseV292:true" /tmp/universal-signs.js
+          grep -F "joystickPressed" /tmp/universal-signs.js
+          grep -F "pad?.buttons?.[3]" /tmp/universal-signs.js
+          grep -F "ctx.drawImage(info.canvas" /tmp/universal-signs.js
+          grep -F "new B.Vector3(-17, LEVEL_ROOFTOP + 4.55, 49.0)" /tmp/universal-signs.js
+          grep -F "clock.meshes.front.position.copyFrom" /tmp/universal-signs.js
+          grep -F "Ventana información XR V290" /tmp/universal-signs.js
+          grep -F "Ventana celeste compacta V288" /tmp/universal-signs.js
 
           grep -F "ucan_v290_quest_controls_interaction.js?build=V290-20260720-QUEST-CONTROLS-STAIRS-INFO" /tmp/campus.html
           grep -F "ucan_v289_quest_xr_compat.js?build=V289-20260720-QUEST-XR-COMPAT-DIAGNOSTICS" /tmp/campus.html
           grep -F "ucan_v291_quest_celestial_glass.js?build=V291-20260720-QUEST-CELESTIAL-GLASS" /tmp/campus.html
+          grep -F "ucan_v292_universal_sign_window.js?build=V292-20260721-UNIVERSAL-SIGN-WINDOW-CLOCK" /tmp/campus.html
           grep -F "ucan_v288_celestial_info_window.js?build=V288-20260720-COMPACT-CELESTIAL-WINDOW" /tmp/campus.html
           if grep -Fq "ucan_v283_unified_xr_runtime.js" /tmp/campus.html; then
             echo "El campus todavía carga el controlador de movimiento V283." >&2
@@ -90,9 +84,10 @@ jobs:
           grep -Fi "Permissions-Policy: xr-spatial-tracking=(self)" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Controls: V290" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Visuals: V291" /tmp/campus.headers
-          node -e "const fs=require('fs');const html=fs.readFileSync('/tmp/campus.html','utf8');const controls=html.indexOf('ucan_v290_quest_controls_interaction.js');const q=html.indexOf('ucan_v289_quest_xr_compat.js');const visuals=html.indexOf('ucan_v291_quest_celestial_glass.js');const main=html.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');if(!(controls>=0&&q>controls&&visuals>q&&main>visuals))process.exit(1);console.log({controls,q,visuals,main});"
+          grep -Fi "X-UCAN-XR-UI: V292" /tmp/campus.headers
+          node -e "const fs=require('fs');const html=fs.readFileSync('/tmp/campus.html','utf8');const controls=html.indexOf('ucan_v290_quest_controls_interaction.js');const q=html.indexOf('ucan_v289_quest_xr_compat.js');const visuals=html.indexOf('ucan_v291_quest_celestial_glass.js');const universal=html.indexOf('ucan_v292_universal_sign_window.js');const main=html.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');if(!(controls>=0&&q>controls&&visuals>q&&universal>visuals&&main>universal))process.exit(1);console.log({controls,q,visuals,universal,main});"
 
-          node -e "const fs=require('fs');const v=JSON.parse(fs.readFileSync('/tmp/version.json'));if(v.version!=='V287'||v.unifiedXrVersion!=='V290'||v.questVisualVersion!=='V291'||v.questCelestialRayLength!==240||v.questCelestialMaxDistance!==265||v.questCelestialAngularFallback!==true||v.questCelestialAngleLimitDegrees!==7.5||v.questGlassCompatibility!==true||v.questGlassDepthPrePassDisabled!==true||v.questGlassAlphaBlend!==true||v.questGlassBackFacesVisible!==true||v.questGlassShadowsDisabled!==true||v.questGlassRestoredAfterXR!==true||v.celestialInfoWindowVersion!=='V288')process.exit(1);console.log(JSON.stringify(v,null,2));"
+          node -e "const fs=require('fs');const v=JSON.parse(fs.readFileSync('/tmp/version.json'));if(v.version!=='V287'||v.unifiedXrVersion!=='V290'||v.questVisualVersion!=='V291'||v.universalSignVersion!=='V292'||v.universalWindowDesktop!==true||v.universalWindowXR!==true||v.universalWindowSeparateFrontBack!==true||v.mirroredInformationFixed!==true||v.livePanelsOpenActualContent!==true||v.livePanelsTriggerActivation!==true||v.livePanelsJoystickClickActivation!==true||v.livePanelsPrimaryButtonActivation!==true||v.universalWindowClosableDesktop!==true||v.universalWindowClosableXR!==true||v.legacyInformationWindowsSuppressed!==true||v.rooftopClockRelocated!==true||v.rooftopClockPosition?.x!==-17||v.rooftopClockPosition?.y!==31.75||v.rooftopClockPosition?.z!==49)process.exit(1);console.log(JSON.stringify(v,null,2));"
           kill "$(cat /tmp/ucan.pid)"
       - name: Construir imagen Docker
         run: docker build -t ucan-academic-mall:test .
