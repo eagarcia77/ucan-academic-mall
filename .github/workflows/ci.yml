@@ -16,7 +16,7 @@ jobs:
           node-version: 20
       - name: Validar JavaScript y auditorías
         run: npm test
-      - name: Probar servidor, paneles, Meta Quest y autenticación
+      - name: Probar servidor, escaleras manuales, Meta Quest y autenticación
         env:
           PORT: 3011
           ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
@@ -29,7 +29,7 @@ jobs:
           done
 
           curl -fsS "http://127.0.0.1:3011/js/ucan_babylon_mall_v265_accounts_avatars.js?build=V287-20260720-FLOOR-STATE-SKY-OPT" > /tmp/main-scene.js
-          curl -fsS "http://127.0.0.1:3011/js/ucan_v290_quest_controls_interaction.js?build=V290-20260720-QUEST-CONTROLS-STAIRS-INFO" > /tmp/quest-controls.js
+          curl -fsS "http://127.0.0.1:3011/js/ucan_v293_quest_controls_interaction.js?build=V293-20260721-MANUAL-ROOFTOP-STAIRS-NO-LOOP" > /tmp/quest-controls.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v291_quest_celestial_glass.js?build=V291-20260720-QUEST-CELESTIAL-GLASS" > /tmp/quest-visuals.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v292_universal_sign_window.js?build=V292-20260721-UNIVERSAL-SIGN-WINDOW-CLOCK" > /tmp/universal-signs.js
           curl -fsS http://127.0.0.1:3011/version > /tmp/version.json
@@ -48,31 +48,32 @@ jobs:
 
           node - <<'NODE'
           const fs = require('fs');
-          const source = fs.readFileSync('/tmp/universal-signs.js', 'utf8');
+          const source = fs.readFileSync('/tmp/quest-controls.js', 'utf8');
           const required = [
-            "const VERSION = 'V292'",
-            'Ventana universal V292',
-            'ventana universal frente V292',
-            'ventana universal reverso V292',
-            'ucanUniversalCloseV292:true',
-            'const joystickPressed = Boolean',
-            'ctx.drawImage(info.canvas',
-            'new B.Vector3(-17, LEVEL_ROOFTOP + 4.55, 49.0)',
-            'clock.meshes.front.position.copyFrom',
-            'window.__UCAN_UNIVERSAL_SIGN_AUDIT__'
+            "const VERSION = 'V293'",
+            "kind:'escalator', automatic:true",
+            "kind:'stairs', automatic:false",
+            'route.automatic === true && nearRouteEntry(state, route)',
+            "['control-manual', 'auditoría'].includes(source)",
+            'Math.abs(state.floor - route.fromFloor) <= 0.4',
+            "route.direction === 'up' ? -9.2 : 9.2",
+            "route.kind === 'stairs' ? 5200 : 2300",
+            'automaticRooftopStairs:false',
+            'manualRooftopStairs:true',
+            'rooftopStairsLoopPrevention:true'
           ];
           const missing = required.filter(value => !source.includes(value));
-          if (missing.length) {
-            console.error({ missing });
+          if (missing.length || source.includes('ROUTES.find(route => nearRouteEntry(state, route))')) {
+            console.error({ missing, oldAutomaticRouteFound:source.includes('ROUTES.find(route => nearRouteEntry(state, route))') });
             process.exit(1);
           }
-          console.log({ universalSignMarkers: required.length });
+          console.log({ manualStairMarkers:required.length });
           NODE
 
           node - <<'NODE'
           const fs = require('fs');
           const html = fs.readFileSync('/tmp/campus.html', 'utf8');
-          const controls = html.indexOf('ucan_v290_quest_controls_interaction.js');
+          const controls = html.indexOf('ucan_v293_quest_controls_interaction.js');
           const quest = html.indexOf('ucan_v289_quest_xr_compat.js');
           const visuals = html.indexOf('ucan_v291_quest_celestial_glass.js');
           const universal = html.indexOf('ucan_v292_universal_sign_window.js');
@@ -81,12 +82,13 @@ jobs:
             console.error({ controls, quest, visuals, universal, main });
             process.exit(1);
           }
-          if (html.includes('ucan_v283_unified_xr_runtime.js')) process.exit(1);
+          if (html.includes('ucan_v290_quest_controls_interaction.js') || html.includes('ucan_v283_unified_xr_runtime.js')) process.exit(1);
           console.log({ controls, quest, visuals, universal, main });
           NODE
 
           grep -Fi "Permissions-Policy: xr-spatial-tracking=(self)" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Controls: V290" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Controls: V293" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Stairs: V293" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Visuals: V291" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-UI: V292" /tmp/campus.headers
 
@@ -95,16 +97,16 @@ jobs:
           const v = JSON.parse(fs.readFileSync('/tmp/version.json'));
           const checks = {
             baseVersion:v.version === 'V287',
-            controls:v.unifiedXrVersion === 'V290',
+            controls:v.unifiedXrVersion === 'V293' && v.questControlsVersion === 'V293',
+            manual:v.questRooftopStairsAutomatic === false && v.questRooftopStairsManualActivation === true,
+            loop:v.questRooftopStairsLoopPrevention === true && v.questRooftopStairsExitOutsideOppositeTrigger === true,
+            buttons:v.questRooftopStairsTriggerActivation === true && v.questRooftopStairsJoystickActivation === true && v.questRooftopStairsPrimaryButtonActivation === true,
+            floor:v.questRooftopStairsCorrectFloorRequired === true,
+            cooldown:v.questRooftopStairsReentryCooldownMs === 5200,
+            escalators:v.questAutomaticEscalatorsOtherFloors === true,
+            mode:v.rooftopStairsActivationMode === 'manual-control-only',
             visuals:v.questVisualVersion === 'V291',
-            universal:v.universalSignVersion === 'V292',
-            desktop:v.universalWindowDesktop === true,
-            xr:v.universalWindowXR === true,
-            orientation:v.universalWindowSeparateFrontBack === true && v.mirroredInformationFixed === true,
-            actualContent:v.livePanelsOpenActualContent === true,
-            activation:v.livePanelsTriggerActivation === true && v.livePanelsJoystickClickActivation === true && v.livePanelsPrimaryButtonActivation === true,
-            close:v.universalWindowClosableDesktop === true && v.universalWindowClosableXR === true,
-            clock:v.rooftopClockRelocated === true && v.rooftopClockPosition?.x === -17 && v.rooftopClockPosition?.y === 31.75 && v.rooftopClockPosition?.z === 49
+            universal:v.universalSignVersion === 'V292'
           };
           if (!Object.values(checks).every(Boolean)) {
             console.error({ checks, version:v });
