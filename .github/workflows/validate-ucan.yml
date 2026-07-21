@@ -21,8 +21,10 @@ jobs:
         script:
           - check
           - audit:unified-xr
+          - audit:manual-rooftop-stairs
           - audit:quest-xr
           - audit:quest-visuals
+          - audit:universal-signs
           - audit:floor-sky
           - audit:celestial-window
           - audit:profile
