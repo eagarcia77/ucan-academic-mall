@@ -10,26 +10,36 @@ const CONTROLS_FILE = path.join(__dirname, 'public', 'js', 'ucan_v290_quest_cont
 const CONTROLS_SCRIPT = `${CONTROLS_PATH}?build=${BUILD}`;
 const V290_BUILD = 'V290-20260720-QUEST-CONTROLS-STAIRS-INFO';
 const V290_PATH = '/js/ucan_v290_quest_controls_interaction.js';
-const QUEST_TERRACE_VERSION = 'V294';
-const QUEST_TERRACE_BUILD = 'V294-20260721-QUEST-TERRACE-LIGHT-SIGNS';
-const QUEST_TERRACE_PATH = '/js/ucan_v294_quest_terrace_stability.js';
+const QUEST_TERRACE_VERSION = 'V295';
+const QUEST_TERRACE_BUILD = 'V295-20260721-QUEST-DESKTOP-PARITY-TERRACE-ASSETS';
+const QUEST_TERRACE_PATH = '/js/ucan_v295_quest_desktop_parity_terrace.js';
 const QUEST_TERRACE_SCRIPT = `${QUEST_TERRACE_PATH}?build=${QUEST_TERRACE_BUILD}`;
+const LEGACY_QUEST_TERRACE_PATH = '/js/ucan_v294_quest_terrace_stability.js';
 
 const nativeWriteHead = http.ServerResponse.prototype.writeHead;
 const nativeEnd = http.ServerResponse.prototype.end;
 const nativeCreateServer = http.createServer;
 
+function normalizeBranding(text) {
+  return String(text)
+    .replace(/UCAN Academic Mall V\d+/g, 'UCAN Academic')
+    .replace(/UCAN Academic Mall/g, 'UCAN Academic')
+    .replace(/COMPILACIÓN V\d+ ACTIVA/g, 'ENTORNO ACTIVO')
+    .replace(/<title>[^<]*<\/title>/i, '<title>UCAN Academic</title>');
+}
+
 function insertQuestTerraceScript(text) {
-  let html = String(text);
-  if (html.includes(QUEST_TERRACE_PATH)) return html;
+  let html = String(text)
+    .replace(/\s*<script src="\/js\/ucan_v294_quest_terrace_stability\.js\?build=[^"]+"><\/script>/g, '');
+  if (html.includes(QUEST_TERRACE_PATH)) return normalizeBranding(html);
   const universalPattern = /<script src="\/js\/ucan_v292_universal_sign_window\.js\?build=[^"]+"><\/script>/;
   const universalTag = html.match(universalPattern)?.[0];
   const terraceTag = `<script src="${QUEST_TERRACE_SCRIPT}"></script>`;
-  if (universalTag) return html.replace(universalTag, `${universalTag}\n  ${terraceTag}`);
+  if (universalTag) return normalizeBranding(html.replace(universalTag, `${universalTag}\n  ${terraceTag}`));
   const mainPattern = /<script src="\/js\/ucan_babylon_mall_v265_accounts_avatars\.js\?build=[^"]+"><\/script>/;
   const mainTag = html.match(mainPattern)?.[0];
-  if (mainTag) return html.replace(mainTag, `${terraceTag}\n  ${mainTag}`);
-  return html;
+  if (mainTag) return normalizeBranding(html.replace(mainTag, `${terraceTag}\n  ${mainTag}`));
+  return normalizeBranding(html);
 }
 
 function replaceV290References(text) {
@@ -38,13 +48,16 @@ function replaceV290References(text) {
     .replaceAll(V290_PATH, CONTROLS_PATH)
     .replaceAll(V290_BUILD, BUILD)
     .replaceAll('Meta Quest V290:', 'Meta Quest V293:')
-    .replaceAll('V292: planetas, calendarios, mapas, agenda, clima y reloj usan una ventana universal legible y cerrable en todos los entornos.', 'V294: Meta Quest utiliza iluminación calibrada, terraza estable y carteles visibles; la computadora conserva su presentación original.');
+    .replaceAll('V292: planetas, calendarios, mapas, agenda, clima y reloj usan una ventana universal legible y cerrable en todos los entornos.', 'V295: Meta Quest utiliza la misma iluminación y materiales de la computadora, con planetas y pantallas de terraza visibles.');
   return insertQuestTerraceScript(updated);
 }
 
 function updateVersionData(data) {
   if (!data || typeof data !== 'object') return data;
   if (data.unifiedXrVersion !== 'V290' && data.questControlsVersion !== 'V290' && data.questControlsVersion !== 'V293') return data;
+  data.productName = 'UCAN Academic';
+  data.visibleVersionInProductName = false;
+  data.legacyProductNameRemoved = true;
   data.unifiedXrScript = CONTROLS_SCRIPT;
   data.unifiedXrVersion = VERSION;
   data.unifiedXrBuild = BUILD;
@@ -72,15 +85,25 @@ function updateVersionData(data) {
   data.questTerraceBuild = QUEST_TERRACE_BUILD;
   data.questOnlyVisualCorrections = true;
   data.desktopVisualsUnchanged = true;
-  data.questExposure = 0.72;
-  data.questContrast = 1.08;
-  data.questEnvironmentIntensity = 0.65;
-  data.questLightScale = 0.82;
+  data.sameLightingAcrossEnvironments = true;
+  data.noQuestSpecificExposure = true;
+  data.questExposureFactor = 1;
+  data.questExposureOverride = false;
+  data.questContrastOverride = false;
+  data.questToneMappingOverride = false;
+  data.questEnvironmentIntensityOverride = false;
+  data.questLightIntensityOverride = false;
+  data.questFloorMaterialOverride = false;
+  data.questFloorMatchesDesktop = true;
   data.questTerraceFloorLock = true;
   data.questTerraceDropPrevention = true;
-  data.questDistantLabelsAlwaysActive = true;
-  data.questCelestialLabelScale = 1.65;
-  data.questTerracePanelsReadable = true;
+  data.questTerraceAssetsForcedEveryFrame = true;
+  data.questSkyRootForcedEveryFrame = true;
+  data.questCelestialMeshesForcedVisible = true;
+  data.questHiddenPlanetsEducationallyVisibleInXR = true;
+  data.questTerracePanelsForcedVisible = true;
+  data.questDynamicPanelTexturesRefreshed = true;
+  data.questOriginalMaterialsPreserved = true;
   return data;
 }
 
@@ -97,7 +120,8 @@ function sendV293Controls(res) {
       'Expires':'0',
       'X-UCAN-XR-Controls':VERSION,
       'X-UCAN-XR-Stairs':VERSION,
-      'X-UCAN-XR-Terrace':QUEST_TERRACE_VERSION
+      'X-UCAN-XR-Terrace':QUEST_TERRACE_VERSION,
+      'X-UCAN-Product':'UCAN Academic'
     });
     res.end(body);
   } catch (error) {
@@ -146,6 +170,7 @@ http.ServerResponse.prototype.writeHead = function writeHeadV293(statusCode, sta
     else nextHeaders['X-UCAN-XR-Controls'] = VERSION;
     nextHeaders['X-UCAN-XR-Stairs'] = VERSION;
     nextHeaders['X-UCAN-XR-Terrace'] = QUEST_TERRACE_VERSION;
+    nextHeaders['X-UCAN-Product'] = 'UCAN Academic';
   }
   if (message === undefined) return nativeWriteHead.call(this, statusCode, nextHeaders);
   return nativeWriteHead.call(this, statusCode, message, nextHeaders);
@@ -166,11 +191,11 @@ http.ServerResponse.prototype.end = function endV293(chunk, encoding, callback) 
       body = buffer ? Buffer.from(text, 'utf8') : text;
     }
   } catch (error) {
-    console.error('[UCAN V293/V294 response compatibility]', error);
+    console.error('[UCAN V293/V295 response compatibility]', error);
   }
   return nativeEnd.call(this, body, encoding, callback);
 };
 
 require('./auth-compat-v287.js');
 
-console.info(`[UCAN ${VERSION}/${QUEST_TERRACE_VERSION}] Escaleras caminables, terraza estable, iluminación calibrada y carteles Quest cargados.`);
+console.info(`[UCAN ${VERSION}/${QUEST_TERRACE_VERSION}] UCAN Academic, escaleras caminables, paridad visual y terraza Quest cargados.`);
