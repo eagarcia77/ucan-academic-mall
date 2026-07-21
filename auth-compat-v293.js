@@ -21,7 +21,7 @@ function replaceV290References(text) {
     .replaceAll(V290_PATH, CONTROLS_PATH)
     .replaceAll(V290_BUILD, BUILD)
     .replaceAll('Meta Quest V290:', 'Meta Quest V293:')
-    .replaceAll('V292: planetas, calendarios, mapas, agenda, clima y reloj usan una ventana universal legible y cerrable en todos los entornos.', 'V293: las escaleras entre el Piso 3 y la terraza se activan únicamente con el control y no pueden entrar en un loop automático.');
+    .replaceAll('V292: planetas, calendarios, mapas, agenda, clima y reloj usan una ventana universal legible y cerrable en todos los entornos.', 'V293: las escaleras entre el Piso 3 y la terraza se recorren caminando con el joystick, sin activación ni movimiento automático.');
 }
 
 function updateVersionData(data) {
@@ -33,19 +33,20 @@ function updateVersionData(data) {
   data.questControlsVersion = VERSION;
   data.questControlsBuild = BUILD;
   data.questRooftopStairsAutomatic = false;
-  data.questRooftopStairsManualActivation = true;
-  data.questRooftopStairsTriggerActivation = true;
-  data.questRooftopStairsJoystickActivation = true;
-  data.questRooftopStairsPrimaryButtonActivation = true;
+  data.questRooftopStairsManualActivation = false;
+  data.questRooftopStairsTriggerActivation = false;
+  data.questRooftopStairsJoystickClickActivation = false;
+  data.questRooftopStairsPrimaryButtonActivation = false;
+  data.questRooftopStairsJoystickTraversal = true;
+  data.questRooftopStairsContinuousSlope = true;
   data.questRooftopStairsLoopPrevention = true;
-  data.questRooftopStairsCorrectFloorRequired = true;
-  data.questRooftopStairsExitOutsideOppositeTrigger = true;
-  data.questRooftopStairsReentryCooldownMs = 5200;
+  data.questRooftopStairsNoActivationButton = true;
+  data.questRooftopStairsFloorSynchronization = true;
   data.questAutomaticEscalatorsOtherFloors = true;
   data.rooftopStairsExpandedTriggers = false;
-  data.rooftopStairsTriggerMarkers = true;
+  data.rooftopStairsTriggerMarkers = false;
   data.rooftopStairsBidirectional = true;
-  data.rooftopStairsActivationMode = 'manual-control-only';
+  data.rooftopStairsActivationMode = 'manual-walk-with-joystick';
   return data;
 }
 
@@ -75,7 +76,6 @@ function sendV293Controls(res) {
   }
 }
 
-// Se instala antes de V287 para que V287 capture estas funciones como su capa base.
 http.createServer = function createV293BaseServer(listener) {
   if (typeof listener !== 'function') return nativeCreateServer.apply(this, arguments);
   return nativeCreateServer.call(this, async (req, res) => {
@@ -137,4 +137,4 @@ http.ServerResponse.prototype.end = function endV293(chunk, encoding, callback) 
 
 require('./auth-compat-v287.js');
 
-console.info(`[UCAN ${VERSION}] Escaleras terraza–Piso 3 manuales y protección contra loops cargadas.`);
+console.info(`[UCAN ${VERSION}] Escaleras terraza–Piso 3 caminables con joystick y sin loops cargadas.`);
