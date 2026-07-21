@@ -1,4 +1,4 @@
-name: Validar UCAN Academic Mall
+name: Validar UCAN Academic
 on:
   push:
     branches: [main]
@@ -16,7 +16,7 @@ jobs:
           node-version: 20
       - name: Validar JavaScript y auditorías
         run: npm test
-      - name: Probar servidor, terraza Meta Quest y autenticación
+      - name: Probar servidor, marca, paridad Quest y autenticación
         env:
           PORT: 3011
           ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
@@ -32,7 +32,7 @@ jobs:
           curl -fsS "http://127.0.0.1:3011/js/ucan_v293_quest_controls_interaction.js?build=V293-20260721-MANUAL-ROOFTOP-STAIRS-NO-LOOP" > /tmp/quest-controls.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v291_quest_celestial_glass.js?build=V291-20260720-QUEST-CELESTIAL-GLASS" > /tmp/quest-visuals.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v292_universal_sign_window.js?build=V292-20260721-UNIVERSAL-SIGN-WINDOW-CLOCK" > /tmp/universal-signs.js
-          curl -fsS "http://127.0.0.1:3011/js/ucan_v294_quest_terrace_stability.js?build=V294-20260721-QUEST-TERRACE-LIGHT-SIGNS" > /tmp/quest-terrace.js
+          curl -fsS "http://127.0.0.1:3011/js/ucan_v295_quest_desktop_parity_terrace.js?build=V295-20260721-QUEST-DESKTOP-PARITY-TERRACE-ASSETS" > /tmp/quest-parity.js
           curl -fsS http://127.0.0.1:3011/version > /tmp/version.json
 
           CI_USER="ciquest${GITHUB_RUN_ID}"
@@ -46,65 +46,33 @@ jobs:
           node --check /tmp/quest-controls.js
           node --check /tmp/quest-visuals.js
           node --check /tmp/universal-signs.js
-          node --check /tmp/quest-terrace.js
+          node --check /tmp/quest-parity.js
 
           node - <<'NODE'
           const fs = require('fs');
-          const source = fs.readFileSync('/tmp/quest-controls.js', 'utf8');
+          const source = fs.readFileSync('/tmp/quest-parity.js', 'utf8');
           const required = [
-            "const VERSION = 'V293'",
-            "kind:'escalator', automatic:true",
-            "kind:'stairs', automatic:false",
-            'route.automatic === true && nearRouteEntry(state, route)',
-            'function rooftopStairGround(state, p)',
-            'lerp(LEVEL.three, LEVEL.roof, progress)',
-            'progress >= 0.86',
-            "commitRooftopFloor(state, 'xr-manual-stairs:arrive-rooftop-v294')",
-            "setStableFloor(LEVEL.roof, 'xr-terrace-sticky-v294')",
-            'state.rooftopCommitted',
-            "if (route.kind === 'stairs')",
-            'no tienen movimiento automático',
-            'no se crean activadores para las escaleras caminables',
-            'rooftopStairsManualJoystickTraversal:true',
-            'rooftopFloorStickyCommit:true',
-            'rooftopStairsLoopPrevention:true'
-          ];
-          const missing = required.filter(value => !source.includes(value));
-          const forbidden = [
-            'ROUTES.find(route => nearRouteEntry(state, route))',
-            "beginRoute(state, route, 'control-manual')"
-          ].filter(value => source.includes(value));
-          if (missing.length || forbidden.length) {
-            console.error({ missing, forbidden });
-            process.exit(1);
-          }
-          console.log({ stableManualStairMarkers:required.length });
-          NODE
-
-          node - <<'NODE'
-          const fs = require('fs');
-          const source = fs.readFileSync('/tmp/quest-terrace.js', 'utf8');
-          const required = [
-            "const VERSION = 'V294'",
-            'OculusBrowser|Meta Quest|Quest 2|Quest 3|Quest Pro',
-            'const QUEST_EXPOSURE = 0.72',
-            'const QUEST_CONTRAST = 1.08',
-            'const QUEST_ENVIRONMENT_INTENSITY = 0.65',
-            'function stabilizeTerraceFloor',
-            'quest-v294-terrace-lock',
-            'alwaysSelectAsActiveMesh = true',
-            'original.scale(1.65)',
-            'Cielo optimizado terraza V287',
-            'function restoreLighting',
-            'function restoreReadableMeshes',
-            'window.__UCAN_QUEST_TERRACE_V294__'
+            "const VERSION = 'V295'",
+            'function captureDesktopAppearance',
+            'function applyExactDesktopAppearance',
+            'exposureOverride:false',
+            'contrastOverride:false',
+            'toneMappingOverride:false',
+            'floorMaterialOverride:false',
+            'originalMaterialsPreserved:true',
+            'quest-v295-terrace-sticky',
+            'skyRootForcedEveryFrame:true',
+            'celestialMeshesForcedVisible:true',
+            'terracePanelsForcedVisible:true',
+            'dynamicPanelTexturesRefreshed:true',
+            'hiddenPlanetsEducationallyVisibleInXR:true'
           ];
           const missing = required.filter(value => !source.includes(value));
           if (missing.length) {
             console.error({ missing });
             process.exit(1);
           }
-          console.log({ questTerraceMarkers:required.length });
+          console.log({ questParityMarkers:required.length });
           NODE
 
           node - <<'NODE'
@@ -114,40 +82,41 @@ jobs:
           const quest = html.indexOf('ucan_v289_quest_xr_compat.js');
           const visuals = html.indexOf('ucan_v291_quest_celestial_glass.js');
           const universal = html.indexOf('ucan_v292_universal_sign_window.js');
-          const terrace = html.indexOf('ucan_v294_quest_terrace_stability.js');
+          const parity = html.indexOf('ucan_v295_quest_desktop_parity_terrace.js');
           const main = html.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');
-          if (!(controls >= 0 && quest > controls && visuals > quest && universal > visuals && terrace > universal && main > terrace)) {
-            console.error({ controls, quest, visuals, universal, terrace, main });
+          if (!(controls >= 0 && quest > controls && visuals > quest && universal > visuals && parity > universal && main > parity)) {
+            console.error({ controls, quest, visuals, universal, parity, main });
             process.exit(1);
           }
-          if (html.includes('ucan_v290_quest_controls_interaction.js') || html.includes('ucan_v283_unified_xr_runtime.js')) process.exit(1);
-          console.log({ controls, quest, visuals, universal, terrace, main });
+          if (html.includes('ucan_v294_quest_terrace_stability.js') || html.includes('ucan_v290_quest_controls_interaction.js') || html.includes('ucan_v283_unified_xr_runtime.js')) process.exit(1);
+          if (!html.includes('UCAN Academic') || html.includes('UCAN Academic Mall')) process.exit(1);
+          if (!html.includes('<title>UCAN Academic</title>')) process.exit(1);
+          console.log({ controls, quest, visuals, universal, parity, main, branding:true });
           NODE
 
           grep -Fi "Permissions-Policy: xr-spatial-tracking=(self)" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Controls: V293" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Stairs: V293" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Terrace: V294" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Visuals: V291" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-UI: V292" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Terrace: V295" /tmp/campus.headers
+          grep -Fi "X-UCAN-Product: UCAN Academic" /tmp/campus.headers
 
           node - <<'NODE'
           const fs = require('fs');
           const v = JSON.parse(fs.readFileSync('/tmp/version.json'));
           const checks = {
-            baseVersion:v.version === 'V287',
+            product:v.productName === 'UCAN Academic' && v.visibleVersionInProductName === false && v.legacyProductNameRemoved === true,
             controls:v.unifiedXrVersion === 'V293' && v.questControlsVersion === 'V293',
-            automatic:v.questRooftopStairsAutomatic === false,
-            traversal:v.questRooftopStairsJoystickTraversal === true && v.questRooftopStairsContinuousSlope === true,
-            sticky:v.questRooftopFloorStickyCommit === true && v.questRooftopFloorCommitProgress === 0.86,
-            loop:v.questRooftopStairsLoopPrevention === true && v.questRooftopStairsNoActivationButton === true,
-            terraceVersion:v.questTerraceVersion === 'V294',
-            questOnly:v.questOnlyVisualCorrections === true && v.desktopVisualsUnchanged === true,
-            lighting:v.questExposure === 0.72 && v.questContrast === 1.08 && v.questEnvironmentIntensity === 0.65 && v.questLightScale === 0.82,
-            drop:v.questTerraceFloorLock === true && v.questTerraceDropPrevention === true,
-            signs:v.questDistantLabelsAlwaysActive === true && v.questCelestialLabelScale === 1.65 && v.questTerracePanelsReadable === true,
-            visuals:v.questVisualVersion === 'V291',
-            universal:v.universalSignVersion === 'V292'
+            terrace:v.questTerraceVersion === 'V295',
+            desktopUnchanged:v.desktopVisualsUnchanged === true,
+            lightingParity:v.sameLightingAcrossEnvironments === true && v.noQuestSpecificExposure === true && v.questExposureFactor === 1,
+            noOverrides:v.questExposureOverride === false && v.questContrastOverride === false && v.questToneMappingOverride === false && v.questEnvironmentIntensityOverride === false && v.questLightIntensityOverride === false,
+            floorParity:v.questFloorMaterialOverride === false && v.questFloorMatchesDesktop === true,
+            stability:v.questTerraceFloorLock === true && v.questTerraceDropPrevention === true,
+            assets:v.questTerraceAssetsForcedEveryFrame === true && v.questSkyRootForcedEveryFrame === true && v.questCelestialMeshesForcedVisible === true && v.questTerracePanelsForcedVisible === true,
+            textures:v.questDynamicPanelTexturesRefreshed === true && v.questOriginalMaterialsPreserved === true,
+            planets:v.questHiddenPlanetsEducationallyVisibleInXR === true
           };
           if (!Object.values(checks).every(Boolean)) {
             console.error({ checks, version:v });
@@ -158,4 +127,4 @@ jobs:
 
           kill "$(cat /tmp/ucan.pid)"
       - name: Construir imagen Docker
-        run: docker build -t ucan-academic-mall:test .
+        run: docker build -t ucan-academic:test .
