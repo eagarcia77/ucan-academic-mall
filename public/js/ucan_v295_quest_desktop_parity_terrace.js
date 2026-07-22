@@ -369,12 +369,12 @@
   function boot(attempt = 0) {
     const scene = window.__UCAN_API__?.getScene?.();
     const helper = window.__UCAN_XR_HELPER__;
-    const controlsReady = window.__UCAN_UNIFIED_XR_AUDIT__?.version === 'V293';
+    const controlsReady = window.__UCAN_UNIFIED_XR_AUDIT__?.version === 'V296';
     const windowReady = window.__UCAN_UNIVERSAL_SIGN_AUDIT__?.version === 'V292';
     if (scene && helper?.baseExperience && controlsReady && windowReady) return install(scene, helper);
     if (attempt < 300) window.setTimeout(() => boot(attempt + 1), 100);
     else {
-      state.lastError = { stage:'boot', name:'Timeout', message:'No se encontró la escena, WebXR, V293 o V292.', at:new Date().toISOString() };
+      state.lastError = { stage:'boot', name:'Timeout', message:'No se encontró la escena, WebXR, V296 o V292.', at:new Date().toISOString() };
       updateAudit();
     }
   }
