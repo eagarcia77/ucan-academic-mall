@@ -1,15 +1,16 @@
 {
-  "name": "ucan-academic-v296",
-  "version": "2.9.6",
-  "description": "UCAN Academic con movimiento de computadora, letreros legibles y selección robusta en Meta Quest V296",
+  "name": "ucan-academic-v297",
+  "version": "2.9.7",
+  "description": "UCAN Academic con rótulos frontales y velocidad del navegador en Meta Quest V297",
   "main": "server.js",
   "scripts": {
     "start": "node -r ./auth-compat-v293.js server.js",
-    "check": "node --check server.js && node --check lib/auth.js && node --check lib/floor-state-machine-v287.js && node --check lib/manual-rooftop-stairs-v293.js && node --check auth-compat-v271.js && node --check auth-compat-v287.js && node --check auth-compat-v293.js && node --check public/js/ucan_babylon_mall_v265_accounts_avatars.js && node --check public/js/ucan_avatar_shared.js && node --check public/js/ucan_v265_identity.js && node --check public/js/ucan_v270_avatar_studio.js && node --check public/js/ucan_v277_profile_rollback_persistence.js && node --check public/js/ucan_v278_scroll_direct_access.js && node --check public/js/ucan_v290_quest_controls_interaction.js && node --check public/js/ucan_v291_quest_celestial_glass.js && node --check public/js/ucan_v292_universal_sign_window.js && node --check public/js/ucan_v295_quest_desktop_parity_terrace.js && node --check public/js/ucan_v296_quest_signs_selection.js && node --check public/js/ucan_v287_rooftop_sky.js && node --check public/js/ucan_v288_celestial_info_window.js && node --check public/js/ucan_v289_quest_xr_compat.js && node --check public/js/ucan_v266_keyboard_jump.js && node --check public/js/ucan_v240_features.js && node --check public/js/ucan_v240_voice.js && node --check public/js/ucan_v240_experiences.js",
+    "check": "node --check server.js && node --check lib/auth.js && node --check lib/floor-state-machine-v287.js && node --check lib/manual-rooftop-stairs-v293.js && node --check auth-compat-v271.js && node --check auth-compat-v287.js && node --check auth-compat-v293.js && node --check public/js/ucan_babylon_mall_v265_accounts_avatars.js && node --check public/js/ucan_avatar_shared.js && node --check public/js/ucan_v265_identity.js && node --check public/js/ucan_v270_avatar_studio.js && node --check public/js/ucan_v277_profile_rollback_persistence.js && node --check public/js/ucan_v278_scroll_direct_access.js && node --check public/js/ucan_v290_quest_controls_interaction.js && node --check public/js/ucan_v291_quest_celestial_glass.js && node --check public/js/ucan_v292_universal_sign_window.js && node --check public/js/ucan_v295_quest_desktop_parity_terrace.js && node --check public/js/ucan_v296_quest_signs_selection.js && node --check public/js/ucan_v297_quest_room_signs_speed.js && node --check public/js/ucan_v287_rooftop_sky.js && node --check public/js/ucan_v288_celestial_info_window.js && node --check public/js/ucan_v289_quest_xr_compat.js && node --check public/js/ucan_v266_keyboard_jump.js && node --check public/js/ucan_v240_features.js && node --check public/js/ucan_v240_voice.js && node --check public/js/ucan_v240_experiences.js",
     "audit:unified-xr": "node audit_unified_xr_v290.js",
     "audit:manual-rooftop-stairs": "node verify_manual_stairs_v293.js",
     "audit:quest-terrace": "node verify_quest_parity_v295.js",
     "audit:quest-interaction": "node verify_quest_interaction_v296.js",
+    "audit:quest-room-speed": "node verify_quest_room_signs_speed_v297.js",
     "audit:quest-xr": "node verify_meta_xr_v289.js",
     "audit:quest-visuals": "node verify_meta_visuals_v291.js",
     "audit:universal-signs": "node verify_universal_signs_v292.js",
@@ -18,7 +19,7 @@
     "audit:direct-floor-fix": "node audit_floor_sky_v287.js",
     "audit:desktop-floor-lock": "node audit_floor_sky_v287.js",
     "audit:desktop-floor-guard": "node audit_floor_sky_v287.js",
-    "audit:quest": "node verify_quest_interaction_v296.js",
+    "audit:quest": "node verify_quest_room_signs_speed_v297.js",
     "audit:xr-floor-stairs": "node verify_manual_stairs_v293.js",
     "audit:quest-visual-rooftop": "node verify_quest_interaction_v296.js",
     "audit:environment-escalators": "node audit_unified_xr_v290.js",
@@ -38,7 +39,7 @@
     "audit:astro-panels": "node audit_astro_panels_v265.js",
     "audit:keyboard-jump": "node audit_keyboard_jump_v266.js",
     "audit:avatar-v270": "node audit_avatar_studio_v270.js",
-    "test": "npm run check && npm run audit:unified-xr && npm run audit:manual-rooftop-stairs && npm run audit:quest-terrace && npm run audit:quest-interaction && npm run audit:quest-xr && npm run audit:quest-visuals && npm run audit:universal-signs && npm run audit:floor-sky && npm run audit:celestial-window && npm run audit:profile && npm run audit:access-scroll && npm run audit:accounts && npm run audit:layers && npm run audit:floor && npm run audit:environment && npm run audit:optimization && npm run audit:stairs && npm run audit:astronomy && npm run audit:text-wrap && npm run audit:astro-panels && npm run audit:keyboard-jump && npm run audit:avatar-v270"
+    "test": "npm run check && npm run audit:unified-xr && npm run audit:manual-rooftop-stairs && npm run audit:quest-terrace && npm run audit:quest-interaction && npm run audit:quest-room-speed && npm run audit:quest-xr && npm run audit:quest-visuals && npm run audit:universal-signs && npm run audit:floor-sky && npm run audit:celestial-window && npm run audit:profile && npm run audit:access-scroll && npm run audit:accounts && npm run audit:layers && npm run audit:floor && npm run audit:environment && npm run audit:optimization && npm run audit:stairs && npm run audit:astronomy && npm run audit:text-wrap && npm run audit:astro-panels && npm run audit:keyboard-jump && npm run audit:avatar-v270"
   },
   "dependencies": {}
 }
