@@ -16,7 +16,7 @@ jobs:
           node-version: 20
       - name: Validar JavaScript y auditorías
         run: npm test
-      - name: Probar servidor, rótulos, velocidad y autenticación
+      - name: Probar servidor, emulación browser XR y autenticación
         env:
           PORT: 3011
           ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
@@ -29,12 +29,9 @@ jobs:
           done
 
           curl -fsS "http://127.0.0.1:3011/js/ucan_babylon_mall_v265_accounts_avatars.js?build=V287-20260720-FLOOR-STATE-SKY-OPT" > /tmp/main-scene.js
-          curl -fsS "http://127.0.0.1:3011/js/ucan_v296_quest_controls_interaction.js?build=V296-20260722-QUEST-MOVEMENT-SIGNS-SELECTION" > /tmp/quest-controls.js
-          curl -fsS "http://127.0.0.1:3011/js/ucan_v291_quest_celestial_glass.js?build=V291-20260720-QUEST-CELESTIAL-GLASS" > /tmp/quest-visuals.js
+          curl -fsS "http://127.0.0.1:3011/js/ucan_v289_quest_xr_compat.js?build=V289-20260720-QUEST-XR-COMPAT-DIAGNOSTICS" > /tmp/quest-entry.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v292_universal_sign_window.js?build=V292-20260721-UNIVERSAL-SIGN-WINDOW-CLOCK" > /tmp/universal-signs.js
-          curl -fsS "http://127.0.0.1:3011/js/ucan_v295_quest_desktop_parity_terrace.js?build=V295-20260721-QUEST-DESKTOP-PARITY-TERRACE-ASSETS" > /tmp/quest-parity.js
-          curl -fsS "http://127.0.0.1:3011/js/ucan_v296_quest_signs_selection.js?build=V296-20260722-QUEST-MOVEMENT-SIGNS-SELECTION" > /tmp/quest-interaction.js
-          curl -fsS "http://127.0.0.1:3011/js/ucan_v297_quest_room_signs_speed.js?build=V297-20260722-QUEST-ROOM-SIGNS-DESKTOP-SPEED" > /tmp/quest-correction.js
+          curl -fsS "http://127.0.0.1:3011/js/ucan_v298_browser_emulation_xr.js?build=V298-20260722-BROWSER-SCENE-XR-EMULATION" > /tmp/browser-xr.js
           curl -fsS http://127.0.0.1:3011/version > /tmp/version.json
 
           CI_USER="ciquest${GITHUB_RUN_ID}"
@@ -45,48 +42,51 @@ jobs:
           curl -fsS -D /tmp/campus.headers -b /tmp/cookies.txt http://127.0.0.1:3011/campus > /tmp/campus.html
 
           node --check /tmp/main-scene.js
-          node --check /tmp/quest-controls.js
-          node --check /tmp/quest-visuals.js
+          node --check /tmp/quest-entry.js
           node --check /tmp/universal-signs.js
-          node --check /tmp/quest-parity.js
-          node --check /tmp/quest-interaction.js
-          node --check /tmp/quest-correction.js
+          node --check /tmp/browser-xr.js
 
           node - <<'NODE'
           const fs = require('fs');
-          const source = fs.readFileSync('/tmp/quest-correction.js', 'utf8');
+          const source = fs.readFileSync('/tmp/browser-xr.js', 'utf8');
           const required = [
-            "const VERSION = 'V297'",
-            'function disposeMirroredCopies',
-            'ucanQuestRoomSignBackV296',
-            'function createSignMaterial',
-            'SALA VIRTUAL',
-            'sideOrientation:B.Mesh.FRONTSIDE',
-            'B.Mesh.BILLBOARDMODE_Y',
-            'roomSignsNeverUseBackTexture:true',
-            'comfort:3.4, normal:5.0, sprint:7.0',
-            'DIGITAL_THRESHOLD = 0.34',
-            'SPRINT_THRESHOLD = 0.72',
-            'function applyDesktopSpeedCorrection',
-            'camera._collideWithWorld(step)',
-            'analogToKeyboardParity:true',
-            'desktopSceneUnchanged:true'
+            "const VERSION = 'V298'",
+            "architecture:'single-browser-scene-emulation'",
+            'singleAuthoritativeRuntime:true',
+            'sameSceneAsBrowser:true',
+            'sameMeshesAsBrowser:true',
+            'sameMaterialsAsBrowser:true',
+            'sameLightingAsBrowser:true',
+            'sameRoomSignsAsBrowser:true',
+            'generatedRoomSignClones:false',
+            'generatedRoomSignOverlays:false',
+            'browserCollisionCameraProxy:true',
+            'state.desktop._collideWithWorld(step)',
+            'browserNormalSpeed:SPEED.normal',
+            'browserComfortSpeed:SPEED.comfort',
+            'browserSprintSpeed:SPEED.sprint',
+            'browserAutomaticEscalatorRoutes:true',
+            'rooftopStairsManualInXR:true',
+            'browserPointerEventDispatch:true',
+            'window.__UCAN_UNIVERSAL_SIGN_WINDOW__',
+            'function selectFromController'
           ];
           const missing = required.filter(value => !source.includes(value));
           if (missing.length) {
             console.error({ missing });
             process.exit(1);
           }
-          console.log({ correctionMarkers:required.length });
+          console.log({ browserXrMarkers:required.length });
           NODE
 
           node - <<'NODE'
           const fs = require('fs');
           const main = fs.readFileSync('/tmp/main-scene.js', 'utf8');
           const required = [
-            "{ id:'SV-201'",
-            "{ id:'SV-203'",
-            "{ id:'SV-205'",
+            '__UCAN_BROWSER_XR_MAIN_PATCH_V298__',
+            'if(window.__UCAN_BROWSER_XR_EMULATION_ACTIVE__) return;',
+            "zone.id === 'up34' || zone.id === 'down43'",
+            'return nearEntry(camera.position, zone);',
             "const speed=(comfortMode?3.4:(keys.has('ShiftLeft')||keys.has('ShiftRight')?7.0:5.0))"
           ];
           const missing = required.filter(value => !main.includes(value));
@@ -94,37 +94,46 @@ jobs:
             console.error({ missing });
             process.exit(1);
           }
-          console.log({ browserReferenceMarkers:required.length });
+          console.log({ mainPatchMarkers:required.length });
           NODE
 
           node - <<'NODE'
           const fs = require('fs');
           const html = fs.readFileSync('/tmp/campus.html', 'utf8');
-          const controls = html.indexOf('ucan_v296_quest_controls_interaction.js');
-          const quest = html.indexOf('ucan_v289_quest_xr_compat.js');
-          const visuals = html.indexOf('ucan_v291_quest_celestial_glass.js');
+          const entry = html.indexOf('ucan_v289_quest_xr_compat.js');
           const universal = html.indexOf('ucan_v292_universal_sign_window.js');
-          const parity = html.indexOf('ucan_v295_quest_desktop_parity_terrace.js');
-          const interaction = html.indexOf('ucan_v296_quest_signs_selection.js');
-          const correction = html.indexOf('ucan_v297_quest_room_signs_speed.js');
+          const runtime = html.indexOf('ucan_v298_browser_emulation_xr.js');
           const main = html.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');
-          if (!(controls >= 0 && quest > controls && visuals > quest && universal > visuals && parity > universal && interaction > parity && correction > interaction && main > correction)) {
-            console.error({ controls, quest, visuals, universal, parity, interaction, correction, main });
+          if (!(entry >= 0 && universal > entry && runtime > universal && main > runtime)) {
+            console.error({ entry, universal, runtime, main });
             process.exit(1);
           }
-          if (html.includes('ucan_v294_quest_terrace_stability.js') || html.includes('ucan_v293_quest_controls_interaction.js') || html.includes('ucan_v290_quest_controls_interaction.js') || html.includes('ucan_v283_unified_xr_runtime.js')) process.exit(1);
+          const forbidden = [
+            'ucan_v283_unified_xr_runtime.js',
+            'ucan_v290_quest_controls_interaction.js',
+            'ucan_v293_quest_controls_interaction.js',
+            'ucan_v296_quest_controls_interaction.js',
+            'ucan_v291_quest_celestial_glass.js',
+            'ucan_v294_quest_terrace_stability.js',
+            'ucan_v295_quest_desktop_parity_terrace.js',
+            'ucan_v296_quest_signs_selection.js',
+            'ucan_v297_quest_room_signs_speed.js'
+          ];
+          const found = forbidden.filter(value => html.includes(value));
+          if (found.length) {
+            console.error({ found });
+            process.exit(1);
+          }
           if (!html.includes('UCAN Academic') || html.includes('UCAN Academic Mall')) process.exit(1);
-          console.log({ controls, quest, visuals, universal, parity, interaction, correction, main, branding:true });
+          console.log({ entry, universal, runtime, main, singleRuntime:true, branding:true });
           NODE
 
           grep -Fi "Permissions-Policy: xr-spatial-tracking=(self)" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Controls: V296" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Stairs: V296" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Visuals: V291" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Controls: V298" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Emulation: V298" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Mode: browser-scene" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-UI: V292" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Terrace: V295" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Interaction: V296" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Correction: V297" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Entry: V289" /tmp/campus.headers
           grep -Fi "X-UCAN-Product: UCAN Academic" /tmp/campus.headers
 
           node - <<'NODE'
@@ -132,22 +141,35 @@ jobs:
           const v = JSON.parse(fs.readFileSync('/tmp/version.json'));
           const checks = {
             product:v.productName === 'UCAN Academic',
-            experience:v.questExperienceVersion === 'V297' && v.questCorrectionVersion === 'V297',
-            controls:v.unifiedXrVersion === 'V296' && v.questControlsVersion === 'V296',
-            browserSpeed:v.questNaturalSpeed === 5 && v.questComfortSpeed === 3.4 && v.questBrowserSprintSpeed === 7,
-            digitalParity:v.questAnalogToKeyboardParity === true && v.questDigitalMovementThreshold === 0.34,
-            sprint:v.questFullStickSprint === true && v.questSprintThreshold === 0.72,
-            collisions:v.questDesktopCollisionParity === true,
-            signs:v.questRoomSignsFrontFacingTextures === true && v.questRoomSignsBillboardY === true && v.questRoomSignsNeverUseBackTexture === true,
-            cleanup:v.questV296MirroredCopiesRemoved === true && v.questMirroredVirtualRoomSignsFixed === true,
-            interaction:v.questInteractionVersion === 'V296' && v.questTerracePanelsSelectable === true && v.questCelestialObjectsSelectable === true,
-            desktop:v.desktopVisualsUnchanged === true && v.questFloorMatchesDesktop === true
+            experience:v.questExperienceVersion === 'V298' && v.questRuntimeVersion === 'V298',
+            runtime:v.unifiedXrVersion === 'V298' && v.questControlsVersion === 'V298',
+            architecture:v.questArchitecture === 'single-browser-scene-emulation' && v.questSingleAuthoritativeRuntime === true,
+            noLegacy:v.questLegacyRuntimeLayersLoaded === false && v.questVisualOverrides === false,
+            scene:v.questUsesBrowserScene === true && v.questUsesBrowserMeshes === true,
+            rendering:v.questUsesBrowserMaterials === true && v.questUsesBrowserLighting === true && v.questUsesBrowserImageProcessing === true,
+            signs:v.questUsesBrowserRoomSigns === true && v.questGeneratedRoomSignClones === false && v.questGeneratedRoomSignOverlays === false,
+            movement:v.questNormalSpeed === 5 && v.questComfortSpeed === 3.4 && v.questBrowserSprintSpeed === 7,
+            collisions:v.questBrowserCollisionCameraProxy === true && v.questBrowserMovementLoopSuppressed === true,
+            escalators:v.questAutomaticEscalatorsUseBrowserRoutes === true && v.questRooftopStairsAutomatic === false,
+            interaction:v.questBrowserPointerDispatch === true && v.questDirectTouchControllerTrigger === true && v.questSelectionRayLength === 300,
+            content:v.questTerracePanelsSelectable === true && v.questCelestialObjectsSelectable === true && v.questUniversalWindowIntegration === true,
+            desktop:v.desktopVisualsUnchanged === true
           };
           if (!Object.values(checks).every(Boolean)) {
             console.error({ checks, version:v });
             process.exit(1);
           }
           console.log({ checks });
+          NODE
+
+          node - <<'NODE'
+          const fs = require('fs');
+          const registration = JSON.parse(fs.readFileSync('/tmp/register.json'));
+          if (registration.questRuntimeVersion || registration.questArchitecture) {
+            console.error('La respuesta de registro fue modificada como si fuera /version.', registration);
+            process.exit(1);
+          }
+          console.log({ registrationResponseUntouched:true });
           NODE
 
           kill "$(cat /tmp/ucan.pid)"
