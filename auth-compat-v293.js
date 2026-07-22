@@ -58,6 +58,8 @@ function transformCampusHtml(text) {
 
 function updateVersionData(data) {
   if (!data || typeof data !== 'object') return data;
+  const versionPayload = Object.prototype.hasOwnProperty.call(data, 'version') || Object.prototype.hasOwnProperty.call(data, 'build') || Object.prototype.hasOwnProperty.call(data, 'unifiedXrVersion') || Object.prototype.hasOwnProperty.call(data, 'questControlsVersion');
+  if (!versionPayload) return data;
   data.productName = 'UCAN Academic';
   data.visibleVersionInProductName = false;
   data.legacyProductNameRemoved = true;
@@ -130,6 +132,9 @@ http.ServerResponse.prototype.writeHead = function writeHeadV298(statusCode, sta
   }
   if (nextHeaders && typeof nextHeaders === 'object') {
     nextHeaders = { ...nextHeaders };
+    for (const key of Object.keys(nextHeaders)) {
+      if (key.toLowerCase() === 'content-length') delete nextHeaders[key];
+    }
     nextHeaders['X-UCAN-XR-Controls'] = QUEST_RUNTIME_VERSION;
     nextHeaders['X-UCAN-XR-Emulation'] = QUEST_RUNTIME_VERSION;
     nextHeaders['X-UCAN-XR-Mode'] = 'browser-scene';
