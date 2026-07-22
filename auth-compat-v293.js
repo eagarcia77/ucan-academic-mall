@@ -5,15 +5,20 @@ const fs = require('fs');
 const path = require('path');
 const { VERSION, BUILD, patchQuestControls } = require('./lib/manual-rooftop-stairs-v293');
 
-const CONTROLS_PATH = '/js/ucan_v293_quest_controls_interaction.js';
+const CONTROLS_PATH = '/js/ucan_v296_quest_controls_interaction.js';
 const CONTROLS_FILE = path.join(__dirname, 'public', 'js', 'ucan_v290_quest_controls_interaction.js');
 const CONTROLS_SCRIPT = `${CONTROLS_PATH}?build=${BUILD}`;
+const LEGACY_CONTROLS_PATH = '/js/ucan_v293_quest_controls_interaction.js';
 const V290_BUILD = 'V290-20260720-QUEST-CONTROLS-STAIRS-INFO';
 const V290_PATH = '/js/ucan_v290_quest_controls_interaction.js';
 const QUEST_TERRACE_VERSION = 'V295';
 const QUEST_TERRACE_BUILD = 'V295-20260721-QUEST-DESKTOP-PARITY-TERRACE-ASSETS';
 const QUEST_TERRACE_PATH = '/js/ucan_v295_quest_desktop_parity_terrace.js';
 const QUEST_TERRACE_SCRIPT = `${QUEST_TERRACE_PATH}?build=${QUEST_TERRACE_BUILD}`;
+const QUEST_INTERACTION_VERSION = 'V296';
+const QUEST_INTERACTION_BUILD = 'V296-20260722-QUEST-MOVEMENT-SIGNS-SELECTION';
+const QUEST_INTERACTION_PATH = '/js/ucan_v296_quest_signs_selection.js';
+const QUEST_INTERACTION_SCRIPT = `${QUEST_INTERACTION_PATH}?build=${QUEST_INTERACTION_BUILD}`;
 const LEGACY_QUEST_TERRACE_PATH = '/js/ucan_v294_quest_terrace_stability.js';
 
 const nativeWriteHead = http.ServerResponse.prototype.writeHead;
@@ -28,17 +33,20 @@ function normalizeBranding(text) {
     .replace(/<title>[^<]*<\/title>/i, '<title>UCAN Academic</title>');
 }
 
-function insertQuestTerraceScript(text) {
+function insertQuestScripts(text) {
   let html = String(text)
-    .replace(/\s*<script src="\/js\/ucan_v294_quest_terrace_stability\.js\?build=[^"]+"><\/script>/g, '');
-  if (html.includes(QUEST_TERRACE_PATH)) return normalizeBranding(html);
+    .replace(/\s*<script src="\/js\/ucan_v294_quest_terrace_stability\.js\?build=[^"]+"><\/script>/g, '')
+    .replace(/\s*<script src="\/js\/ucan_v295_quest_desktop_parity_terrace\.js\?build=[^"]+"><\/script>/g, '')
+    .replace(/\s*<script src="\/js\/ucan_v296_quest_signs_selection\.js\?build=[^"]+"><\/script>/g, '');
+
   const universalPattern = /<script src="\/js\/ucan_v292_universal_sign_window\.js\?build=[^"]+"><\/script>/;
   const universalTag = html.match(universalPattern)?.[0];
-  const terraceTag = `<script src="${QUEST_TERRACE_SCRIPT}"></script>`;
-  if (universalTag) return normalizeBranding(html.replace(universalTag, `${universalTag}\n  ${terraceTag}`));
+  const tags = `<script src="${QUEST_TERRACE_SCRIPT}"></script>\n  <script src="${QUEST_INTERACTION_SCRIPT}"></script>`;
+  if (universalTag) return normalizeBranding(html.replace(universalTag, `${universalTag}\n  ${tags}`));
+
   const mainPattern = /<script src="\/js\/ucan_babylon_mall_v265_accounts_avatars\.js\?build=[^"]+"><\/script>/;
   const mainTag = html.match(mainPattern)?.[0];
-  if (mainTag) return normalizeBranding(html.replace(mainTag, `${terraceTag}\n  ${mainTag}`));
+  if (mainTag) return normalizeBranding(html.replace(mainTag, `${tags}\n  ${mainTag}`));
   return normalizeBranding(html);
 }
 
@@ -46,15 +54,18 @@ function replaceV290References(text) {
   const updated = String(text)
     .replaceAll(`${V290_PATH}?build=${V290_BUILD}`, CONTROLS_SCRIPT)
     .replaceAll(V290_PATH, CONTROLS_PATH)
+    .replaceAll(LEGACY_CONTROLS_PATH, CONTROLS_PATH)
     .replaceAll(V290_BUILD, BUILD)
-    .replaceAll('Meta Quest V290:', 'Meta Quest V293:')
-    .replaceAll('V292: planetas, calendarios, mapas, agenda, clima y reloj usan una ventana universal legible y cerrable en todos los entornos.', 'V295: Meta Quest utiliza la misma iluminación y materiales de la computadora, con planetas y pantallas de terraza visibles.');
-  return insertQuestTerraceScript(updated);
+    .replaceAll('Meta Quest V290:', 'Meta Quest V296:')
+    .replaceAll('Meta Quest V293:', 'Meta Quest V296:')
+    .replaceAll('V295: Meta Quest utiliza la misma iluminación y materiales de la computadora, con planetas y pantallas de terraza visibles.', 'V296: movimiento igual a computadora, letreros de salas legibles y selección directa de planetas y pantallas en Meta Quest.')
+    .replaceAll('V292: planetas, calendarios, mapas, agenda, clima y reloj usan una ventana universal legible y cerrable en todos los entornos.', 'V296: movimiento igual a computadora, letreros de salas legibles y selección directa de planetas y pantallas en Meta Quest.');
+  return insertQuestScripts(updated);
 }
 
 function updateVersionData(data) {
   if (!data || typeof data !== 'object') return data;
-  if (data.unifiedXrVersion !== 'V290' && data.questControlsVersion !== 'V290' && data.questControlsVersion !== 'V293') return data;
+  if (!['V290','V293','V296'].includes(data.unifiedXrVersion) && !['V290','V293','V296'].includes(data.questControlsVersion)) return data;
   data.productName = 'UCAN Academic';
   data.visibleVersionInProductName = false;
   data.legacyProductNameRemoved = true;
@@ -63,6 +74,14 @@ function updateVersionData(data) {
   data.unifiedXrBuild = BUILD;
   data.questControlsVersion = VERSION;
   data.questControlsBuild = BUILD;
+  data.questMovementMatchesDesktop = true;
+  data.questNaturalSpeed = 5.0;
+  data.questComfortSpeed = 3.4;
+  data.questSmoothTurn = true;
+  data.questSmoothTurnNaturalSpeed = 1.9;
+  data.questSmoothTurnComfortSpeed = 1.2;
+  data.questSnapTurn = false;
+  data.questDesktopCollisionParity = true;
   data.questRooftopStairsAutomatic = false;
   data.questRooftopStairsManualActivation = false;
   data.questRooftopStairsTriggerActivation = false;
@@ -83,6 +102,19 @@ function updateVersionData(data) {
   data.questTerraceScript = QUEST_TERRACE_SCRIPT;
   data.questTerraceVersion = QUEST_TERRACE_VERSION;
   data.questTerraceBuild = QUEST_TERRACE_BUILD;
+  data.questInteractionScript = QUEST_INTERACTION_SCRIPT;
+  data.questInteractionVersion = QUEST_INTERACTION_VERSION;
+  data.questInteractionBuild = QUEST_INTERACTION_BUILD;
+  data.questRoomSignsSeparateFrontBack = true;
+  data.questMirroredVirtualRoomSignsFixed = true;
+  data.questDirectTouchControllerTrigger = true;
+  data.questTriggerPollingFallback = true;
+  data.questSelectionRayLength = 300;
+  data.questCelestialAngularFallbackDegrees = 10;
+  data.questPanelAngularFallbackDegrees = 7;
+  data.questTerracePanelsSelectable = true;
+  data.questCelestialObjectsSelectable = true;
+  data.questUniversalWindowIntegration = true;
   data.questOnlyVisualCorrections = true;
   data.desktopVisualsUnchanged = true;
   data.sameLightingAcrossEnvironments = true;
@@ -107,7 +139,7 @@ function updateVersionData(data) {
   return data;
 }
 
-function sendV293Controls(res) {
+function sendV296Controls(res) {
   try {
     const source = fs.readFileSync(CONTROLS_FILE, 'utf8');
     const result = patchQuestControls(source);
@@ -121,6 +153,7 @@ function sendV293Controls(res) {
       'X-UCAN-XR-Controls':VERSION,
       'X-UCAN-XR-Stairs':VERSION,
       'X-UCAN-XR-Terrace':QUEST_TERRACE_VERSION,
+      'X-UCAN-XR-Interaction':QUEST_INTERACTION_VERSION,
       'X-UCAN-Product':'UCAN Academic'
     });
     res.end(body);
@@ -135,16 +168,17 @@ function sendV293Controls(res) {
   }
 }
 
-http.createServer = function createV293BaseServer(listener) {
+http.createServer = function createV296BaseServer(listener) {
   if (typeof listener !== 'function') return nativeCreateServer.apply(this, arguments);
   return nativeCreateServer.call(this, async (req, res) => {
     try {
       const parsed = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
-      if (req.method === 'GET' && decodeURIComponent(parsed.pathname) === CONTROLS_PATH) return sendV293Controls(res);
+      const pathname = decodeURIComponent(parsed.pathname);
+      if (req.method === 'GET' && (pathname === CONTROLS_PATH || pathname === LEGACY_CONTROLS_PATH)) return sendV296Controls(res);
       return await listener(req, res);
     } catch (error) {
       if (!res.headersSent && !res.writableEnded) {
-        const body = JSON.stringify({ error:error.message || 'Error interno V293' });
+        const body = JSON.stringify({ error:error.message || 'Error interno V296' });
         nativeWriteHead.call(res, 500, {
           'Content-Type':'application/json; charset=utf-8',
           'Content-Length':Buffer.byteLength(body),
@@ -156,7 +190,7 @@ http.createServer = function createV293BaseServer(listener) {
   });
 };
 
-http.ServerResponse.prototype.writeHead = function writeHeadV293(statusCode, statusMessage, headers) {
+http.ServerResponse.prototype.writeHead = function writeHeadV296(statusCode, statusMessage, headers) {
   let message = statusMessage;
   let nextHeaders = headers;
   if (statusMessage && typeof statusMessage === 'object') {
@@ -170,13 +204,14 @@ http.ServerResponse.prototype.writeHead = function writeHeadV293(statusCode, sta
     else nextHeaders['X-UCAN-XR-Controls'] = VERSION;
     nextHeaders['X-UCAN-XR-Stairs'] = VERSION;
     nextHeaders['X-UCAN-XR-Terrace'] = QUEST_TERRACE_VERSION;
+    nextHeaders['X-UCAN-XR-Interaction'] = QUEST_INTERACTION_VERSION;
     nextHeaders['X-UCAN-Product'] = 'UCAN Academic';
   }
   if (message === undefined) return nativeWriteHead.call(this, statusCode, nextHeaders);
   return nativeWriteHead.call(this, statusCode, message, nextHeaders);
 };
 
-http.ServerResponse.prototype.end = function endV293(chunk, encoding, callback) {
+http.ServerResponse.prototype.end = function endV296(chunk, encoding, callback) {
   let body = chunk;
   try {
     if (typeof body === 'string' || Buffer.isBuffer(body)) {
@@ -191,11 +226,11 @@ http.ServerResponse.prototype.end = function endV293(chunk, encoding, callback) 
       body = buffer ? Buffer.from(text, 'utf8') : text;
     }
   } catch (error) {
-    console.error('[UCAN V293/V295 response compatibility]', error);
+    console.error('[UCAN V296 response compatibility]', error);
   }
   return nativeEnd.call(this, body, encoding, callback);
 };
 
 require('./auth-compat-v287.js');
 
-console.info(`[UCAN ${VERSION}/${QUEST_TERRACE_VERSION}] UCAN Academic, escaleras caminables, paridad visual y terraza Quest cargados.`);
+console.info(`[UCAN ${VERSION}/${QUEST_TERRACE_VERSION}] UCAN Academic, movimiento de computadora, letreros legibles y selección Quest cargados.`);
