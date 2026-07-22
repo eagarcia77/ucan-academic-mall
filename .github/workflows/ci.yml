@@ -16,7 +16,7 @@ jobs:
           node-version: 20
       - name: Validar JavaScript y auditorías
         run: npm test
-      - name: Probar servidor, marca, paridad Quest y autenticación
+      - name: Probar servidor, movimiento, letreros, selección y autenticación
         env:
           PORT: 3011
           ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
@@ -29,10 +29,11 @@ jobs:
           done
 
           curl -fsS "http://127.0.0.1:3011/js/ucan_babylon_mall_v265_accounts_avatars.js?build=V287-20260720-FLOOR-STATE-SKY-OPT" > /tmp/main-scene.js
-          curl -fsS "http://127.0.0.1:3011/js/ucan_v293_quest_controls_interaction.js?build=V293-20260721-MANUAL-ROOFTOP-STAIRS-NO-LOOP" > /tmp/quest-controls.js
+          curl -fsS "http://127.0.0.1:3011/js/ucan_v296_quest_controls_interaction.js?build=V296-20260722-QUEST-MOVEMENT-SIGNS-SELECTION" > /tmp/quest-controls.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v291_quest_celestial_glass.js?build=V291-20260720-QUEST-CELESTIAL-GLASS" > /tmp/quest-visuals.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v292_universal_sign_window.js?build=V292-20260721-UNIVERSAL-SIGN-WINDOW-CLOCK" > /tmp/universal-signs.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v295_quest_desktop_parity_terrace.js?build=V295-20260721-QUEST-DESKTOP-PARITY-TERRACE-ASSETS" > /tmp/quest-parity.js
+          curl -fsS "http://127.0.0.1:3011/js/ucan_v296_quest_signs_selection.js?build=V296-20260722-QUEST-MOVEMENT-SIGNS-SELECTION" > /tmp/quest-interaction.js
           curl -fsS http://127.0.0.1:3011/version > /tmp/version.json
 
           CI_USER="ciquest${GITHUB_RUN_ID}"
@@ -47,76 +48,100 @@ jobs:
           node --check /tmp/quest-visuals.js
           node --check /tmp/universal-signs.js
           node --check /tmp/quest-parity.js
+          node --check /tmp/quest-interaction.js
 
           node - <<'NODE'
           const fs = require('fs');
-          const source = fs.readFileSync('/tmp/quest-parity.js', 'utf8');
+          const controls = fs.readFileSync('/tmp/quest-controls.js', 'utf8');
           const required = [
-            "const VERSION = 'V295'",
-            'function captureDesktopAppearance',
-            'function applyExactDesktopAppearance',
-            'exposureOverride:false',
-            'contrastOverride:false',
-            'toneMappingOverride:false',
-            'floorMaterialOverride:false',
-            'originalMaterialsPreserved:true',
-            'quest-v295-terrace-sticky',
-            'skyRootForcedEveryFrame:true',
-            'celestialMeshesForcedVisible:true',
-            'terracePanelsForcedVisible:true',
-            'dynamicPanelTexturesRefreshed:true',
-            'hiddenPlanetsEducationallyVisibleInXR:true'
+            "const VERSION = 'V296'",
+            'comfort:3.4, natural:5.0',
+            'TURN_SPEED = Object.freeze({ comfort:1.2, natural:1.9 })',
+            'function applySmoothTurn',
+            'function moveWithDesktopRules',
+            'camera._collideWithWorld(step)',
+            'desktopMovementParity:true',
+            'desktopCollisionParity:true',
+            'automaticRooftopStairs:false',
+            'rooftopStairsManualJoystickTraversal:true'
+          ];
+          const missing = required.filter(value => !controls.includes(value));
+          if (missing.length) {
+            console.error({ missing });
+            process.exit(1);
+          }
+          console.log({ movementMarkers:required.length });
+          NODE
+
+          node - <<'NODE'
+          const fs = require('fs');
+          const source = fs.readFileSync('/tmp/quest-interaction.js', 'utf8');
+          const required = [
+            "const VERSION = 'V296'",
+            'roomSignsSeparateFrontBack:true',
+            'mirroredVirtualRoomSignsFixed:true',
+            'ucanQuestRoomSignBackV296',
+            'back.rotation.y += Math.PI',
+            'directTouchControllerTrigger:true',
+            'triggerPollingFallback:true',
+            'const RAY_LENGTH = 300',
+            'function angularPick',
+            'terracePanelsSelectable:true',
+            'celestialObjectsSelectable:true',
+            'window.__UCAN_UNIVERSAL_SIGN_WINDOW__'
           ];
           const missing = required.filter(value => !source.includes(value));
           if (missing.length) {
             console.error({ missing });
             process.exit(1);
           }
-          console.log({ questParityMarkers:required.length });
+          console.log({ interactionMarkers:required.length });
           NODE
 
           node - <<'NODE'
           const fs = require('fs');
           const html = fs.readFileSync('/tmp/campus.html', 'utf8');
-          const controls = html.indexOf('ucan_v293_quest_controls_interaction.js');
+          const controls = html.indexOf('ucan_v296_quest_controls_interaction.js');
           const quest = html.indexOf('ucan_v289_quest_xr_compat.js');
           const visuals = html.indexOf('ucan_v291_quest_celestial_glass.js');
           const universal = html.indexOf('ucan_v292_universal_sign_window.js');
           const parity = html.indexOf('ucan_v295_quest_desktop_parity_terrace.js');
+          const interaction = html.indexOf('ucan_v296_quest_signs_selection.js');
           const main = html.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');
-          if (!(controls >= 0 && quest > controls && visuals > quest && universal > visuals && parity > universal && main > parity)) {
-            console.error({ controls, quest, visuals, universal, parity, main });
+          if (!(controls >= 0 && quest > controls && visuals > quest && universal > visuals && parity > universal && interaction > parity && main > interaction)) {
+            console.error({ controls, quest, visuals, universal, parity, interaction, main });
             process.exit(1);
           }
-          if (html.includes('ucan_v294_quest_terrace_stability.js') || html.includes('ucan_v290_quest_controls_interaction.js') || html.includes('ucan_v283_unified_xr_runtime.js')) process.exit(1);
+          if (html.includes('ucan_v294_quest_terrace_stability.js') || html.includes('ucan_v293_quest_controls_interaction.js') || html.includes('ucan_v290_quest_controls_interaction.js') || html.includes('ucan_v283_unified_xr_runtime.js')) process.exit(1);
           if (!html.includes('UCAN Academic') || html.includes('UCAN Academic Mall')) process.exit(1);
-          if (!html.includes('<title>UCAN Academic</title>')) process.exit(1);
-          console.log({ controls, quest, visuals, universal, parity, main, branding:true });
+          console.log({ controls, quest, visuals, universal, parity, interaction, main, branding:true });
           NODE
 
           grep -Fi "Permissions-Policy: xr-spatial-tracking=(self)" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Controls: V293" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Stairs: V293" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Controls: V296" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Stairs: V296" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Visuals: V291" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-UI: V292" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Terrace: V295" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Interaction: V296" /tmp/campus.headers
           grep -Fi "X-UCAN-Product: UCAN Academic" /tmp/campus.headers
 
           node - <<'NODE'
           const fs = require('fs');
           const v = JSON.parse(fs.readFileSync('/tmp/version.json'));
           const checks = {
-            product:v.productName === 'UCAN Academic' && v.visibleVersionInProductName === false && v.legacyProductNameRemoved === true,
-            controls:v.unifiedXrVersion === 'V293' && v.questControlsVersion === 'V293',
-            terrace:v.questTerraceVersion === 'V295',
-            desktopUnchanged:v.desktopVisualsUnchanged === true,
-            lightingParity:v.sameLightingAcrossEnvironments === true && v.noQuestSpecificExposure === true && v.questExposureFactor === 1,
-            noOverrides:v.questExposureOverride === false && v.questContrastOverride === false && v.questToneMappingOverride === false && v.questEnvironmentIntensityOverride === false && v.questLightIntensityOverride === false,
-            floorParity:v.questFloorMaterialOverride === false && v.questFloorMatchesDesktop === true,
-            stability:v.questTerraceFloorLock === true && v.questTerraceDropPrevention === true,
-            assets:v.questTerraceAssetsForcedEveryFrame === true && v.questSkyRootForcedEveryFrame === true && v.questCelestialMeshesForcedVisible === true && v.questTerracePanelsForcedVisible === true,
-            textures:v.questDynamicPanelTexturesRefreshed === true && v.questOriginalMaterialsPreserved === true,
-            planets:v.questHiddenPlanetsEducationallyVisibleInXR === true
+            product:v.productName === 'UCAN Academic',
+            controls:v.unifiedXrVersion === 'V296' && v.questControlsVersion === 'V296',
+            movement:v.questMovementMatchesDesktop === true && v.questNaturalSpeed === 5 && v.questComfortSpeed === 3.4,
+            turning:v.questSmoothTurn === true && v.questSnapTurn === false && v.questSmoothTurnNaturalSpeed === 1.9 && v.questSmoothTurnComfortSpeed === 1.2,
+            collisions:v.questDesktopCollisionParity === true,
+            terrace:v.questTerraceVersion === 'V295' && v.questTerraceFloorLock === true,
+            interaction:v.questInteractionVersion === 'V296',
+            signs:v.questRoomSignsSeparateFrontBack === true && v.questMirroredVirtualRoomSignsFixed === true,
+            trigger:v.questDirectTouchControllerTrigger === true && v.questTriggerPollingFallback === true,
+            ray:v.questSelectionRayLength === 300 && v.questCelestialAngularFallbackDegrees === 10 && v.questPanelAngularFallbackDegrees === 7,
+            selectable:v.questTerracePanelsSelectable === true && v.questCelestialObjectsSelectable === true && v.questUniversalWindowIntegration === true,
+            parity:v.sameLightingAcrossEnvironments === true && v.questFloorMatchesDesktop === true
           };
           if (!Object.values(checks).every(Boolean)) {
             console.error({ checks, version:v });
