@@ -7,6 +7,7 @@ const mainSource = fs.readFileSync('public/js/ucan_babylon_mall_v265_accounts_av
 const skySource = fs.readFileSync('public/js/ucan_v287_rooftop_sky.js', 'utf8');
 const compatSource = fs.readFileSync('auth-compat-v287.js', 'utf8');
 const layeredCompatSource = fs.readFileSync('auth-compat-v293.js', 'utf8');
+const visibilityCompatSource = fs.readFileSync('auth-compat-v305.js', 'utf8');
 const dockerfileSource = fs.readFileSync('Dockerfile', 'utf8');
 const codespaceStartSource = fs.readFileSync('.devcontainer/start-codespace.sh', 'utf8');
 const devcontainer = JSON.parse(fs.readFileSync('.devcontainer/devcontainer.json', 'utf8'));
@@ -32,10 +33,14 @@ try {
   patchError = patchError || error.message;
 }
 
+const v293PreservesV287 = /require\('\.\/auth-compat-v287\.js'\)/.test(layeredCompatSource);
+const v305PreservesV293 = /require\('\.\/auth-compat-v293\.js'\)/.test(visibilityCompatSource);
 const startsDirectV287 = pkg.scripts?.start === 'node -r ./auth-compat-v287.js server.js';
-const startsLayeredV293 = pkg.scripts?.start === 'node -r ./auth-compat-v293.js server.js' && /require\('\.\/auth-compat-v287\.js'\)/.test(layeredCompatSource);
+const startsLayeredV293 = pkg.scripts?.start === 'node -r ./auth-compat-v293.js server.js' && v293PreservesV287;
+const startsLayeredV305 = pkg.scripts?.start === 'node -r ./auth-compat-v305.js server.js' && v305PreservesV293 && v293PreservesV287;
 const dockerDirectV287 = /CMD \["node", "-r", "\.\/auth-compat-v287\.js", "server\.js"\]/.test(dockerfileSource);
-const dockerLayeredV293 = /CMD \["node", "-r", "\.\/auth-compat-v293\.js", "server\.js"\]/.test(dockerfileSource) && /require\('\.\/auth-compat-v287\.js'\)/.test(layeredCompatSource);
+const dockerLayeredV293 = /CMD \["node", "-r", "\.\/auth-compat-v293\.js", "server\.js"\]/.test(dockerfileSource) && v293PreservesV287;
+const dockerLayeredV305 = /CMD \["node", "-r", "\.\/auth-compat-v305\.js", "server\.js"\]/.test(dockerfileSource) && v305PreservesV293 && v293PreservesV287;
 
 const checks = {
   version:VERSION === 'V287',
@@ -70,10 +75,11 @@ const checks = {
   serverUsesNewSky:/ucan_v287_rooftop_sky\.js/.test(compatSource),
   oldSkyRefreshRemoved:/ucan_v276_sky_refresh/.test(compatSource) && /skyRefreshScript = null/.test(compatSource),
   noCacheMain:/X-UCAN-Floor-State/.test(compatSource) && /no-store, no-cache/.test(compatSource),
-  packageStartsV287Base:startsDirectV287 || startsLayeredV293,
-  layeredPreloaderPreservesV287:startsDirectV287 || /require\('\.\/auth-compat-v287\.js'\)/.test(layeredCompatSource),
+  packageStartsV287Base:startsDirectV287 || startsLayeredV293 || startsLayeredV305,
+  layeredPreloaderPreservesV287:startsDirectV287 || v293PreservesV287,
+  v305PreloaderPreservesV287:!startsLayeredV305 || (v305PreservesV293 && v293PreservesV287),
   packageAudit:pkg.scripts?.['audit:floor-sky'] === 'node audit_floor_sky_v287.js',
-  dockerStartsV287Base:dockerDirectV287 || dockerLayeredV293,
+  dockerStartsV287Base:dockerDirectV287 || dockerLayeredV293 || dockerLayeredV305,
   codespacesUsesNpmStart:/nohup npm start/.test(codespaceStartSource),
   codespacesRejectsOldVersion:/v\.version==='V287'/.test(codespaceStartSource),
   codespacesBuildIsV287:devcontainer?.remoteEnv?.UCAN_BUILD === BUILD,
@@ -86,6 +92,7 @@ console.log(JSON.stringify({
   version:VERSION,
   build:BUILD,
   checks,
+  preloaderChain:{ startsDirectV287, startsLayeredV293, startsLayeredV305, v305PreservesV293, v293PreservesV287 },
   patchError,
   transformChecks:result.checks || null
 }, null, 2));
