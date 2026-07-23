@@ -1,0 +1,100 @@
+name: Validar Entrada VR y MR V304
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate-v304-xr-entry:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Ejecutar auditorías V304
+        run: |
+          npm run check
+          npm run audit:xr-entry-mr
+
+      - name: Iniciar servidor autenticado
+        env:
+          PORT: 3016
+          ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
+        run: |
+          npm start > /tmp/ucan-xr-v304.log 2>&1 &
+          echo $! > /tmp/ucan-xr-v304.pid
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:3016/health > /tmp/health-xr-v304.json && break
+            sleep 1
+          done
+          curl -fsS "http://127.0.0.1:3016/js/ucan_v304_xr_entry_mr_fix.js?build=V304-20260723-XR-FLOATING-VR-MR-BETA" > /tmp/xr-entry-v304.js
+          curl -fsS http://127.0.0.1:3016/version > /tmp/version-xr-v304.json
+          CI_USER="cixrv304${GITHUB_RUN_ID}"
+          curl -fsS -c /tmp/cookies-xr-v304.txt \
+            -H 'Content-Type: application/json' \
+            -d "{\"username\":\"${CI_USER}\",\"displayName\":\"CI XR V304\",\"email\":\"${CI_USER}@example.test\",\"password\":\"CI-XR-V304-2026!\"}" \
+            http://127.0.0.1:3016/api/auth/register > /tmp/register-xr-v304.json
+          curl -fsS -D /tmp/campus-xr-v304.headers -b /tmp/cookies-xr-v304.txt http://127.0.0.1:3016/campus > /tmp/campus-xr-v304.html
+
+      - name: Validar JavaScript servido
+        run: |
+          node --check /tmp/xr-entry-v304.js
+          node - <<'NODE'
+          const fs = require('fs');
+          const source = fs.readFileSync('/tmp/xr-entry-v304.js', 'utf8');
+          const required = [
+            "const VERSION = 'V304'",
+            'ucanVrGogglesV304',
+            'floatingVrGogglesLowerRight:true',
+            "enterMode('immersive-vr')",
+            "enterMode('immersive-ar')",
+            'baseExperience.enterXRAsync',
+            'state.helper.renderTarget',
+            'new B.Color4(0, 0, 0, 0)',
+            'function restoreMixedReality',
+            '__UCAN_XR_ENTRY_MR_V304__'
+          ];
+          const missing = required.filter(value => !source.includes(value));
+          if (missing.length) throw new Error(`Marcadores XR V304 ausentes: ${missing.join(', ')}`);
+          console.log({ markers:required.length });
+          NODE
+
+      - name: Validar campus autenticado
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const html = fs.readFileSync('/tmp/campus-xr-v304.html', 'utf8');
+          const main = html.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');
+          const ecosystem = html.indexOf('ucan_v304_seasonal_natural_ecosystem.js');
+          const xrFix = html.indexOf('ucan_v304_xr_entry_mr_fix.js');
+          const occurrences = (html.match(/ucan_v304_xr_entry_mr_fix\.js/g) || []).length;
+          if (!(main >= 0 && ecosystem > main && xrFix > main)) throw new Error(JSON.stringify({ main, ecosystem, xrFix }));
+          if (occurrences !== 1) throw new Error(`La capa XR V304 aparece ${occurrences} veces.`);
+          if (html.includes('ucan_v305_') || html.includes('ucan_v306_')) throw new Error('Se reactivó una capa posterior a V304.');
+          if (!html.includes('id="xrBtn"') || !html.includes('id="mrBtn"')) throw new Error('Faltan los botones XR del HUD.');
+          console.log({ main, ecosystem, xrFix, occurrences });
+          NODE
+
+      - name: Validar versión restaurada
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const v = JSON.parse(fs.readFileSync('/tmp/version-xr-v304.json'));
+          if (v.releaseVersion !== 'V304' || v.environmentVersion !== 'V304') {
+            throw new Error(JSON.stringify(v, null, 2));
+          }
+          console.log({ releaseVersion:v.releaseVersion, environmentVersion:v.environmentVersion });
+          NODE
+
+      - name: Construir Docker V304
+        run: docker build -t ucan-academic:v304-xr .
+
+      - name: Detener servidor
+        if: always()
+        run: |
+          test -f /tmp/ucan-xr-v304.pid && kill "$(cat /tmp/ucan-xr-v304.pid)" || true
