@@ -18,7 +18,7 @@ jobs:
       - name: Validar JavaScript y auditorías
         run: npm test
 
-      - name: Preparar respuestas del servidor V303
+      - name: Preparar respuestas del servidor V303 R2
         env:
           PORT: 3011
           ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
@@ -33,7 +33,7 @@ jobs:
           curl -fsS "http://127.0.0.1:3011/js/ucan_v289_quest_xr_compat.js?build=V289-20260720-QUEST-XR-COMPAT-DIAGNOSTICS" > /tmp/quest-entry.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v292_universal_sign_window.js?build=V292-20260721-UNIVERSAL-SIGN-WINDOW-CLOCK" > /tmp/universal-signs.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v301_quest_rails_selection_comfort.js?build=V301-20260723-QUEST-RAILS-SELECTION-COMFORT" > /tmp/quest-v301.js
-          curl -fsS "http://127.0.0.1:3011/js/ucan_v303_quest_zone_geometry_cleanup.js?build=V303-20260723-QUEST-ZONE-GLASS-REAR-RAILS" > /tmp/quest-v303.js
+          curl -fsS "http://127.0.0.1:3011/js/ucan_v303_quest_zone_geometry_cleanup_r2.js?build=V303-20260723-QUEST-ZONE-GLASS-REAR-RAILS-R2" > /tmp/quest-v303.js
           curl -fsS http://127.0.0.1:3011/version > /tmp/version.json
           CI_USER="ciquest${GITHUB_RUN_ID}"
           curl -fsS -c /tmp/cookies.txt \
@@ -51,33 +51,35 @@ jobs:
           node --check /tmp/quest-v301.js
           node --check /tmp/quest-v303.js
 
-      - name: Validar limpieza geométrica V303
+      - name: Validar limpieza geométrica V303 R2
         run: |
           node - <<'NODE'
           const fs = require('fs');
           const source = fs.readFileSync('/tmp/quest-v303.js', 'utf8');
           const required = [
             "const VERSION = 'V303'",
+            "const REVISION = 'R2'",
             'function worldBounds',
             'minimumWorld',
             'maximumWorld',
-            'floor2EscalatorFront',
-            'floor3RearBottom',
-            'rooftopRearTop',
+            'minX:-43.0',
+            'maxX:2.0',
+            'FLOOR2_ESCALATOR_ROUTE_X = Object.freeze([-34, -26, -20, -8])',
+            'floor2EscalatorAllRoutesCovered',
             'function isDarkGlass',
-            'function isCrossRearRailing',
-            'function isSideRailing',
+            'function rearRailingZone',
+            'function isProtectedCorrectedMetal',
             'darkGlassRemovedGlobally:true',
             'floor2EscalatorFrontGlassRemoved:true',
-            'floor3RearRailingsRemoved:true',
-            'rooftopSideRailingsPreserved:true',
+            'rearRailingsRemovedWithoutOrientationDependency:true',
+            'correctedMetalSideRailingsPreserved:true',
             'mesh.checkCollisions = false',
             'mesh.isPickable = false',
             'desktopGeometryUnchanged:true'
           ];
           const missing = required.filter(value => !source.includes(value));
-          if (missing.length) throw new Error(`Marcadores V303 ausentes: ${missing.join(', ')}`);
-          console.log({ questV303Markers:required.length });
+          if (missing.length) throw new Error(`Marcadores V303 R2 ausentes: ${missing.join(', ')}`);
+          console.log({ questV303R2Markers:required.length });
           NODE
 
       - name: Validar parche de escena principal V301
@@ -109,7 +111,7 @@ jobs:
           const entry = html.indexOf('ucan_v289_quest_xr_compat.js');
           const universal = html.indexOf('ucan_v292_universal_sign_window.js');
           const runtime = html.indexOf('ucan_v301_quest_rails_selection_comfort.js');
-          const cleanup = html.indexOf('ucan_v303_quest_zone_geometry_cleanup.js');
+          const cleanup = html.indexOf('ucan_v303_quest_zone_geometry_cleanup_r2.js');
           const main = html.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');
           if (!(entry >= 0 && universal > entry && runtime > universal && cleanup > runtime && main > cleanup)) {
             throw new Error(JSON.stringify({ entry, universal, runtime, cleanup, main }));
@@ -128,7 +130,8 @@ jobs:
             'ucan_v299_quest_navigation_glass_terrace.js',
             'ucan_v300_disable_v299_movement.js',
             'ucan_v300_quest_full_controls_floor_lock.js',
-            'ucan_v302_remove_stair_glass.js'
+            'ucan_v302_remove_stair_glass.js',
+            'ucan_v303_quest_zone_geometry_cleanup.js'
           ];
           const found = forbidden.filter(value => html.includes(value));
           if (found.length) throw new Error(`Capas heredadas encontradas: ${found.join(', ')}`);
@@ -136,19 +139,20 @@ jobs:
           console.log({ entry, universal, runtime, cleanup, main, branding:true });
           NODE
 
-      - name: Validar encabezados V303
+      - name: Validar encabezados V303 R2
         run: |
           grep -Fi "Permissions-Policy: xr-spatial-tracking=(self)" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Controls: V301" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Emulation: V301" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Geometry: V303" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Geometry-Revision: R2" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Stair-Glass: V303" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Release: V303" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-UI: V292" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Entry: V289" /tmp/campus.headers
           grep -Fi "X-UCAN-Product: UCAN Academic" /tmp/campus.headers
 
-      - name: Validar endpoint de versión V303
+      - name: Validar endpoint de versión V303 R2
         run: |
           node - <<'NODE'
           const fs = require('fs');
@@ -156,15 +160,15 @@ jobs:
           const checks = {
             product:v.productName === 'UCAN Academic',
             base:v.questExperienceVersion === 'V301' && v.questRuntimeVersion === 'V301' && v.questControlsVersion === 'V301',
-            release:v.questReleaseVersion === 'V303' && v.questGeometryCleanupVersion === 'V303',
-            architecture:v.questArchitecture === 'single-v301-quest-runtime-with-v303-zone-geometry-cleanup' && v.questSingleAuthoritativeRuntime === true,
+            release:v.questReleaseVersion === 'V303' && v.questGeometryCleanupVersion === 'V303' && v.questGeometryCleanupRevision === 'R2',
+            architecture:v.questArchitecture === 'single-v301-quest-runtime-with-v303-r2-zone-geometry-cleanup' && v.questSingleAuthoritativeRuntime === true,
             noLegacy:v.questLegacyRuntimeLayersLoaded === false,
             detection:v.questBoundingBoxZoneDetection === true && v.questParentNameAndMetadataDetection === true,
             darkGlass:v.questDarkGlassRemovedGlobally === true,
-            floor2:v.questFloor2EscalatorFrontGlassRemoved === true,
+            floor2:v.questFloor2EscalatorFrontGlassRemoved === true && v.questFloor2EscalatorAllRoutesCovered === true && JSON.stringify(v.questFloor2EscalatorRouteX) === JSON.stringify([-34,-26,-20,-8]),
             rooftopGlass:v.questRooftopStairGlassRemoved === true,
-            rearRails:v.questFloor3RearRailingsRemoved === true && v.questRooftopRearRailingsRemoved === true,
-            sideRails:v.questRooftopSideRailingsPreserved === true,
+            rearRails:v.questFloor3RearRailingsRemoved === true && v.questRooftopRearRailingsRemoved === true && v.questRearRailingsRemovedWithoutOrientationDependency === true,
+            sideRails:v.questCorrectedMetalSideRailingsPreserved === true,
             disabled:v.questRemovedGeometryCollisionsDisabled === true && v.questRemovedGeometryPickingDisabled === true,
             desktop:v.questDesktopGeometryUnchanged === true && v.desktopVisualsUnchanged === true
           };
