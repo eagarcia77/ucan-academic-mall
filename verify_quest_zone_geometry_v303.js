@@ -32,7 +32,7 @@ const checks = {
   restoresDesktop:/function restoreMeshes/.test(runtime),
   periodicScan:/SCAN_INTERVAL_MS = 120/.test(runtime) && /scanAndClean\(false\)/.test(runtime),
   authV303R2:/QUEST_GEOMETRY_VERSION = 'V303'/.test(auth) && /QUEST_GEOMETRY_REVISION = 'R2'/.test(auth) && /ucan_v303_quest_zone_geometry_cleanup_r2\.js/.test(auth),
-  authStripsOldLayers:/ucan_v302_remove_stair_glass/.test(auth) && /ucan_v303_quest_zone_geometry_cleanup\.js/.test(auth) && /stripLegacyQuestLayers/.test(auth),
+  authStripsOldLayers:/ucan_v302_remove_stair_glass/.test(auth) && /ucan_v303_quest_zone_geometry_cleanup/.test(auth) && /stripLegacyQuestLayers/.test(auth),
   authVersionFlags:/questFloor2EscalatorAllRoutesCovered = true/.test(auth) && /questRearRailingsRemovedWithoutOrientationDependency = true/.test(auth),
   packageCheck:pkg.scripts?.check?.includes('ucan_v303_quest_zone_geometry_cleanup_r2.js'),
   packageAudit:pkg.scripts?.['audit:quest-geometry'] === 'node verify_quest_zone_geometry_v303.js'
