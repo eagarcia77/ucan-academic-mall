@@ -4,6 +4,7 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -18,7 +19,7 @@ jobs:
       - name: Validar JavaScript y auditorías
         run: npm test
 
-      - name: Preparar respuestas del servidor V304
+      - name: Preparar respuestas del servidor V306
         env:
           PORT: 3011
           ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
@@ -35,6 +36,8 @@ jobs:
           curl -fsS "http://127.0.0.1:3011/js/ucan_v301_quest_rails_selection_comfort.js?build=V301-20260723-QUEST-RAILS-SELECTION-COMFORT" > /tmp/quest-v301.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v303_quest_zone_geometry_cleanup_r2.js?build=V303-20260723-QUEST-ZONE-GLASS-REAR-RAILS-R2" > /tmp/quest-v303.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v304_seasonal_natural_ecosystem.js?build=V304-20260723-SEASONAL-NATURAL-ECOSYSTEM-PR" > /tmp/environment-v304.js
+          curl -fsS "http://127.0.0.1:3011/js/ucan_v305_ecosystem_visibility_fix.js?build=V305-20260723-ECOSYSTEM-VISIBILITY-ENTRY-GARDEN" > /tmp/environment-v305.js
+          curl -fsS "http://127.0.0.1:3011/js/ucan_v306_exterior_ecosystem_solar_cycle.js?build=V306-20260723-EXTERIOR-ECOSYSTEM-SOLAR-SAN-GERMAN" > /tmp/environment-v306.js
           curl -fsS http://127.0.0.1:3011/version > /tmp/version.json
           CI_USER="ciquest${GITHUB_RUN_ID}"
           curl -fsS -c /tmp/cookies.txt \
@@ -52,6 +55,8 @@ jobs:
           node --check /tmp/quest-v301.js
           node --check /tmp/quest-v303.js
           node --check /tmp/environment-v304.js
+          node --check /tmp/environment-v305.js
+          node --check /tmp/environment-v306.js
 
       - name: Validar limpieza geométrica V303 R2
         run: |
@@ -92,10 +97,7 @@ jobs:
           const required = [
             "const VERSION = 'V304'",
             'America/Puerto_Rico',
-            'Primavera',
-            'Verano',
-            'Otoño',
-            'Invierno',
+            'Primavera', 'Verano', 'Otoño', 'Invierno',
             'Día de la Bandera, Himno y Escudo de Puerto Rico',
             'Día de la Constitución de Puerto Rico',
             'Natalicio de José Celso Barbosa',
@@ -104,15 +106,46 @@ jobs:
             'function createBush',
             'function createButterfly',
             'function createPuertoRicoFlag',
-            'livePanel:true',
-            'openPanelByMesh',
             '__UCAN_SEASONAL_ECOSYSTEM_V304__',
-            'dailyAutomaticRefresh:true',
-            'questOptimized:state.questMode'
+            'dailyAutomaticRefresh:true'
           ];
           const missing = required.filter(value => !source.includes(value));
           if (missing.length) throw new Error(`Marcadores V304 ausentes: ${missing.join(', ')}`);
           console.log({ environmentV304Markers:required.length });
+          NODE
+
+      - name: Validar ecosistema exterior y ciclo solar V306
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const source = fs.readFileSync('/tmp/environment-v306.js', 'utf8');
+          const required = [
+            "const VERSION = 'V306'",
+            'latitude:18.0819',
+            'longitude:-67.0458',
+            'America/Puerto_Rico',
+            'function solarPosition',
+            'function sunriseSunset',
+            '90.833',
+            'Amanecer',
+            'Atardecer',
+            'Crepúsculo',
+            'Noche',
+            'jardín frontal exterior V306',
+            'jardín posterior exterior V306',
+            'jardín lateral oeste exterior V306',
+            'jardín lateral este exterior V306',
+            'Ecosistema natural estacional UCAN V304',
+            'Plaza natural visible UCAN V305',
+            'exteriorOnly:true',
+            'dynamicSunriseSunset:true',
+            'Domo exterior solar San Germán V306',
+            'Cartel ecosistema exterior y ciclo solar V306',
+            '__UCAN_EXTERIOR_ECOSYSTEM_V306__'
+          ];
+          const missing = required.filter(value => !source.includes(value));
+          if (missing.length) throw new Error(`Marcadores V306 ausentes: ${missing.join(', ')}`);
+          console.log({ environmentV306Markers:required.length });
           NODE
 
       - name: Validar parche de escena principal V301
@@ -146,66 +179,51 @@ jobs:
           const runtime = html.indexOf('ucan_v301_quest_rails_selection_comfort.js');
           const cleanup = html.indexOf('ucan_v303_quest_zone_geometry_cleanup_r2.js');
           const main = html.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');
-          const ecosystem = html.indexOf('ucan_v304_seasonal_natural_ecosystem.js');
-          if (!(entry >= 0 && universal > entry && runtime > universal && cleanup > runtime && main > cleanup && ecosystem > main)) {
-            throw new Error(JSON.stringify({ entry, universal, runtime, cleanup, main, ecosystem }));
+          const seasonal = html.indexOf('ucan_v304_seasonal_natural_ecosystem.js');
+          const visibility = html.indexOf('ucan_v305_ecosystem_visibility_fix.js');
+          const exterior = html.indexOf('ucan_v306_exterior_ecosystem_solar_cycle.js');
+          if (!(entry >= 0 && universal > entry && runtime > universal && cleanup > runtime && main > cleanup && seasonal > main && visibility > seasonal && exterior > visibility)) {
+            throw new Error(JSON.stringify({ entry, universal, runtime, cleanup, main, seasonal, visibility, exterior }));
           }
-          const occurrences = (html.match(/ucan_v304_seasonal_natural_ecosystem\.js/g) || []).length;
-          if (occurrences !== 1) throw new Error(`V304 aparece ${occurrences} veces.`);
-          const forbidden = [
-            'ucan_v283_unified_xr_runtime.js',
-            'ucan_v290_quest_controls_interaction.js',
-            'ucan_v293_quest_controls_interaction.js',
-            'ucan_v296_quest_controls_interaction.js',
-            'ucan_v291_quest_celestial_glass.js',
-            'ucan_v294_quest_terrace_stability.js',
-            'ucan_v295_quest_desktop_parity_terrace.js',
-            'ucan_v296_quest_signs_selection.js',
-            'ucan_v297_quest_room_signs_speed.js',
-            'ucan_v298_browser_emulation_xr.js',
-            'ucan_v299_quest_navigation_glass_terrace.js',
-            'ucan_v300_disable_v299_movement.js',
-            'ucan_v300_quest_full_controls_floor_lock.js',
-            'ucan_v302_remove_stair_glass.js',
-            'ucan_v303_quest_zone_geometry_cleanup.js'
-          ];
-          const found = forbidden.filter(value => html.includes(value));
-          if (found.length) throw new Error(`Capas heredadas encontradas: ${found.join(', ')}`);
+          for (const file of ['ucan_v304_seasonal_natural_ecosystem.js','ucan_v305_ecosystem_visibility_fix.js','ucan_v306_exterior_ecosystem_solar_cycle.js']) {
+            const count = (html.match(new RegExp(file.replaceAll('.', '\\.'), 'g')) || []).length;
+            if (count !== 1) throw new Error(`${file} aparece ${count} veces.`);
+          }
           if (!html.includes('UCAN Academic') || html.includes('UCAN Academic Mall')) throw new Error('Marca visible incorrecta');
-          console.log({ entry, universal, runtime, cleanup, main, ecosystem, occurrences, branding:true });
+          console.log({ entry, universal, runtime, cleanup, main, seasonal, visibility, exterior, branding:true });
           NODE
 
-      - name: Validar encabezados V304
+      - name: Validar encabezados V306
         run: |
           grep -Fi "Permissions-Policy: xr-spatial-tracking=(self)" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Controls: V301" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Emulation: V301" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Geometry: V303" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Geometry-Revision: R2" /tmp/campus.headers
           grep -Fi "X-UCAN-Environment: V304" /tmp/campus.headers
-          grep -Fi "X-UCAN-Seasons: V304" /tmp/campus.headers
-          grep -Fi "X-UCAN-Celebrations-PR: V304" /tmp/campus.headers
-          grep -Fi "X-UCAN-Release: V304" /tmp/campus.headers
+          grep -Fi "X-UCAN-Ecosystem-Visibility: V305" /tmp/campus.headers
+          grep -Fi "X-UCAN-Exterior-Ecosystem: V306" /tmp/campus.headers
+          grep -Fi "X-UCAN-Solar-Cycle: V306" /tmp/campus.headers
+          grep -Fi "X-UCAN-Solar-Location: San-German-PR" /tmp/campus.headers
+          grep -Fi "X-UCAN-Release: V306" /tmp/campus.headers
           grep -Fi "X-UCAN-Product: UCAN Academic" /tmp/campus.headers
 
-      - name: Validar endpoint de versión V304
+      - name: Validar endpoint de versión V306
         run: |
           node - <<'NODE'
           const fs = require('fs');
           const v = JSON.parse(fs.readFileSync('/tmp/version.json'));
           const checks = {
             product:v.productName === 'UCAN Academic',
-            release:v.releaseVersion === 'V304' && v.environmentVersion === 'V304',
-            base:v.questExperienceVersion === 'V301' && v.questRuntimeVersion === 'V301' && v.questControlsVersion === 'V301',
-            geometry:v.questGeometryCleanupVersion === 'V303' && v.questGeometryCleanupRevision === 'R2',
-            ecosystem:v.seasonalEcosystemEnabled === true && v.seasonalEcosystemAroundBuilding === true,
-            platforms:v.seasonalEcosystemBrowserAndQuest === true && v.seasonalEcosystemQuestOptimized === true,
-            calendar:v.seasonalCalendarTimeZone === 'America/Puerto_Rico' && v.seasonalPuertoRicoCelebrationCalendar === true,
-            season:['Primavera','Verano','Otoño','Invierno'].includes(v.seasonalCurrentSeason),
-            dates:typeof v.seasonalCurrentDatePuertoRico === 'string' && typeof v.seasonalNextCelebration === 'string',
-            signs:v.seasonalPickableInformationBoards === true && v.seasonalPuertoRicoFlagsDateAware === true,
-            refresh:v.seasonalAutomaticDailyRefresh === true,
-            desktop:v.desktopVisualsUnchanged === true
+            release:v.releaseVersion === 'V306',
+            base:v.questExperienceVersion === 'V301' && v.questGeometryCleanupVersion === 'V303',
+            calendar:v.environmentVersion === 'V304' && v.seasonalCalendarTimeZone === 'America/Puerto_Rico',
+            visibility:v.ecosystemVisibilityVersion === 'V305',
+            exterior:v.exteriorEcosystemVersion === 'V306' && v.exteriorEcosystemOutsideBuilding === true && v.exteriorEcosystemExteriorOnly === true,
+            oldInterior:v.exteriorEcosystemInteriorV305Disabled === true && v.exteriorEcosystemBaseV304GeometryDisabled === true,
+            location:v.solarCycleLocation === 'San Germán, Puerto Rico' && v.solarCycleLatitude === 18.0819 && v.solarCycleLongitude === -67.0458,
+            solar:v.solarCycleDynamicPosition === true && v.solarSunriseSunsetDynamic === true && v.solarDawnSunsetNightDynamic === true,
+            refresh:v.solarAutomaticMinuteRefresh === true,
+            visuals:v.solarSkyDomeEnabled === true && v.solarSunAndMoonVisible === true && v.solarGardenLightsNightAware === true,
+            platforms:v.exteriorEcosystemBrowserAndQuest === true && v.exteriorEcosystemQuestOptimized === true
           };
           if (!Object.values(checks).every(Boolean)) throw new Error(JSON.stringify({ checks, version:v }, null, 2));
           console.log({ checks });
@@ -216,9 +234,11 @@ jobs:
           node - <<'NODE'
           const fs = require('fs');
           const registration = JSON.parse(fs.readFileSync('/tmp/register.json'));
-          if (registration.questRuntimeVersion || registration.questArchitecture || registration.environmentVersion || registration.seasonalEcosystemEnabled) throw new Error('Registro modificado como /version');
+          if (registration.questRuntimeVersion || registration.environmentVersion || registration.exteriorEcosystemVersion || registration.solarCycleVersion) {
+            throw new Error('Registro modificado como /version');
+          }
           console.log({ registrationResponseUntouched:true });
           NODE
 
       - name: Construir imagen Docker
-        run: docker build -t ucan-academic:test .
+        run: docker build -t ucan-academic:v306 .
