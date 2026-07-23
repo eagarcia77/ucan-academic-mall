@@ -14,9 +14,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+
       - name: Validar JavaScript y auditorías
         run: npm test
-      - name: Probar controles completos, salto, velocidad, piso y terraza Meta Quest
+
+      - name: Preparar respuestas del servidor V300
         env:
           PORT: 3011
           ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
@@ -27,27 +29,30 @@ jobs:
             curl -fsS http://127.0.0.1:3011/health > /tmp/health.json && break
             sleep 1
           done
-
           curl -fsS "http://127.0.0.1:3011/js/ucan_babylon_mall_v265_accounts_avatars.js?build=V287-20260720-FLOOR-STATE-SKY-OPT" > /tmp/main-scene.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v289_quest_xr_compat.js?build=V289-20260720-QUEST-XR-COMPAT-DIAGNOSTICS" > /tmp/quest-entry.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v292_universal_sign_window.js?build=V292-20260721-UNIVERSAL-SIGN-WINDOW-CLOCK" > /tmp/universal-signs.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v299_quest_navigation_glass_terrace.js?build=V299-20260723-QUEST-NAVIGATION-GLASS-TERRACE" > /tmp/quest-v299.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v300_quest_full_controls_floor_lock.js?build=V300-20260723-FULL-CONTROLS-FLOOR-LOCK" > /tmp/quest-v300.js
           curl -fsS http://127.0.0.1:3011/version > /tmp/version.json
-
           CI_USER="ciquest${GITHUB_RUN_ID}"
           curl -fsS -c /tmp/cookies.txt \
             -H 'Content-Type: application/json' \
             -d "{\"username\":\"${CI_USER}\",\"displayName\":\"CI Meta Quest\",\"email\":\"${CI_USER}@example.test\",\"password\":\"CI-Quest-2026!\"}" \
             http://127.0.0.1:3011/api/auth/register > /tmp/register.json
           curl -fsS -D /tmp/campus.headers -b /tmp/cookies.txt http://127.0.0.1:3011/campus > /tmp/campus.html
+          kill "$(cat /tmp/ucan.pid)"
 
+      - name: Validar sintaxis de respuestas servidas
+        run: |
           node --check /tmp/main-scene.js
           node --check /tmp/quest-entry.js
           node --check /tmp/universal-signs.js
           node --check /tmp/quest-v299.js
           node --check /tmp/quest-v300.js
 
+      - name: Validar base de selección V299
+        run: |
           node - <<'NODE'
           const fs = require('fs');
           const base = fs.readFileSync('/tmp/quest-v299.js', 'utf8');
@@ -58,13 +63,12 @@ jobs:
             'window.__UCAN_V299_PATCHED_FOR_V300__ = true'
           ];
           const missing = required.filter(value => !base.includes(value));
-          if (missing.length) {
-            console.error({ missing });
-            process.exit(1);
-          }
+          if (missing.length) throw new Error(`Marcadores V299 ausentes: ${missing.join(', ')}`);
           console.log({ v299SelectionBaseMarkers:required.length });
           NODE
 
+      - name: Validar controles completos V300
+        run: |
           node - <<'NODE'
           const fs = require('fs');
           const source = fs.readFileSync('/tmp/quest-v300.js', 'utf8');
@@ -96,13 +100,12 @@ jobs:
             'rooftopFullSurface:true'
           ];
           const missing = required.filter(value => !source.includes(value));
-          if (missing.length) {
-            console.error({ missing });
-            process.exit(1);
-          }
+          if (missing.length) throw new Error(`Marcadores V300 ausentes: ${missing.join(', ')}`);
           console.log({ v300Markers:required.length });
           NODE
 
+      - name: Validar parche de escena principal V300
+        run: |
           node - <<'NODE'
           const fs = require('fs');
           const main = fs.readFileSync('/tmp/main-scene.js', 'utf8');
@@ -116,13 +119,12 @@ jobs:
             'floorMaterialLockedInXR:true'
           ];
           const missing = required.filter(value => !main.includes(value));
-          if (missing.length) {
-            console.error({ missing });
-            process.exit(1);
-          }
+          if (missing.length) throw new Error(`Marcadores escena principal ausentes: ${missing.join(', ')}`);
           console.log({ mainPatchMarkers:required.length });
           NODE
 
+      - name: Validar orden del campus autenticado
+        run: |
           node - <<'NODE'
           const fs = require('fs');
           const html = fs.readFileSync('/tmp/campus.html', 'utf8');
@@ -132,8 +134,7 @@ jobs:
           const runtime = html.indexOf('ucan_v300_quest_full_controls_floor_lock.js');
           const main = html.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');
           if (!(entry >= 0 && universal > entry && base > universal && runtime > base && main > runtime)) {
-            console.error({ entry, universal, base, runtime, main });
-            process.exit(1);
+            throw new Error(JSON.stringify({ entry, universal, base, runtime, main }));
           }
           const forbidden = [
             'ucan_v283_unified_xr_runtime.js',
@@ -148,14 +149,13 @@ jobs:
             'ucan_v298_browser_emulation_xr.js'
           ];
           const found = forbidden.filter(value => html.includes(value));
-          if (found.length) {
-            console.error({ found });
-            process.exit(1);
-          }
-          if (!html.includes('UCAN Academic') || html.includes('UCAN Academic Mall')) process.exit(1);
+          if (found.length) throw new Error(`Capas heredadas encontradas: ${found.join(', ')}`);
+          if (!html.includes('UCAN Academic') || html.includes('UCAN Academic Mall')) throw new Error('Marca visible incorrecta');
           console.log({ entry, universal, base, runtime, main, branding:true });
           NODE
 
+      - name: Validar encabezados V300
+        run: |
           grep -Fi "Permissions-Policy: xr-spatial-tracking=(self)" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Controls: V300" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Emulation: V300" /tmp/campus.headers
@@ -167,6 +167,8 @@ jobs:
           grep -Fi "X-UCAN-XR-Entry: V289" /tmp/campus.headers
           grep -Fi "X-UCAN-Product: UCAN Academic" /tmp/campus.headers
 
+      - name: Validar endpoint de versión V300
+        run: |
           node - <<'NODE'
           const fs = require('fs');
           const v = JSON.parse(fs.readFileSync('/tmp/version.json'));
@@ -186,23 +188,18 @@ jobs:
             interaction:v.questBrowserPointerDispatch === true && v.questDirectTouchControllerTrigger === true,
             desktop:v.desktopVisualsUnchanged === true
           };
-          if (!Object.values(checks).every(Boolean)) {
-            console.error({ checks, version:v });
-            process.exit(1);
-          }
+          if (!Object.values(checks).every(Boolean)) throw new Error(JSON.stringify({ checks, version:v }, null, 2));
           console.log({ checks });
           NODE
 
+      - name: Validar respuesta de registro intacta
+        run: |
           node - <<'NODE'
           const fs = require('fs');
           const registration = JSON.parse(fs.readFileSync('/tmp/register.json'));
-          if (registration.questRuntimeVersion || registration.questArchitecture) {
-            console.error('La respuesta de registro fue modificada como si fuera /version.', registration);
-            process.exit(1);
-          }
+          if (registration.questRuntimeVersion || registration.questArchitecture) throw new Error('Registro modificado como /version');
           console.log({ registrationResponseUntouched:true });
           NODE
 
-          kill "$(cat /tmp/ucan.pid)"
       - name: Construir imagen Docker
         run: docker build -t ucan-academic:test .
