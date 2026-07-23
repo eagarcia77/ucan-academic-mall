@@ -1,16 +1,17 @@
 {
-  "name": "ucan-academic-v305",
-  "version": "3.0.5",
-  "description": "UCAN Academic con ecosistema natural visible desde el vestíbulo V305",
+  "name": "ucan-academic-v306",
+  "version": "3.0.6",
+  "description": "UCAN Academic con ecosistema exterior y ciclo solar de San Germán V306",
   "main": "server.js",
   "scripts": {
-    "start": "node -r ./auth-compat-v305.js server.js",
-    "check": "node --check server.js && node --check lib/auth.js && node --check lib/floor-state-machine-v287.js && node --check lib/browser-xr-emulation-v301.js && node --check auth-compat-v271.js && node --check auth-compat-v287.js && node --check auth-compat-v293.js && node --check auth-compat-v305.js && node --check public/js/ucan_babylon_mall_v265_accounts_avatars.js && node --check public/js/ucan_avatar_shared.js && node --check public/js/ucan_v265_identity.js && node --check public/js/ucan_v270_avatar_studio.js && node --check public/js/ucan_v277_profile_rollback_persistence.js && node --check public/js/ucan_v278_scroll_direct_access.js && node --check public/js/ucan_v289_quest_xr_compat.js && node --check public/js/ucan_v292_universal_sign_window.js && node --check public/js/ucan_v301_quest_rails_selection_comfort.js && node --check public/js/ucan_v303_quest_zone_geometry_cleanup_r2.js && node --check public/js/ucan_v304_seasonal_natural_ecosystem.js && node --check public/js/ucan_v305_ecosystem_visibility_fix.js && node --check public/js/ucan_v287_rooftop_sky.js && node --check public/js/ucan_v288_celestial_info_window.js && node --check public/js/ucan_v266_keyboard_jump.js && node --check public/js/ucan_v240_features.js && node --check public/js/ucan_v240_voice.js && node --check public/js/ucan_v240_experiences.js && node --check verify_quest_rails_selection_comfort_v301.js && node --check verify_quest_zone_geometry_v303.js && node --check verify_seasonal_ecosystem_v304.js && node --check verify_ecosystem_visibility_v305.js",
+    "start": "node -r ./auth-compat-v306.js server.js",
+    "check": "node --check server.js && node --check lib/auth.js && node --check lib/floor-state-machine-v287.js && node --check lib/browser-xr-emulation-v301.js && node --check auth-compat-v271.js && node --check auth-compat-v287.js && node --check auth-compat-v293.js && node --check auth-compat-v305.js && node --check auth-compat-v306.js && node --check public/js/ucan_babylon_mall_v265_accounts_avatars.js && node --check public/js/ucan_avatar_shared.js && node --check public/js/ucan_v265_identity.js && node --check public/js/ucan_v270_avatar_studio.js && node --check public/js/ucan_v277_profile_rollback_persistence.js && node --check public/js/ucan_v278_scroll_direct_access.js && node --check public/js/ucan_v289_quest_xr_compat.js && node --check public/js/ucan_v292_universal_sign_window.js && node --check public/js/ucan_v301_quest_rails_selection_comfort.js && node --check public/js/ucan_v303_quest_zone_geometry_cleanup_r2.js && node --check public/js/ucan_v304_seasonal_natural_ecosystem.js && node --check public/js/ucan_v305_ecosystem_visibility_fix.js && node --check public/js/ucan_v306_exterior_ecosystem_solar_cycle.js && node --check public/js/ucan_v287_rooftop_sky.js && node --check public/js/ucan_v288_celestial_info_window.js && node --check public/js/ucan_v266_keyboard_jump.js && node --check public/js/ucan_v240_features.js && node --check public/js/ucan_v240_voice.js && node --check public/js/ucan_v240_experiences.js && node --check verify_quest_rails_selection_comfort_v301.js && node --check verify_quest_zone_geometry_v303.js && node --check verify_seasonal_ecosystem_v304.js && node --check verify_ecosystem_visibility_v305.js && node --check verify_exterior_ecosystem_solar_v306.js",
     "audit:browser-xr": "node verify_quest_rails_selection_comfort_v301.js",
     "audit:quest-geometry": "node verify_quest_zone_geometry_v303.js",
     "audit:quest-stair-glass": "node verify_quest_zone_geometry_v303.js",
     "audit:seasonal-ecosystem": "node verify_seasonal_ecosystem_v304.js",
     "audit:ecosystem-visibility": "node verify_ecosystem_visibility_v305.js",
+    "audit:exterior-ecosystem": "node verify_exterior_ecosystem_solar_v306.js",
     "audit:unified-xr": "node verify_quest_rails_selection_comfort_v301.js",
     "audit:manual-rooftop-stairs": "node verify_quest_rails_selection_comfort_v301.js",
     "audit:quest-terrace": "node verify_quest_rails_selection_comfort_v301.js",
@@ -45,7 +46,7 @@
     "audit:astro-panels": "node audit_astro_panels_v265.js",
     "audit:keyboard-jump": "node audit_keyboard_jump_v266.js",
     "audit:avatar-v270": "node audit_avatar_studio_v270.js",
-    "test": "npm run check && npm run audit:browser-xr && npm run audit:quest-geometry && npm run audit:seasonal-ecosystem && npm run audit:ecosystem-visibility && npm run audit:quest-xr && npm run audit:universal-signs && npm run audit:floor-sky && npm run audit:celestial-window && npm run audit:profile && npm run audit:access-scroll && npm run audit:accounts && npm run audit:layers && npm run audit:floor && npm run audit:environment && npm run audit:optimization && npm run audit:stairs && npm run audit:astronomy && npm run audit:text-wrap && npm run audit:astro-panels && npm run audit:keyboard-jump && npm run audit:avatar-v270"
+    "test": "npm run check && npm run audit:browser-xr && npm run audit:quest-geometry && npm run audit:seasonal-ecosystem && npm run audit:ecosystem-visibility && npm run audit:exterior-ecosystem && npm run audit:quest-xr && npm run audit:universal-signs && npm run audit:floor-sky && npm run audit:celestial-window && npm run audit:profile && npm run audit:access-scroll && npm run audit:accounts && npm run audit:layers && npm run audit:floor && npm run audit:environment && npm run audit:optimization && npm run audit:stairs && npm run audit:astronomy && npm run audit:text-wrap && npm run audit:astro-panels && npm run audit:keyboard-jump && npm run audit:avatar-v270"
   },
   "dependencies": {}
 }
