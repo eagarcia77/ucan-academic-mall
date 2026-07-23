@@ -16,7 +16,7 @@ jobs:
           node-version: 20
       - name: Validar JavaScript y auditorías
         run: npm test
-      - name: Probar servidor, emulación browser XR y autenticación
+      - name: Probar servidor, navegación Quest, cristales, terraza y autenticación
         env:
           PORT: 3011
           ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
@@ -31,7 +31,7 @@ jobs:
           curl -fsS "http://127.0.0.1:3011/js/ucan_babylon_mall_v265_accounts_avatars.js?build=V287-20260720-FLOOR-STATE-SKY-OPT" > /tmp/main-scene.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v289_quest_xr_compat.js?build=V289-20260720-QUEST-XR-COMPAT-DIAGNOSTICS" > /tmp/quest-entry.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v292_universal_sign_window.js?build=V292-20260721-UNIVERSAL-SIGN-WINDOW-CLOCK" > /tmp/universal-signs.js
-          curl -fsS "http://127.0.0.1:3011/js/ucan_v298_browser_emulation_xr.js?build=V298-20260722-BROWSER-SCENE-XR-EMULATION" > /tmp/browser-xr.js
+          curl -fsS "http://127.0.0.1:3011/js/ucan_v299_quest_navigation_glass_terrace.js?build=V299-20260723-QUEST-NAVIGATION-GLASS-TERRACE" > /tmp/quest-v299.js
           curl -fsS http://127.0.0.1:3011/version > /tmp/version.json
 
           CI_USER="ciquest${GITHUB_RUN_ID}"
@@ -44,49 +44,54 @@ jobs:
           node --check /tmp/main-scene.js
           node --check /tmp/quest-entry.js
           node --check /tmp/universal-signs.js
-          node --check /tmp/browser-xr.js
+          node --check /tmp/quest-v299.js
 
           node - <<'NODE'
           const fs = require('fs');
-          const source = fs.readFileSync('/tmp/browser-xr.js', 'utf8');
+          const source = fs.readFileSync('/tmp/quest-v299.js', 'utf8');
           const required = [
-            "const VERSION = 'V298'",
-            "architecture:'single-browser-scene-emulation'",
+            "const VERSION = 'V299'",
+            "architecture:'single-browser-scene-quest-compatible'",
             'singleAuthoritativeRuntime:true',
-            'sameSceneAsBrowser:true',
-            'sameMeshesAsBrowser:true',
-            'sameMaterialsAsBrowser:true',
-            'sameLightingAsBrowser:true',
-            'sameRoomSignsAsBrowser:true',
-            'generatedRoomSignClones:false',
-            'generatedRoomSignOverlays:false',
-            'browserCollisionCameraProxy:true',
-            'state.desktop._collideWithWorld(step)',
-            'browserNormalSpeed:SPEED.normal',
-            'browserComfortSpeed:SPEED.comfort',
-            'browserSprintSpeed:SPEED.sprint',
-            'browserAutomaticEscalatorRoutes:true',
-            'rooftopStairsManualInXR:true',
-            'browserPointerEventDispatch:true',
-            'window.__UCAN_UNIVERSAL_SIGN_WINDOW__',
-            'function selectFromController'
+            'function controllerAxes',
+            'gamepad-0-1',
+            'gamepad-2-3',
+            'joystickAxisPairAutoDetection:true',
+            'comfort:3.4, normal:5.0, sprint:7.0',
+            'function pathClear',
+            'function moveWithSceneCollision',
+            'synchronousCollisionChecks:true',
+            'asynchronousCameraCollisionProxy:false',
+            'floorThreeSpeedStable:true',
+            'function disableRooftopRampCollision',
+            'function moveOnRooftopStairs',
+            'rooftopStairMidpointBlockPrevented:true',
+            'function applyQuestGlassCompatibility',
+            'material.needDepthPrePass = false',
+            'material.disableDepthWrite = true',
+            'questGlassAlphaBlend:true',
+            'tragaluz cristal ampliado',
+            'terraza piso completo Quest V299 principal',
+            'rooftopSolidFloor:true',
+            'rooftopStairOpeningPreserved:true'
           ];
           const missing = required.filter(value => !source.includes(value));
           if (missing.length) {
             console.error({ missing });
             process.exit(1);
           }
-          console.log({ browserXrMarkers:required.length });
+          console.log({ questV299Markers:required.length });
           NODE
 
           node - <<'NODE'
           const fs = require('fs');
           const main = fs.readFileSync('/tmp/main-scene.js', 'utf8');
           const required = [
-            '__UCAN_BROWSER_XR_MAIN_PATCH_V298__',
+            '__UCAN_BROWSER_XR_MAIN_PATCH_V299__',
             'if(window.__UCAN_BROWSER_XR_EMULATION_ACTIVE__) return;',
             "zone.id === 'up34' || zone.id === 'down43'",
             'return nearEntry(camera.position, zone);',
+            'floorThreeSpeedStable:true',
             "const speed=(comfortMode?3.4:(keys.has('ShiftLeft')||keys.has('ShiftRight')?7.0:5.0))"
           ];
           const missing = required.filter(value => !main.includes(value));
@@ -102,7 +107,7 @@ jobs:
           const html = fs.readFileSync('/tmp/campus.html', 'utf8');
           const entry = html.indexOf('ucan_v289_quest_xr_compat.js');
           const universal = html.indexOf('ucan_v292_universal_sign_window.js');
-          const runtime = html.indexOf('ucan_v298_browser_emulation_xr.js');
+          const runtime = html.indexOf('ucan_v299_quest_navigation_glass_terrace.js');
           const main = html.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');
           if (!(entry >= 0 && universal > entry && runtime > universal && main > runtime)) {
             console.error({ entry, universal, runtime, main });
@@ -117,7 +122,8 @@ jobs:
             'ucan_v294_quest_terrace_stability.js',
             'ucan_v295_quest_desktop_parity_terrace.js',
             'ucan_v296_quest_signs_selection.js',
-            'ucan_v297_quest_room_signs_speed.js'
+            'ucan_v297_quest_room_signs_speed.js',
+            'ucan_v298_browser_emulation_xr.js'
           ];
           const found = forbidden.filter(value => html.includes(value));
           if (found.length) {
@@ -129,9 +135,11 @@ jobs:
           NODE
 
           grep -Fi "Permissions-Policy: xr-spatial-tracking=(self)" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Controls: V298" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Emulation: V298" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Mode: browser-scene" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Controls: V299" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Emulation: V299" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Mode: browser-scene-quest-compatible" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Glass: V299" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Terrace: V299" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-UI: V292" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Entry: V289" /tmp/campus.headers
           grep -Fi "X-UCAN-Product: UCAN Academic" /tmp/campus.headers
@@ -141,18 +149,18 @@ jobs:
           const v = JSON.parse(fs.readFileSync('/tmp/version.json'));
           const checks = {
             product:v.productName === 'UCAN Academic',
-            experience:v.questExperienceVersion === 'V298' && v.questRuntimeVersion === 'V298',
-            runtime:v.unifiedXrVersion === 'V298' && v.questControlsVersion === 'V298',
-            architecture:v.questArchitecture === 'single-browser-scene-emulation' && v.questSingleAuthoritativeRuntime === true,
-            noLegacy:v.questLegacyRuntimeLayersLoaded === false && v.questVisualOverrides === false,
-            scene:v.questUsesBrowserScene === true && v.questUsesBrowserMeshes === true,
-            rendering:v.questUsesBrowserMaterials === true && v.questUsesBrowserLighting === true && v.questUsesBrowserImageProcessing === true,
-            signs:v.questUsesBrowserRoomSigns === true && v.questGeneratedRoomSignClones === false && v.questGeneratedRoomSignOverlays === false,
+            experience:v.questExperienceVersion === 'V299' && v.questRuntimeVersion === 'V299',
+            runtime:v.unifiedXrVersion === 'V299' && v.questControlsVersion === 'V299',
+            architecture:v.questArchitecture === 'single-browser-scene-quest-compatible' && v.questSingleAuthoritativeRuntime === true,
+            noLegacy:v.questLegacyRuntimeLayersLoaded === false,
             movement:v.questNormalSpeed === 5 && v.questComfortSpeed === 3.4 && v.questBrowserSprintSpeed === 7,
-            collisions:v.questBrowserCollisionCameraProxy === true && v.questBrowserMovementLoopSuppressed === true,
+            axes:v.questJoystickAxisPairAutoDetection === true,
+            collisions:v.questSynchronousSceneCollision === true && v.questAsynchronousCameraCollisionProxy === false && v.questFloorThreeSpeedStable === true,
             escalators:v.questAutomaticEscalatorsUseBrowserRoutes === true && v.questRooftopStairsAutomatic === false,
+            stairs:v.questRooftopStairRampCollisionDisabled === true && v.questRooftopStairDirectTraversal === true && v.questRooftopStairMidpointBlockPrevented === true,
+            glass:v.questGlassCompatibility === true && v.questGlassDepthPrePassDisabled === true && v.questGlassDepthWriteDisabled === true && v.questGlassAlphaBlend === true,
+            terrace:v.questRooftopCenterRemoved === true && v.questRooftopSolidFloor === true && v.questRooftopStairOpeningPreserved === true,
             interaction:v.questBrowserPointerDispatch === true && v.questDirectTouchControllerTrigger === true && v.questSelectionRayLength === 300,
-            content:v.questTerracePanelsSelectable === true && v.questCelestialObjectsSelectable === true && v.questUniversalWindowIntegration === true,
             desktop:v.desktopVisualsUnchanged === true
           };
           if (!Object.values(checks).every(Boolean)) {
