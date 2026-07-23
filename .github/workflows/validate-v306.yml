@@ -1,0 +1,142 @@
+name: Validar Ecosistema Exterior V306
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate-v306:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Ejecutar auditoría V306
+        run: |
+          npm run check
+          npm run audit:exterior-ecosystem
+          npm run audit:floor-sky
+
+      - name: Iniciar servidor
+        env:
+          PORT: 3016
+          ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
+        run: |
+          npm start > /tmp/ucan-v306.log 2>&1 &
+          echo $! > /tmp/ucan-v306.pid
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:3016/health > /tmp/health-v306.json && break
+            sleep 1
+          done
+          curl -fsS "http://127.0.0.1:3016/js/ucan_v306_exterior_ecosystem_solar_cycle.js?build=V306-20260723-EXTERIOR-ECOSYSTEM-SOLAR-SAN-GERMAN" > /tmp/exterior-v306.js
+          curl -fsS http://127.0.0.1:3016/version > /tmp/version-v306.json
+          CI_USER="civ306${GITHUB_RUN_ID}"
+          curl -fsS -c /tmp/cookies-v306.txt \
+            -H 'Content-Type: application/json' \
+            -d "{\"username\":\"${CI_USER}\",\"displayName\":\"CI Exterior V306\",\"email\":\"${CI_USER}@example.test\",\"password\":\"CI-V306-2026!\"}" \
+            http://127.0.0.1:3016/api/auth/register > /tmp/register-v306.json
+          curl -fsS -D /tmp/campus-v306.headers -b /tmp/cookies-v306.txt http://127.0.0.1:3016/campus > /tmp/campus-v306.html
+
+      - name: Validar archivo servido
+        run: |
+          node --check /tmp/exterior-v306.js
+          node - <<'NODE'
+          const fs = require('fs');
+          const source = fs.readFileSync('/tmp/exterior-v306.js', 'utf8');
+          const required = [
+            "const VERSION = 'V306'",
+            'latitude:18.0819',
+            'longitude:-67.0458',
+            'function solarParameters',
+            'function solarPosition',
+            'function sunriseSunset',
+            '90.833',
+            'function solarPhase',
+            'Amanecer',
+            'Atardecer',
+            'Crepúsculo',
+            'Noche',
+            'jardín frontal exterior V306',
+            'jardín posterior exterior V306',
+            'jardín lateral oeste exterior V306',
+            'jardín lateral este exterior V306',
+            'Ecosistema natural estacional UCAN V304',
+            'Plaza natural visible UCAN V305',
+            'Domo exterior solar San Germán V306',
+            'Sol San Germán V306',
+            'Luna San Germán V306',
+            'Cartel ecosistema exterior y ciclo solar V306',
+            'dynamicSunriseSunset:true',
+            '__UCAN_EXTERIOR_ECOSYSTEM_V306__'
+          ];
+          const missing = required.filter(value => !source.includes(value));
+          if (missing.length) throw new Error(`Marcadores V306 ausentes: ${missing.join(', ')}`);
+          console.log({ markers:required.length });
+          NODE
+
+      - name: Validar orden y carga única
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const html = fs.readFileSync('/tmp/campus-v306.html', 'utf8');
+          const main = html.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');
+          const v304 = html.indexOf('ucan_v304_seasonal_natural_ecosystem.js');
+          const v305 = html.indexOf('ucan_v305_ecosystem_visibility_fix.js');
+          const v306 = html.indexOf('ucan_v306_exterior_ecosystem_solar_cycle.js');
+          if (!(main >= 0 && v304 > main && v305 > v304 && v306 > v305)) throw new Error(JSON.stringify({ main, v304, v305, v306 }));
+          for (const file of ['ucan_v304_seasonal_natural_ecosystem.js','ucan_v305_ecosystem_visibility_fix.js','ucan_v306_exterior_ecosystem_solar_cycle.js']) {
+            const count = (html.match(new RegExp(file.replaceAll('.', '\\.'), 'g')) || []).length;
+            if (count !== 1) throw new Error(`${file}: ${count} ocurrencias`);
+          }
+          console.log({ main, v304, v305, v306 });
+          NODE
+
+      - name: Validar encabezados y versión
+        run: |
+          grep -Fi "X-UCAN-Exterior-Ecosystem: V306" /tmp/campus-v306.headers
+          grep -Fi "X-UCAN-Solar-Cycle: V306" /tmp/campus-v306.headers
+          grep -Fi "X-UCAN-Solar-Location: San-German-PR" /tmp/campus-v306.headers
+          grep -Fi "X-UCAN-Release: V306" /tmp/campus-v306.headers
+          node - <<'NODE'
+          const fs = require('fs');
+          const v = JSON.parse(fs.readFileSync('/tmp/version-v306.json'));
+          const checks = {
+            release:v.releaseVersion === 'V306',
+            calendar:v.environmentVersion === 'V304',
+            visibility:v.ecosystemVisibilityVersion === 'V305',
+            exterior:v.exteriorEcosystemVersion === 'V306' && v.exteriorEcosystemExteriorOnly === true,
+            oldInterior:v.exteriorEcosystemInteriorV305Disabled === true && v.exteriorEcosystemBaseV304GeometryDisabled === true,
+            season:v.exteriorEcosystemSeasonalCalendarPreserved === true,
+            location:v.solarCycleLocation === 'San Germán, Puerto Rico' && v.solarCycleTimeZone === 'America/Puerto_Rico',
+            coordinates:v.solarCycleLatitude === 18.0819 && v.solarCycleLongitude === -67.0458,
+            solar:v.solarCycleDynamicPosition === true && v.solarSunriseSunsetDynamic === true && v.solarDawnSunsetNightDynamic === true,
+            visuals:v.solarSkyDomeEnabled === true && v.solarSunAndMoonVisible === true,
+            platforms:v.exteriorEcosystemBrowserAndQuest === true && v.exteriorEcosystemQuestOptimized === true
+          };
+          if (!Object.values(checks).every(Boolean)) throw new Error(JSON.stringify({ checks, version:v }, null, 2));
+          console.log({ checks });
+          NODE
+
+      - name: Verificar respuesta de registro
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const registration = JSON.parse(fs.readFileSync('/tmp/register-v306.json'));
+          if (registration.exteriorEcosystemVersion || registration.solarCycleVersion || registration.releaseVersion) {
+            throw new Error('La respuesta de registro fue modificada como /version.');
+          }
+          console.log({ registrationUntouched:true });
+          NODE
+
+      - name: Construir Docker V306
+        run: docker build -t ucan-academic:v306 .
+
+      - name: Detener servidor
+        if: always()
+        run: |
+          test -f /tmp/ucan-v306.pid && kill "$(cat /tmp/ucan-v306.pid)" || true
