@@ -18,7 +18,7 @@ jobs:
       - name: Validar JavaScript y auditorías
         run: npm test
 
-      - name: Preparar respuestas del servidor V301
+      - name: Preparar respuestas del servidor V302
         env:
           PORT: 3011
           ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
@@ -33,6 +33,7 @@ jobs:
           curl -fsS "http://127.0.0.1:3011/js/ucan_v289_quest_xr_compat.js?build=V289-20260720-QUEST-XR-COMPAT-DIAGNOSTICS" > /tmp/quest-entry.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v292_universal_sign_window.js?build=V292-20260721-UNIVERSAL-SIGN-WINDOW-CLOCK" > /tmp/universal-signs.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v301_quest_rails_selection_comfort.js?build=V301-20260723-QUEST-RAILS-SELECTION-COMFORT" > /tmp/quest-v301.js
+          curl -fsS "http://127.0.0.1:3011/js/ucan_v302_remove_stair_glass.js?build=V302-20260723-REMOVE-QUEST-STAIR-GLASS" > /tmp/quest-v302.js
           curl -fsS http://127.0.0.1:3011/version > /tmp/version.json
           CI_USER="ciquest${GITHUB_RUN_ID}"
           curl -fsS -c /tmp/cookies.txt \
@@ -48,6 +49,7 @@ jobs:
           node --check /tmp/quest-entry.js
           node --check /tmp/universal-signs.js
           node --check /tmp/quest-v301.js
+          node --check /tmp/quest-v302.js
 
       - name: Validar runtime Meta Quest V301
         run: |
@@ -61,7 +63,6 @@ jobs:
             'baranda hueco escalera terraza',
             'baranda tragaluz rooftop',
             'questCorrectedStairRailV301',
-            'stairGlassFrontBackVisible:true',
             'terraza completa Quest V301 oeste',
             'terraza completa Quest V301 este',
             'terraza completa Quest V301 sur',
@@ -72,7 +73,6 @@ jobs:
             'rooftopSignsSelectable:true',
             'rooftopSaucersSelectable:true',
             'rooftopTelescopesSelectable:true',
-            'platillo|ovni|ufo|saucer',
             'function selectFromController',
             'triggerSelection:true',
             'defaultComfortMode:true',
@@ -89,6 +89,31 @@ jobs:
           const missing = required.filter(value => !source.includes(value));
           if (missing.length) throw new Error(`Marcadores V301 ausentes: ${missing.join(', ')}`);
           console.log({ questV301Markers:required.length });
+          NODE
+
+      - name: Validar eliminación de cristales V302
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const source = fs.readFileSync('/tmp/quest-v302.js', 'utf8');
+          const required = [
+            "const VERSION = 'V302'",
+            'function isStairGlass',
+            'function isMetalStairPart',
+            'metadata.stairGlassPanel === true',
+            'cristal baranda escalera Quest V301',
+            'baranda hueco escalera terraza',
+            'mesh.setEnabled?.(false)',
+            'mesh.checkCollisions = false',
+            'stairGlassRemoved:true',
+            'metalPostsPreserved:true',
+            'metalHandrailsPreserved:true',
+            'noNewStairGlassCreated:true'
+          ];
+          const missing = required.filter(value => !source.includes(value));
+          if (missing.length) throw new Error(`Marcadores V302 ausentes: ${missing.join(', ')}`);
+          if (source.includes('MeshBuilder.CreateBox')) throw new Error('V302 no debe crear paneles de cristal.');
+          console.log({ questV302Markers:required.length });
           NODE
 
       - name: Validar parche de escena principal V301
@@ -120,9 +145,10 @@ jobs:
           const entry = html.indexOf('ucan_v289_quest_xr_compat.js');
           const universal = html.indexOf('ucan_v292_universal_sign_window.js');
           const runtime = html.indexOf('ucan_v301_quest_rails_selection_comfort.js');
+          const patch = html.indexOf('ucan_v302_remove_stair_glass.js');
           const main = html.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');
-          if (!(entry >= 0 && universal > entry && runtime > universal && main > runtime)) {
-            throw new Error(JSON.stringify({ entry, universal, runtime, main }));
+          if (!(entry >= 0 && universal > entry && runtime > universal && patch > runtime && main > patch)) {
+            throw new Error(JSON.stringify({ entry, universal, runtime, patch, main }));
           }
           const forbidden = [
             'ucan_v283_unified_xr_runtime.js',
@@ -142,10 +168,10 @@ jobs:
           const found = forbidden.filter(value => html.includes(value));
           if (found.length) throw new Error(`Capas heredadas encontradas: ${found.join(', ')}`);
           if (!html.includes('UCAN Academic') || html.includes('UCAN Academic Mall')) throw new Error('Marca visible incorrecta');
-          console.log({ entry, universal, runtime, main, singleRuntime:true, branding:true });
+          console.log({ entry, universal, runtime, patch, main, branding:true });
           NODE
 
-      - name: Validar encabezados V301
+      - name: Validar encabezados V302
         run: |
           grep -Fi "Permissions-Policy: xr-spatial-tracking=(self)" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Controls: V301" /tmp/campus.headers
@@ -155,28 +181,34 @@ jobs:
           grep -Fi "X-UCAN-XR-Terrace: V301" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Selection: V301" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Comfort: V301" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Stair-Glass: V302" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Release: V302" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-UI: V292" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Entry: V289" /tmp/campus.headers
           grep -Fi "X-UCAN-Product: UCAN Academic" /tmp/campus.headers
 
-      - name: Validar endpoint de versión V301
+      - name: Validar endpoint de versión V302
         run: |
           node - <<'NODE'
           const fs = require('fs');
           const v = JSON.parse(fs.readFileSync('/tmp/version.json'));
           const checks = {
             product:v.productName === 'UCAN Academic',
-            experience:v.questExperienceVersion === 'V301' && v.questRuntimeVersion === 'V301',
-            runtime:v.unifiedXrVersion === 'V301' && v.questControlsVersion === 'V301',
-            architecture:v.questArchitecture === 'single-v301-quest-runtime' && v.questSingleAuthoritativeRuntime === true,
+            base:v.questExperienceVersion === 'V301' && v.questRuntimeVersion === 'V301' && v.questControlsVersion === 'V301',
+            release:v.questReleaseVersion === 'V302' && v.questStairGlassVersion === 'V302',
+            architecture:v.questArchitecture === 'single-v301-quest-runtime-with-v302-stair-glass-removal' && v.questSingleAuthoritativeRuntime === true,
             noLegacy:v.questLegacyRuntimeLayersLoaded === false,
-            rails:v.questCorrectedSlopedStairRailings === true && v.questStairGlassFrontBackVisible === true && v.questOriginalHorizontalStairRailsHidden === true,
+            rails:v.questCorrectedSlopedStairRailings === true && v.questStairGlassFrontBackVisible === false && v.questOriginalHorizontalStairRailsHidden === true,
+            removal:v.questStairGlassRemoved === true && v.questStairGlassMeshesDisabled === true && v.questStairGlassCollisionsDisabled === true,
+            oldGlass:v.questV301GlassPanesRemoved === true && v.questOriginalDarkGlassRailsRemoved === true,
+            metal:v.questStairMetalOnly === true && v.questStairMetalPostsPreserved === true && v.questStairMetalHandrailsPreserved === true,
+            noCreation:v.questNoNewStairGlassCreated === true,
             terrace:v.questRooftopCenterGlassRemoved === true && v.questRooftopCenterGlassRailingsRemoved === true && v.questRooftopFullSolidFloor === true && v.questRooftopStairOpeningPreserved === true,
             selection:v.questRooftopSignsSelectable === true && v.questRooftopCelestialSelectable === true && v.questRooftopSaucersSelectable === true && v.questRooftopTelescopesSelectable === true && v.questTriggerSelection === true,
             comfort:v.questDefaultComfortMode === true && v.questRightStickSnapTurnInComfort === true && v.questSnapTurnDegrees === 30 && v.questMotionVignette === true,
             motion:v.questAccelerationSmoothing === true && v.questLowFpsMovementCompensation === true && v.questMovementSubstepsEnabled === true,
             floor:v.questStableFloorMaterial === true && v.questFloorReceivesAvatarShadows === false && v.questFloorColorStableDuringMovement === true,
-            desktop:v.desktopVisualsUnchanged === true
+            desktop:v.questDesktopStairUnchanged === true && v.desktopVisualsUnchanged === true
           };
           if (!Object.values(checks).every(Boolean)) throw new Error(JSON.stringify({ checks, version:v }, null, 2));
           console.log({ checks });
@@ -187,7 +219,7 @@ jobs:
           node - <<'NODE'
           const fs = require('fs');
           const registration = JSON.parse(fs.readFileSync('/tmp/register.json'));
-          if (registration.questRuntimeVersion || registration.questArchitecture) throw new Error('Registro modificado como /version');
+          if (registration.questRuntimeVersion || registration.questArchitecture || registration.questStairGlassVersion) throw new Error('Registro modificado como /version');
           console.log({ registrationResponseUntouched:true });
           NODE
 
