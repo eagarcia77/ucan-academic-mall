@@ -9,6 +9,9 @@ const QUEST_BASE_VERSION = 'V299';
 const QUEST_BASE_BUILD = 'V299-20260723-QUEST-NAVIGATION-GLASS-TERRACE';
 const QUEST_BASE_PATH = '/js/ucan_v299_quest_navigation_glass_terrace.js';
 const QUEST_BASE_SCRIPT = `${QUEST_BASE_PATH}?build=${QUEST_BASE_BUILD}`;
+const QUEST_DISABLE_BUILD = 'V300-20260723-DISABLE-V299-MOVEMENT';
+const QUEST_DISABLE_PATH = '/js/ucan_v300_disable_v299_movement.js';
+const QUEST_DISABLE_SCRIPT = `${QUEST_DISABLE_PATH}?build=${QUEST_DISABLE_BUILD}`;
 const QUEST_RUNTIME_PATH = '/js/ucan_v300_quest_full_controls_floor_lock.js';
 const QUEST_RUNTIME_SCRIPT = `${QUEST_RUNTIME_PATH}?build=${QUEST_RUNTIME_BUILD}`;
 
@@ -36,6 +39,7 @@ function stripLegacyQuestLayers(html) {
     /\s*<script src="\/js\/ucan_v297_quest_room_signs_speed\.js[^"]*"><\/script>/g,
     /\s*<script src="\/js\/ucan_v298_browser_emulation_xr\.js[^"]*"><\/script>/g,
     /\s*<script src="\/js\/ucan_v299_quest_navigation_glass_terrace\.js[^"]*"><\/script>/g,
+    /\s*<script src="\/js\/ucan_v300_disable_v299_movement\.js[^"]*"><\/script>/g,
     /\s*<script src="\/js\/ucan_v300_quest_full_controls_floor_lock\.js[^"]*"><\/script>/g
   ];
   let result = String(html);
@@ -46,8 +50,9 @@ function stripLegacyQuestLayers(html) {
 function transformCampusHtml(text) {
   let html = stripLegacyQuestLayers(text);
   const baseTag = `<script src="${QUEST_BASE_SCRIPT}"></script>`;
+  const disableTag = `<script src="${QUEST_DISABLE_SCRIPT}"></script>`;
   const runtimeTag = `<script src="${QUEST_RUNTIME_SCRIPT}"></script>`;
-  const tags = `${baseTag}\n  ${runtimeTag}`;
+  const tags = `${baseTag}\n  ${disableTag}\n  ${runtimeTag}`;
   const universalTag = html.match(/<script src="\/js\/ucan_v292_universal_sign_window\.js\?build=[^"]+"><\/script>/)?.[0];
   const mainTag = html.match(/<script src="\/js\/ucan_babylon_mall_v265_accounts_avatars\.js\?build=[^"]+"><\/script>/)?.[0];
   if (universalTag) html = html.replace(universalTag, `${universalTag}\n  ${tags}`);
@@ -65,6 +70,9 @@ function transformCampusHtml(text) {
   return normalizeBranding(html);
 }
 
+// Respaldo adicional. La autoridad principal para retirar el ciclo de movimiento V299
+// es ucan_v300_disable_v299_movement.js, que funciona aun cuando el servidor transmite
+// el archivo JavaScript en varios fragmentos.
 function patchV299ForV300(source) {
   let value = String(source);
   if (!value.includes("const VERSION = 'V299'") || !value.includes('function applyMovement(dt)')) return value;
@@ -96,6 +104,9 @@ function updateVersionData(data) {
   data.questControlsBuild = QUEST_RUNTIME_BUILD;
   data.questSelectionBaseVersion = QUEST_BASE_VERSION;
   data.questSelectionBaseScript = QUEST_BASE_SCRIPT;
+  data.questDisableV299MovementScript = QUEST_DISABLE_SCRIPT;
+  data.questV299MovementObserverRemovedByV300 = true;
+  data.questV299SelectionPreserved = true;
   data.questArchitecture = 'v299-selection-v300-single-movement-authority';
   data.questSingleMovementAuthority = true;
   data.questV299MovementSuperseded = true;
@@ -186,6 +197,7 @@ http.ServerResponse.prototype.writeHead = function writeHeadV300(statusCode, sta
     nextHeaders['X-UCAN-XR-Emulation'] = QUEST_RUNTIME_VERSION;
     nextHeaders['X-UCAN-XR-Mode'] = 'v299-selection-v300-controls';
     nextHeaders['X-UCAN-XR-Base'] = QUEST_BASE_VERSION;
+    nextHeaders['X-UCAN-XR-V299-Disable'] = QUEST_RUNTIME_VERSION;
     nextHeaders['X-UCAN-XR-Floor-Lock'] = QUEST_RUNTIME_VERSION;
     nextHeaders['X-UCAN-XR-Jump'] = QUEST_RUNTIME_VERSION;
     nextHeaders['X-UCAN-XR-UI'] = 'V292';
