@@ -4,6 +4,7 @@ const fs = require('fs');
 
 const runtime = fs.readFileSync('public/js/ucan_v305_ecosystem_visibility_fix.js', 'utf8');
 const compat = fs.readFileSync('auth-compat-v305.js', 'utf8');
+const exteriorCompat = fs.readFileSync('auth-compat-v306.js', 'utf8');
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 const docker = fs.readFileSync('Dockerfile', 'utf8');
 
@@ -11,6 +12,12 @@ let syntaxValid = false;
 let syntaxError = null;
 try { new Function(runtime); syntaxValid = true; }
 catch (error) { syntaxError = error.message; }
+
+const v306PreservesV305 = /require\('\.\/auth-compat-v305\.js'\)/.test(exteriorCompat);
+const startsV305 = pkg.scripts?.start === 'node -r ./auth-compat-v305.js server.js';
+const startsV306 = pkg.scripts?.start === 'node -r ./auth-compat-v306.js server.js' && v306PreservesV305;
+const dockerV305 = docker.includes('./auth-compat-v305.js');
+const dockerV306 = docker.includes('./auth-compat-v306.js') && v306PreservesV305;
 
 const checks = {
   syntaxValid,
@@ -32,12 +39,19 @@ const checks = {
   audit:/__UCAN_ECOSYSTEM_VISIBILITY_V305__/.test(runtime),
   compatInjects:/ucan_v305_ecosystem_visibility_fix\.js/.test(compat) && /ucan_v304_seasonal_natural_ecosystem/.test(compat),
   compatVersion:/ecosystemVisibilityVersion = VERSION/.test(compat),
-  packageStart:pkg.scripts?.start === 'node -r ./auth-compat-v305.js server.js',
+  v306PreservesV305,
+  packageStart:startsV305 || startsV306,
   packageCheck:pkg.scripts?.check?.includes('auth-compat-v305.js') && pkg.scripts?.check?.includes('ucan_v305_ecosystem_visibility_fix.js'),
   packageAudit:pkg.scripts?.['audit:ecosystem-visibility'] === 'node verify_ecosystem_visibility_v305.js',
-  dockerPreloader:docker.includes('./auth-compat-v305.js')
+  dockerPreloader:dockerV305 || dockerV306
 };
 
 const ok = Object.values(checks).every(Boolean);
-console.log(JSON.stringify({ ok, version:'V305', checks, syntaxError }, null, 2));
+console.log(JSON.stringify({
+  ok,
+  version:'V305',
+  checks,
+  preloaderChain:{ startsV305, startsV306, dockerV305, dockerV306, v306PreservesV305 },
+  syntaxError
+}, null, 2));
 if (!ok) process.exit(1);
