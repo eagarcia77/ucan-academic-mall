@@ -16,7 +16,7 @@ jobs:
           node-version: 20
       - name: Validar JavaScript y auditorías
         run: npm test
-      - name: Probar servidor, navegación Quest, cristales, terraza y autenticación
+      - name: Probar controles completos, salto, velocidad, piso y terraza Meta Quest
         env:
           PORT: 3011
           ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
@@ -32,6 +32,7 @@ jobs:
           curl -fsS "http://127.0.0.1:3011/js/ucan_v289_quest_xr_compat.js?build=V289-20260720-QUEST-XR-COMPAT-DIAGNOSTICS" > /tmp/quest-entry.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v292_universal_sign_window.js?build=V292-20260721-UNIVERSAL-SIGN-WINDOW-CLOCK" > /tmp/universal-signs.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v299_quest_navigation_glass_terrace.js?build=V299-20260723-QUEST-NAVIGATION-GLASS-TERRACE" > /tmp/quest-v299.js
+          curl -fsS "http://127.0.0.1:3011/js/ucan_v300_quest_full_controls_floor_lock.js?build=V300-20260723-FULL-CONTROLS-FLOOR-LOCK" > /tmp/quest-v300.js
           curl -fsS http://127.0.0.1:3011/version > /tmp/version.json
 
           CI_USER="ciquest${GITHUB_RUN_ID}"
@@ -45,54 +46,74 @@ jobs:
           node --check /tmp/quest-entry.js
           node --check /tmp/universal-signs.js
           node --check /tmp/quest-v299.js
+          node --check /tmp/quest-v300.js
 
           node - <<'NODE'
           const fs = require('fs');
-          const source = fs.readFileSync('/tmp/quest-v299.js', 'utf8');
+          const base = fs.readFileSync('/tmp/quest-v299.js', 'utf8');
           const required = [
             "const VERSION = 'V299'",
-            "architecture:'single-browser-scene-quest-compatible'",
-            'singleAuthoritativeRuntime:true',
-            'function controllerAxes',
-            'gamepad-0-1',
-            'gamepad-2-3',
-            'joystickAxisPairAutoDetection:true',
-            'comfort:3.4, normal:5.0, sprint:7.0',
-            'function pathClear',
-            'function moveWithSceneCollision',
-            'synchronousCollisionChecks:true',
-            'asynchronousCameraCollisionProxy:false',
+            'function selectFromController',
+            'if (window.__UCAN_QUEST_V300_SUPERSEDES_V299__) return;',
+            'window.__UCAN_V299_PATCHED_FOR_V300__ = true'
+          ];
+          const missing = required.filter(value => !base.includes(value));
+          if (missing.length) {
+            console.error({ missing });
+            process.exit(1);
+          }
+          console.log({ v299SelectionBaseMarkers:required.length });
+          NODE
+
+          node - <<'NODE'
+          const fs = require('fs');
+          const source = fs.readFileSync('/tmp/quest-v300.js', 'utf8');
+          const required = [
+            "const VERSION = 'V300'",
+            '__UCAN_QUEST_V300_SUPERSEDES_V299__ = true',
+            'singleMovementAuthority:true',
+            'leftStickMovement:true',
+            'rightStickSmoothTurn:true',
+            'leftStickClickSprint:true',
+            'leftGripSprint:true',
+            'fullStickSprint:true',
+            'rightStickClickJump:true',
+            'primaryButtonJump:true',
+            'secondaryButtonClosesWindow:true',
+            'JUMP_DURATION_MS = 720',
+            'JUMP_HEIGHT = 0.92',
+            'MAX_FRAME_DT = 0.12',
+            'MAX_MOVE_SUBSTEP = 0.14',
+            'movementSubstepsEnabled:true',
             'floorThreeSpeedStable:true',
-            'function disableRooftopRampCollision',
-            'function moveOnRooftopStairs',
-            'rooftopStairMidpointBlockPrevented:true',
-            'function applyQuestGlassCompatibility',
-            'material.needDepthPrePass = false',
-            'material.disableDepthWrite = true',
-            'questGlassAlphaBlend:true',
-            'tragaluz cristal ampliado',
-            'terraza piso completo Quest V299 principal',
-            'rooftopSolidFloor:true',
-            'rooftopStairOpeningPreserved:true'
+            'piso estable Meta Quest V300',
+            'floorColorStableDuringMovement:true',
+            'floorReceivesAvatarShadows:false',
+            'terraza completa Quest V300 oeste',
+            'terraza completa Quest V300 este',
+            'terraza completa Quest V300 sur',
+            'terraza completa Quest V300 norte',
+            'rooftopFullSurface:true'
           ];
           const missing = required.filter(value => !source.includes(value));
           if (missing.length) {
             console.error({ missing });
             process.exit(1);
           }
-          console.log({ questV299Markers:required.length });
+          console.log({ v300Markers:required.length });
           NODE
 
           node - <<'NODE'
           const fs = require('fs');
           const main = fs.readFileSync('/tmp/main-scene.js', 'utf8');
           const required = [
-            '__UCAN_BROWSER_XR_MAIN_PATCH_V299__',
+            '__UCAN_BROWSER_XR_MAIN_PATCH_V300__',
             'if(window.__UCAN_BROWSER_XR_EMULATION_ACTIVE__) return;',
             "zone.id === 'up34' || zone.id === 'down43'",
             'return nearEntry(camera.position, zone);',
-            'floorThreeSpeedStable:true',
-            "const speed=(comfortMode?3.4:(keys.has('ShiftLeft')||keys.has('ShiftRight')?7.0:5.0))"
+            'fullTouchControllerMapping:true',
+            'lowFpsMovementCompensation:true',
+            'floorMaterialLockedInXR:true'
           ];
           const missing = required.filter(value => !main.includes(value));
           if (missing.length) {
@@ -107,10 +128,11 @@ jobs:
           const html = fs.readFileSync('/tmp/campus.html', 'utf8');
           const entry = html.indexOf('ucan_v289_quest_xr_compat.js');
           const universal = html.indexOf('ucan_v292_universal_sign_window.js');
-          const runtime = html.indexOf('ucan_v299_quest_navigation_glass_terrace.js');
+          const base = html.indexOf('ucan_v299_quest_navigation_glass_terrace.js');
+          const runtime = html.indexOf('ucan_v300_quest_full_controls_floor_lock.js');
           const main = html.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');
-          if (!(entry >= 0 && universal > entry && runtime > universal && main > runtime)) {
-            console.error({ entry, universal, runtime, main });
+          if (!(entry >= 0 && universal > entry && base > universal && runtime > base && main > runtime)) {
+            console.error({ entry, universal, base, runtime, main });
             process.exit(1);
           }
           const forbidden = [
@@ -131,15 +153,16 @@ jobs:
             process.exit(1);
           }
           if (!html.includes('UCAN Academic') || html.includes('UCAN Academic Mall')) process.exit(1);
-          console.log({ entry, universal, runtime, main, singleRuntime:true, branding:true });
+          console.log({ entry, universal, base, runtime, main, branding:true });
           NODE
 
           grep -Fi "Permissions-Policy: xr-spatial-tracking=(self)" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Controls: V299" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Emulation: V299" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Mode: browser-scene-quest-compatible" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Glass: V299" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Terrace: V299" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Controls: V300" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Emulation: V300" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Mode: v299-selection-v300-controls" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Base: V299" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Floor-Lock: V300" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Jump: V300" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-UI: V292" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Entry: V289" /tmp/campus.headers
           grep -Fi "X-UCAN-Product: UCAN Academic" /tmp/campus.headers
@@ -149,18 +172,18 @@ jobs:
           const v = JSON.parse(fs.readFileSync('/tmp/version.json'));
           const checks = {
             product:v.productName === 'UCAN Academic',
-            experience:v.questExperienceVersion === 'V299' && v.questRuntimeVersion === 'V299',
-            runtime:v.unifiedXrVersion === 'V299' && v.questControlsVersion === 'V299',
-            architecture:v.questArchitecture === 'single-browser-scene-quest-compatible' && v.questSingleAuthoritativeRuntime === true,
-            noLegacy:v.questLegacyRuntimeLayersLoaded === false,
+            experience:v.questExperienceVersion === 'V300' && v.questRuntimeVersion === 'V300',
+            runtime:v.unifiedXrVersion === 'V300' && v.questControlsVersion === 'V300',
+            base:v.questSelectionBaseVersion === 'V299',
+            authority:v.questSingleMovementAuthority === true && v.questV299MovementSuperseded === true,
             movement:v.questNormalSpeed === 5 && v.questComfortSpeed === 3.4 && v.questBrowserSprintSpeed === 7,
-            axes:v.questJoystickAxisPairAutoDetection === true,
-            collisions:v.questSynchronousSceneCollision === true && v.questAsynchronousCameraCollisionProxy === false && v.questFloorThreeSpeedStable === true,
-            escalators:v.questAutomaticEscalatorsUseBrowserRoutes === true && v.questRooftopStairsAutomatic === false,
-            stairs:v.questRooftopStairRampCollisionDisabled === true && v.questRooftopStairDirectTraversal === true && v.questRooftopStairMidpointBlockPrevented === true,
-            glass:v.questGlassCompatibility === true && v.questGlassDepthPrePassDisabled === true && v.questGlassDepthWriteDisabled === true && v.questGlassAlphaBlend === true,
-            terrace:v.questRooftopCenterRemoved === true && v.questRooftopSolidFloor === true && v.questRooftopStairOpeningPreserved === true,
-            interaction:v.questBrowserPointerDispatch === true && v.questDirectTouchControllerTrigger === true && v.questSelectionRayLength === 300,
+            controls:v.questFullTouchControllerMapping === true && v.questLeftStickClickSprint === true && v.questLeftGripSprint === true,
+            jump:v.questJumpEnabled === true && v.questRightStickClickJump === true && v.questPrimaryButtonJump === true && v.questJumpHeight === 0.92,
+            lowFps:v.questLowFpsMovementCompensation === true && v.questMaximumFrameDt === 0.12 && v.questMovementSubstepsEnabled === true,
+            floor3:v.questFloorThreeSpeedStable === true,
+            floor:v.questFloorMaterialLockedInXR === true && v.questFloorReceivesAvatarShadows === false && v.questFloorColorStableDuringMovement === true,
+            terrace:v.questRooftopCenterRemoved === true && v.questRooftopFullSurface === true && v.questRooftopStairOpeningPreserved === true,
+            interaction:v.questBrowserPointerDispatch === true && v.questDirectTouchControllerTrigger === true,
             desktop:v.desktopVisualsUnchanged === true
           };
           if (!Object.values(checks).every(Boolean)) {
