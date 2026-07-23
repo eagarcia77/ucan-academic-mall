@@ -1,18 +1,11 @@
 'use strict';
 
 const http = require('http');
-const { patchBrowserXrEmulation, VERSION, BUILD } = require('./lib/browser-xr-emulation-v300');
+const { patchBrowserXrEmulation, VERSION, BUILD } = require('./lib/browser-xr-emulation-v301');
 
 const QUEST_RUNTIME_VERSION = VERSION;
 const QUEST_RUNTIME_BUILD = BUILD;
-const QUEST_BASE_VERSION = 'V299';
-const QUEST_BASE_BUILD = 'V299-20260723-QUEST-NAVIGATION-GLASS-TERRACE';
-const QUEST_BASE_PATH = '/js/ucan_v299_quest_navigation_glass_terrace.js';
-const QUEST_BASE_SCRIPT = `${QUEST_BASE_PATH}?build=${QUEST_BASE_BUILD}`;
-const QUEST_DISABLE_BUILD = 'V300-20260723-DISABLE-V299-MOVEMENT';
-const QUEST_DISABLE_PATH = '/js/ucan_v300_disable_v299_movement.js';
-const QUEST_DISABLE_SCRIPT = `${QUEST_DISABLE_PATH}?build=${QUEST_DISABLE_BUILD}`;
-const QUEST_RUNTIME_PATH = '/js/ucan_v300_quest_full_controls_floor_lock.js';
+const QUEST_RUNTIME_PATH = '/js/ucan_v301_quest_rails_selection_comfort.js';
 const QUEST_RUNTIME_SCRIPT = `${QUEST_RUNTIME_PATH}?build=${QUEST_RUNTIME_BUILD}`;
 
 const nativeWriteHead = http.ServerResponse.prototype.writeHead;
@@ -40,7 +33,8 @@ function stripLegacyQuestLayers(html) {
     /\s*<script src="\/js\/ucan_v298_browser_emulation_xr\.js[^"]*"><\/script>/g,
     /\s*<script src="\/js\/ucan_v299_quest_navigation_glass_terrace\.js[^"]*"><\/script>/g,
     /\s*<script src="\/js\/ucan_v300_disable_v299_movement\.js[^"]*"><\/script>/g,
-    /\s*<script src="\/js\/ucan_v300_quest_full_controls_floor_lock\.js[^"]*"><\/script>/g
+    /\s*<script src="\/js\/ucan_v300_quest_full_controls_floor_lock\.js[^"]*"><\/script>/g,
+    /\s*<script src="\/js\/ucan_v301_quest_rails_selection_comfort\.js[^"]*"><\/script>/g
   ];
   let result = String(html);
   for (const pattern of patterns) result = result.replace(pattern, '');
@@ -49,50 +43,31 @@ function stripLegacyQuestLayers(html) {
 
 function transformCampusHtml(text) {
   let html = stripLegacyQuestLayers(text);
-  const baseTag = `<script src="${QUEST_BASE_SCRIPT}"></script>`;
-  const disableTag = `<script src="${QUEST_DISABLE_SCRIPT}"></script>`;
   const runtimeTag = `<script src="${QUEST_RUNTIME_SCRIPT}"></script>`;
-  const tags = `${baseTag}\n  ${disableTag}\n  ${runtimeTag}`;
   const universalTag = html.match(/<script src="\/js\/ucan_v292_universal_sign_window\.js\?build=[^"]+"><\/script>/)?.[0];
   const mainTag = html.match(/<script src="\/js\/ucan_babylon_mall_v265_accounts_avatars\.js\?build=[^"]+"><\/script>/)?.[0];
-  if (universalTag) html = html.replace(universalTag, `${universalTag}\n  ${tags}`);
-  else if (mainTag) html = html.replace(mainTag, `${tags}\n  ${mainTag}`);
-  else html = html.replace('</body>', `  ${tags}\n</body>`);
+  if (universalTag) html = html.replace(universalTag, `${universalTag}\n  ${runtimeTag}`);
+  else if (mainTag) html = html.replace(mainTag, `${runtimeTag}\n  ${mainTag}`);
+  else html = html.replace('</body>', `  ${runtimeTag}\n</body>`);
 
   html = html
-    .replaceAll('Meta Quest V290:', 'Meta Quest V300:')
-    .replaceAll('Meta Quest V293:', 'Meta Quest V300:')
-    .replaceAll('Meta Quest V296:', 'Meta Quest V300:')
-    .replaceAll('Meta Quest V298:', 'Meta Quest V300:')
-    .replaceAll('Meta Quest V299:', 'Meta Quest V300:')
-    .replaceAll('V299: navegación estable, cristales transparentes, escalera completa y terraza sólida en Meta Quest.', 'V300: controles completos, correr, brincar, velocidad compensada y piso estable en Meta Quest.')
-    .replaceAll('V298: Meta Quest emula directamente la escena y el comportamiento del browser.', 'V300: controles completos, correr, brincar, velocidad compensada y piso estable en Meta Quest.');
+    .replaceAll('Meta Quest V290:', 'Meta Quest V301:')
+    .replaceAll('Meta Quest V293:', 'Meta Quest V301:')
+    .replaceAll('Meta Quest V296:', 'Meta Quest V301:')
+    .replaceAll('Meta Quest V298:', 'Meta Quest V301:')
+    .replaceAll('Meta Quest V299:', 'Meta Quest V301:')
+    .replaceAll('Meta Quest V300:', 'Meta Quest V301:')
+    .replaceAll('V300: controles completos, correr, brincar, velocidad compensada y piso estable en Meta Quest.', 'V301: barandas correctas, terraza sólida, selección directa y modo de confort en Meta Quest.')
+    .replaceAll('V299: navegación estable, cristales transparentes, escalera completa y terraza sólida en Meta Quest.', 'V301: barandas correctas, terraza sólida, selección directa y modo de confort en Meta Quest.')
+    .replaceAll('V298: Meta Quest emula directamente la escena y el comportamiento del browser.', 'V301: barandas correctas, terraza sólida, selección directa y modo de confort en Meta Quest.');
   return normalizeBranding(html);
-}
-
-// Respaldo adicional. La autoridad principal para retirar el ciclo de movimiento V299
-// es ucan_v300_disable_v299_movement.js, que funciona aun cuando el servidor transmite
-// el archivo JavaScript en varios fragmentos.
-function patchV299ForV300(source) {
-  let value = String(source);
-  if (!value.includes("const VERSION = 'V299'") || !value.includes('function applyMovement(dt)')) return value;
-  if (value.includes('__UCAN_QUEST_V300_SUPERSEDES_V299__')) return value;
-  value = value.replace(
-    '  function applyTurn(dt) {',
-    '  function applyTurn(dt) {\n    if (window.__UCAN_QUEST_V300_SUPERSEDES_V299__) return;'
-  );
-  value = value.replace(
-    '  function applyMovement(dt) {',
-    '  function applyMovement(dt) {\n    if (window.__UCAN_QUEST_V300_SUPERSEDES_V299__) return;'
-  );
-  value += '\nwindow.__UCAN_V299_PATCHED_FOR_V300__ = true;\n';
-  return value;
 }
 
 function updateVersionData(data) {
   if (!data || typeof data !== 'object') return data;
   const versionPayload = Object.prototype.hasOwnProperty.call(data, 'version') || Object.prototype.hasOwnProperty.call(data, 'build') || Object.prototype.hasOwnProperty.call(data, 'unifiedXrVersion') || Object.prototype.hasOwnProperty.call(data, 'questControlsVersion');
   if (!versionPayload) return data;
+
   data.productName = 'UCAN Academic';
   data.visibleVersionInProductName = false;
   data.legacyProductNameRemoved = true;
@@ -102,64 +77,61 @@ function updateVersionData(data) {
   data.unifiedXrBuild = QUEST_RUNTIME_BUILD;
   data.questControlsVersion = QUEST_RUNTIME_VERSION;
   data.questControlsBuild = QUEST_RUNTIME_BUILD;
-  data.questSelectionBaseVersion = QUEST_BASE_VERSION;
-  data.questSelectionBaseScript = QUEST_BASE_SCRIPT;
-  data.questDisableV299MovementScript = QUEST_DISABLE_SCRIPT;
-  data.questV299MovementObserverRemovedByV300 = true;
-  data.questV299SelectionPreserved = true;
-  data.questArchitecture = 'v299-selection-v300-single-movement-authority';
-  data.questSingleMovementAuthority = true;
-  data.questV299MovementSuperseded = true;
-  data.questLegacyRuntimeLayersLoaded = false;
   data.questRuntimeScript = QUEST_RUNTIME_SCRIPT;
   data.questRuntimeVersion = QUEST_RUNTIME_VERSION;
   data.questRuntimeBuild = QUEST_RUNTIME_BUILD;
+  data.questArchitecture = 'single-v301-quest-runtime';
+  data.questSingleAuthoritativeRuntime = true;
+  data.questLegacyRuntimeLayersLoaded = false;
   data.questUsesBrowserScene = true;
   data.questUsesBrowserMeshes = true;
-  data.questUsesBrowserLighting = true;
-  data.questUsesBrowserImageProcessing = true;
-  data.questUsesBrowserRoomSigns = true;
   data.questBrowserMovementLoopSuppressed = true;
-  data.questNormalSpeed = 5.0;
-  data.questComfortSpeed = 3.4;
-  data.questBrowserSprintSpeed = 7.0;
+
   data.questFullTouchControllerMapping = true;
   data.questLeftStickMovement = true;
-  data.questRightStickSmoothTurn = true;
   data.questLeftStickClickSprint = true;
   data.questLeftGripSprint = true;
-  data.questFullStickSprint = true;
+  data.questRightStickSnapTurnInComfort = true;
+  data.questRightStickSmoothTurnOutsideComfort = true;
   data.questRightStickClickJump = true;
-  data.questPrimaryButtonJump = true;
+  data.questPrimaryButtonSelectOrJump = true;
   data.questSecondaryButtonClosesWindow = true;
-  data.questJumpEnabled = true;
-  data.questJumpHeight = 0.92;
-  data.questJumpDurationMs = 720;
+  data.questTriggerSelection = true;
+
+  data.questCorrectedSlopedStairRailings = true;
+  data.questStairGlassFrontBackVisible = true;
+  data.questOriginalHorizontalStairRailsHidden = true;
+  data.questRooftopCenterGlassRemoved = true;
+  data.questRooftopCenterGlassRailingsRemoved = true;
+  data.questRooftopFullSolidFloor = true;
+  data.questRooftopStairOpeningPreserved = true;
+
+  data.questRooftopSignsSelectable = true;
+  data.questRooftopCelestialSelectable = true;
+  data.questRooftopSaucersSelectable = true;
+  data.questRooftopTelescopesSelectable = true;
+  data.questUniversalWindowIntegration = true;
+  data.questSelectionRayLength = 350;
+
+  data.questDefaultComfortMode = true;
+  data.questComfortWalkSpeed = 3.0;
+  data.questComfortRunSpeed = 4.8;
+  data.questNormalWalkSpeed = 5.0;
+  data.questNormalRunSpeed = 7.0;
+  data.questSnapTurnDegrees = 30;
+  data.questSnapTurnCooldownMs = 320;
+  data.questAccelerationSmoothing = true;
+  data.questMotionVignette = true;
+  data.questReducedJumpHeightInComfort = true;
   data.questLowFpsMovementCompensation = true;
-  data.questMaximumFrameDt = 0.12;
   data.questMovementSubstepsEnabled = true;
   data.questMaximumMoveSubstep = 0.14;
   data.questFloorThreeSpeedStable = true;
-  data.questDefaultTeleportation = false;
-  data.questAutomaticEscalatorsUseBrowserRoutes = true;
-  data.questRooftopStairsAutomatic = false;
-  data.questRooftopStairsJoystickTraversal = true;
-  data.questRooftopStairsContinuousSlope = true;
-  data.questRooftopFloorStickyCommit = true;
-  data.questGlassCompatibility = true;
-  data.questFloorMaterialLockedInXR = true;
+
+  data.questStableFloorMaterial = true;
+  data.questStableFloorColor = '#687174';
   data.questFloorReceivesAvatarShadows = false;
   data.questFloorColorStableDuringMovement = true;
-  data.questFloorStableColor = '#7f898d';
-  data.questRooftopCenterRemoved = true;
-  data.questRooftopFullSurface = true;
-  data.questRooftopStairOpeningPreserved = true;
-  data.questBrowserPointerDispatch = true;
-  data.questDirectTouchControllerTrigger = true;
-  data.questSelectionRayLength = 300;
-  data.questTerracePanelsSelectable = true;
-  data.questCelestialObjectsSelectable = true;
-  data.questUniversalWindowIntegration = true;
   data.desktopVisualsUnchanged = true;
   return data;
 }
@@ -174,14 +146,11 @@ function transformResponseText(text) {
   if (value.includes('__UCAN_FLOOR_STATE_V287__') && value.includes('function setupReliableMovement')) {
     return patchBrowserXrEmulation(value).code;
   }
-  if (value.includes("const VERSION = 'V299'") && value.includes('function applyMovement(dt)')) {
-    return patchV299ForV300(value);
-  }
   if (/<html|<body|<script/i.test(value)) return transformCampusHtml(value);
   return normalizeBranding(value);
 }
 
-http.ServerResponse.prototype.writeHead = function writeHeadV300(statusCode, statusMessage, headers) {
+http.ServerResponse.prototype.writeHead = function writeHeadV301(statusCode, statusMessage, headers) {
   let message = statusMessage;
   let nextHeaders = headers;
   if (statusMessage && typeof statusMessage === 'object') {
@@ -195,11 +164,11 @@ http.ServerResponse.prototype.writeHead = function writeHeadV300(statusCode, sta
     }
     nextHeaders['X-UCAN-XR-Controls'] = QUEST_RUNTIME_VERSION;
     nextHeaders['X-UCAN-XR-Emulation'] = QUEST_RUNTIME_VERSION;
-    nextHeaders['X-UCAN-XR-Mode'] = 'v299-selection-v300-controls';
-    nextHeaders['X-UCAN-XR-Base'] = QUEST_BASE_VERSION;
-    nextHeaders['X-UCAN-XR-V299-Disable'] = QUEST_RUNTIME_VERSION;
-    nextHeaders['X-UCAN-XR-Floor-Lock'] = QUEST_RUNTIME_VERSION;
-    nextHeaders['X-UCAN-XR-Jump'] = QUEST_RUNTIME_VERSION;
+    nextHeaders['X-UCAN-XR-Mode'] = 'single-v301-quest-runtime';
+    nextHeaders['X-UCAN-XR-Railings'] = QUEST_RUNTIME_VERSION;
+    nextHeaders['X-UCAN-XR-Terrace'] = QUEST_RUNTIME_VERSION;
+    nextHeaders['X-UCAN-XR-Selection'] = QUEST_RUNTIME_VERSION;
+    nextHeaders['X-UCAN-XR-Comfort'] = QUEST_RUNTIME_VERSION;
     nextHeaders['X-UCAN-XR-UI'] = 'V292';
     nextHeaders['X-UCAN-XR-Entry'] = 'V289';
     nextHeaders['X-UCAN-Product'] = 'UCAN Academic';
@@ -208,7 +177,7 @@ http.ServerResponse.prototype.writeHead = function writeHeadV300(statusCode, sta
   return nativeWriteHead.call(this, statusCode, message, nextHeaders);
 };
 
-http.ServerResponse.prototype.end = function endV300(chunk, encoding, callback) {
+http.ServerResponse.prototype.end = function endV301(chunk, encoding, callback) {
   let body = chunk;
   try {
     if (typeof body === 'string' || Buffer.isBuffer(body)) {
@@ -218,11 +187,11 @@ http.ServerResponse.prototype.end = function endV300(chunk, encoding, callback) 
       body = buffer ? Buffer.from(transformed, 'utf8') : transformed;
     }
   } catch (error) {
-    console.error('[UCAN V300 response compatibility]', error);
+    console.error('[UCAN V301 response compatibility]', error);
   }
   return nativeEnd.call(this, body, encoding, callback);
 };
 
 require('./auth-compat-v287.js');
 
-console.info(`[UCAN ${QUEST_RUNTIME_VERSION}] Controles completos, correr, brincar y piso estable Meta Quest cargados.`);
+console.info(`[UCAN ${QUEST_RUNTIME_VERSION}] Barandas, terraza, selección y confort Meta Quest cargados.`);
