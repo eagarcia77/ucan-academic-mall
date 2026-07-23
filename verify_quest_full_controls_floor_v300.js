@@ -5,15 +5,19 @@ const { patchMainScene } = require('./lib/floor-state-machine-v287');
 const { patchBrowserXrEmulation, auditPatchedSource } = require('./lib/browser-xr-emulation-v300');
 
 const runtime = fs.readFileSync('public/js/ucan_v300_quest_full_controls_floor_lock.js', 'utf8');
+const disableRuntime = fs.readFileSync('public/js/ucan_v300_disable_v299_movement.js', 'utf8');
 const baseRuntime = fs.readFileSync('public/js/ucan_v299_quest_navigation_glass_terrace.js', 'utf8');
 const auth = fs.readFileSync('auth-compat-v293.js', 'utf8');
 const main = fs.readFileSync('public/js/ucan_babylon_mall_v265_accounts_avatars.js', 'utf8');
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
 let syntaxValid = false;
+let disableSyntaxValid = false;
 let syntaxError = null;
 try { new Function(runtime); syntaxValid = true; }
 catch (error) { syntaxError = error.message; }
+try { new Function(disableRuntime); disableSyntaxValid = true; }
+catch (error) { syntaxError = `${syntaxError || ''} disable: ${error.message}`.trim(); }
 
 let patchedChecks = {};
 let patchError = null;
@@ -27,6 +31,7 @@ try {
 
 const checks = {
   syntaxValid,
+  disableSyntaxValid,
   version:/const VERSION = 'V300'/.test(runtime),
   build:/V300-20260723-FULL-CONTROLS-FLOOR-LOCK/.test(runtime),
   supersedesV299:/__UCAN_QUEST_V300_SUPERSEDES_V299__ = true/.test(runtime),
@@ -49,10 +54,12 @@ const checks = {
   stairOpening:/rooftopStairOpeningPreserved:true/.test(runtime) && /STAIR\.minX/.test(runtime) && /STAIR\.maxX/.test(runtime),
   glassPreserved:/function stabilizeGlass/.test(runtime) && /material\.needDepthPrePass = false/.test(runtime),
   v299SelectionPreserved:/triggerSelectionPreservedFromV299:true/.test(runtime) && /function selectFromController/.test(baseRuntime),
-  authLoadsBaseAndV300:/QUEST_BASE_VERSION = 'V299'/.test(auth) && /ucan_v300_quest_full_controls_floor_lock/.test(auth),
-  authPatchesV299:/function patchV299ForV300/.test(auth) && /__UCAN_QUEST_V300_SUPERSEDES_V299__/.test(auth),
-  endpointFlags:/questFullTouchControllerMapping = true/.test(auth) && /questJumpEnabled = true/.test(auth) && /questFloorMaterialLockedInXR = true/.test(auth),
-  packageCheck:pkg.scripts?.check?.includes('browser-xr-emulation-v300.js') && pkg.scripts?.check?.includes('ucan_v300_quest_full_controls_floor_lock.js'),
+  observerRemoval:/function callbackLooksLikeV299/.test(disableRuntime) && /observable\.remove\(target\)/.test(disableRuntime),
+  disableAudit:/__UCAN_V299_MOVEMENT_DISABLED_BY_V300__/.test(disableRuntime) && /v299MovementObserverRemoved:true/.test(disableRuntime),
+  authLoadsBaseDisableV300:/QUEST_BASE_VERSION = 'V299'/.test(auth) && /ucan_v300_disable_v299_movement/.test(auth) && /ucan_v300_quest_full_controls_floor_lock/.test(auth),
+  authOrder:/const tags = `\$\{baseTag\}\\n  \$\{disableTag\}\\n  \$\{runtimeTag\}`/.test(auth),
+  endpointFlags:/questFullTouchControllerMapping = true/.test(auth) && /questJumpEnabled = true/.test(auth) && /questFloorMaterialLockedInXR = true/.test(auth) && /questV299MovementObserverRemovedByV300 = true/.test(auth),
+  packageCheck:pkg.scripts?.check?.includes('browser-xr-emulation-v300.js') && pkg.scripts?.check?.includes('ucan_v300_disable_v299_movement.js') && pkg.scripts?.check?.includes('ucan_v300_quest_full_controls_floor_lock.js'),
   packageAudit:pkg.scripts?.['audit:browser-xr'] === 'node verify_quest_full_controls_floor_v300.js',
   mainPatchAll:patchedChecks.all === true
 };
