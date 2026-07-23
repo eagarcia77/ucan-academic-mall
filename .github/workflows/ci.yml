@@ -18,7 +18,7 @@ jobs:
       - name: Validar JavaScript y auditorías
         run: npm test
 
-      - name: Preparar respuestas del servidor V300
+      - name: Preparar respuestas del servidor V301
         env:
           PORT: 3011
           ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
@@ -32,9 +32,7 @@ jobs:
           curl -fsS "http://127.0.0.1:3011/js/ucan_babylon_mall_v265_accounts_avatars.js?build=V287-20260720-FLOOR-STATE-SKY-OPT" > /tmp/main-scene.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v289_quest_xr_compat.js?build=V289-20260720-QUEST-XR-COMPAT-DIAGNOSTICS" > /tmp/quest-entry.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v292_universal_sign_window.js?build=V292-20260721-UNIVERSAL-SIGN-WINDOW-CLOCK" > /tmp/universal-signs.js
-          curl -fsS "http://127.0.0.1:3011/js/ucan_v299_quest_navigation_glass_terrace.js?build=V299-20260723-QUEST-NAVIGATION-GLASS-TERRACE" > /tmp/quest-v299.js
-          curl -fsS "http://127.0.0.1:3011/js/ucan_v300_disable_v299_movement.js?build=V300-20260723-DISABLE-V299-MOVEMENT" > /tmp/quest-disable-v299.js
-          curl -fsS "http://127.0.0.1:3011/js/ucan_v300_quest_full_controls_floor_lock.js?build=V300-20260723-FULL-CONTROLS-FLOOR-LOCK" > /tmp/quest-v300.js
+          curl -fsS "http://127.0.0.1:3011/js/ucan_v301_quest_rails_selection_comfort.js?build=V301-20260723-QUEST-RAILS-SELECTION-COMFORT" > /tmp/quest-v301.js
           curl -fsS http://127.0.0.1:3011/version > /tmp/version.json
           CI_USER="ciquest${GITHUB_RUN_ID}"
           curl -fsS -c /tmp/cookies.txt \
@@ -49,89 +47,65 @@ jobs:
           node --check /tmp/main-scene.js
           node --check /tmp/quest-entry.js
           node --check /tmp/universal-signs.js
-          node --check /tmp/quest-v299.js
-          node --check /tmp/quest-disable-v299.js
-          node --check /tmp/quest-v300.js
+          node --check /tmp/quest-v301.js
 
-      - name: Validar base de selección V299
+      - name: Validar runtime Meta Quest V301
         run: |
           node - <<'NODE'
           const fs = require('fs');
-          const base = fs.readFileSync('/tmp/quest-v299.js', 'utf8');
-          const required = ["const VERSION = 'V299'", 'function selectFromController'];
-          const missing = required.filter(value => !base.includes(value));
-          if (missing.length) throw new Error(`Marcadores V299 ausentes: ${missing.join(', ')}`);
-          console.log({ v299SelectionBaseMarkers:required.length });
-          NODE
-
-      - name: Validar retirada del movimiento V299
-        run: |
-          node - <<'NODE'
-          const fs = require('fs');
-          const source = fs.readFileSync('/tmp/quest-disable-v299.js', 'utf8');
+          const source = fs.readFileSync('/tmp/quest-v301.js', 'utf8');
           const required = [
-            "const VERSION = 'V300'",
-            'function callbackLooksLikeV299',
-            'scene?.onBeforeRenderObservable',
-            'observable.remove(target)',
-            '__UCAN_V299_MOVEMENT_DISABLED_BY_V300__',
-            'v299MovementObserverRemoved:true'
-          ];
-          const missing = required.filter(value => !source.includes(value));
-          if (missing.length) throw new Error(`Marcadores desactivador V299 ausentes: ${missing.join(', ')}`);
-          console.log({ disableV299Markers:required.length });
-          NODE
-
-      - name: Validar controles completos V300
-        run: |
-          node - <<'NODE'
-          const fs = require('fs');
-          const source = fs.readFileSync('/tmp/quest-v300.js', 'utf8');
-          const required = [
-            "const VERSION = 'V300'",
-            '__UCAN_QUEST_V300_SUPERSEDES_V299__ = true',
-            'singleMovementAuthority:true',
-            'leftStickMovement:true',
-            'rightStickSmoothTurn:true',
-            'leftStickClickSprint:true',
-            'leftGripSprint:true',
-            'fullStickSprint:true',
-            'rightStickClickJump:true',
-            'primaryButtonJump:true',
-            'secondaryButtonClosesWindow:true',
-            'JUMP_DURATION_MS = 720',
-            'JUMP_HEIGHT = 0.92',
+            "const VERSION = 'V301'",
+            'singleAuthoritativeRuntime:true',
+            'function buildCorrectedStairRailings',
+            'baranda hueco escalera terraza',
+            'baranda tragaluz rooftop',
+            'questCorrectedStairRailV301',
+            'stairGlassFrontBackVisible:true',
+            'terraza completa Quest V301 oeste',
+            'terraza completa Quest V301 este',
+            'terraza completa Quest V301 sur',
+            'terraza completa Quest V301 norte',
+            'rooftopCenterGlassRemoved:true',
+            'rooftopFullSolidFloor:true',
+            'rooftopStairOpeningPreserved:true',
+            'rooftopSignsSelectable:true',
+            'rooftopSaucersSelectable:true',
+            'rooftopTelescopesSelectable:true',
+            'platillo|ovni|ufo|saucer',
+            'function selectFromController',
+            'triggerSelection:true',
+            'defaultComfortMode:true',
+            'rightStickSnapTurnInComfort:true',
+            'snapDegrees:30',
+            'motionVignette:true',
+            'function createVignette',
+            'accelerationSmoothing:true',
             'MAX_FRAME_DT = 0.12',
             'MAX_MOVE_SUBSTEP = 0.14',
-            'movementSubstepsEnabled:true',
-            'floorThreeSpeedStable:true',
-            'piso estable Meta Quest V300',
-            'floorColorStableDuringMovement:true',
-            'floorReceivesAvatarShadows:false',
-            'terraza completa Quest V300 oeste',
-            'terraza completa Quest V300 este',
-            'terraza completa Quest V300 sur',
-            'terraza completa Quest V300 norte',
-            'rooftopFullSurface:true'
+            'piso estable Meta Quest V301',
+            'floorColorStableDuringMovement:true'
           ];
           const missing = required.filter(value => !source.includes(value));
-          if (missing.length) throw new Error(`Marcadores V300 ausentes: ${missing.join(', ')}`);
-          console.log({ v300Markers:required.length });
+          if (missing.length) throw new Error(`Marcadores V301 ausentes: ${missing.join(', ')}`);
+          console.log({ questV301Markers:required.length });
           NODE
 
-      - name: Validar parche de escena principal V300
+      - name: Validar parche de escena principal V301
         run: |
           node - <<'NODE'
           const fs = require('fs');
           const main = fs.readFileSync('/tmp/main-scene.js', 'utf8');
           const required = [
-            '__UCAN_BROWSER_XR_MAIN_PATCH_V300__',
+            '__UCAN_BROWSER_XR_MAIN_PATCH_V301__',
             'if(window.__UCAN_BROWSER_XR_EMULATION_ACTIVE__) return;',
             "zone.id === 'up34' || zone.id === 'down43'",
             'return nearEntry(camera.position, zone);',
-            'fullTouchControllerMapping:true',
-            'lowFpsMovementCompensation:true',
-            'floorMaterialLockedInXR:true'
+            'rooftopRailingsRebuilt:true',
+            'rooftopCenterGlassRemoved:true',
+            'rooftopObjectsSelectable:true',
+            'snapTurnComfort:true',
+            'motionVignette:true'
           ];
           const missing = required.filter(value => !main.includes(value));
           if (missing.length) throw new Error(`Marcadores escena principal ausentes: ${missing.join(', ')}`);
@@ -145,12 +119,10 @@ jobs:
           const html = fs.readFileSync('/tmp/campus.html', 'utf8');
           const entry = html.indexOf('ucan_v289_quest_xr_compat.js');
           const universal = html.indexOf('ucan_v292_universal_sign_window.js');
-          const base = html.indexOf('ucan_v299_quest_navigation_glass_terrace.js');
-          const disable = html.indexOf('ucan_v300_disable_v299_movement.js');
-          const runtime = html.indexOf('ucan_v300_quest_full_controls_floor_lock.js');
+          const runtime = html.indexOf('ucan_v301_quest_rails_selection_comfort.js');
           const main = html.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');
-          if (!(entry >= 0 && universal > entry && base > universal && disable > base && runtime > disable && main > runtime)) {
-            throw new Error(JSON.stringify({ entry, universal, base, disable, runtime, main }));
+          if (!(entry >= 0 && universal > entry && runtime > universal && main > runtime)) {
+            throw new Error(JSON.stringify({ entry, universal, runtime, main }));
           }
           const forbidden = [
             'ucan_v283_unified_xr_runtime.js',
@@ -162,47 +134,48 @@ jobs:
             'ucan_v295_quest_desktop_parity_terrace.js',
             'ucan_v296_quest_signs_selection.js',
             'ucan_v297_quest_room_signs_speed.js',
-            'ucan_v298_browser_emulation_xr.js'
+            'ucan_v298_browser_emulation_xr.js',
+            'ucan_v299_quest_navigation_glass_terrace.js',
+            'ucan_v300_disable_v299_movement.js',
+            'ucan_v300_quest_full_controls_floor_lock.js'
           ];
           const found = forbidden.filter(value => html.includes(value));
           if (found.length) throw new Error(`Capas heredadas encontradas: ${found.join(', ')}`);
           if (!html.includes('UCAN Academic') || html.includes('UCAN Academic Mall')) throw new Error('Marca visible incorrecta');
-          console.log({ entry, universal, base, disable, runtime, main, branding:true });
+          console.log({ entry, universal, runtime, main, singleRuntime:true, branding:true });
           NODE
 
-      - name: Validar encabezados V300
+      - name: Validar encabezados V301
         run: |
           grep -Fi "Permissions-Policy: xr-spatial-tracking=(self)" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Controls: V300" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Emulation: V300" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Mode: v299-selection-v300-controls" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Base: V299" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-V299-Disable: V300" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Floor-Lock: V300" /tmp/campus.headers
-          grep -Fi "X-UCAN-XR-Jump: V300" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Controls: V301" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Emulation: V301" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Mode: single-v301-quest-runtime" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Railings: V301" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Terrace: V301" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Selection: V301" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-Comfort: V301" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-UI: V292" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Entry: V289" /tmp/campus.headers
           grep -Fi "X-UCAN-Product: UCAN Academic" /tmp/campus.headers
 
-      - name: Validar endpoint de versión V300
+      - name: Validar endpoint de versión V301
         run: |
           node - <<'NODE'
           const fs = require('fs');
           const v = JSON.parse(fs.readFileSync('/tmp/version.json'));
           const checks = {
             product:v.productName === 'UCAN Academic',
-            experience:v.questExperienceVersion === 'V300' && v.questRuntimeVersion === 'V300',
-            runtime:v.unifiedXrVersion === 'V300' && v.questControlsVersion === 'V300',
-            base:v.questSelectionBaseVersion === 'V299' && v.questV299SelectionPreserved === true,
-            authority:v.questSingleMovementAuthority === true && v.questV299MovementSuperseded === true && v.questV299MovementObserverRemovedByV300 === true,
-            movement:v.questNormalSpeed === 5 && v.questComfortSpeed === 3.4 && v.questBrowserSprintSpeed === 7,
-            controls:v.questFullTouchControllerMapping === true && v.questLeftStickClickSprint === true && v.questLeftGripSprint === true,
-            jump:v.questJumpEnabled === true && v.questRightStickClickJump === true && v.questPrimaryButtonJump === true && v.questJumpHeight === 0.92,
-            lowFps:v.questLowFpsMovementCompensation === true && v.questMaximumFrameDt === 0.12 && v.questMovementSubstepsEnabled === true,
-            floor3:v.questFloorThreeSpeedStable === true,
-            floor:v.questFloorMaterialLockedInXR === true && v.questFloorReceivesAvatarShadows === false && v.questFloorColorStableDuringMovement === true,
-            terrace:v.questRooftopCenterRemoved === true && v.questRooftopFullSurface === true && v.questRooftopStairOpeningPreserved === true,
-            interaction:v.questBrowserPointerDispatch === true && v.questDirectTouchControllerTrigger === true,
+            experience:v.questExperienceVersion === 'V301' && v.questRuntimeVersion === 'V301',
+            runtime:v.unifiedXrVersion === 'V301' && v.questControlsVersion === 'V301',
+            architecture:v.questArchitecture === 'single-v301-quest-runtime' && v.questSingleAuthoritativeRuntime === true,
+            noLegacy:v.questLegacyRuntimeLayersLoaded === false,
+            rails:v.questCorrectedSlopedStairRailings === true && v.questStairGlassFrontBackVisible === true && v.questOriginalHorizontalStairRailsHidden === true,
+            terrace:v.questRooftopCenterGlassRemoved === true && v.questRooftopCenterGlassRailingsRemoved === true && v.questRooftopFullSolidFloor === true && v.questRooftopStairOpeningPreserved === true,
+            selection:v.questRooftopSignsSelectable === true && v.questRooftopCelestialSelectable === true && v.questRooftopSaucersSelectable === true && v.questRooftopTelescopesSelectable === true && v.questTriggerSelection === true,
+            comfort:v.questDefaultComfortMode === true && v.questRightStickSnapTurnInComfort === true && v.questSnapTurnDegrees === 30 && v.questMotionVignette === true,
+            motion:v.questAccelerationSmoothing === true && v.questLowFpsMovementCompensation === true && v.questMovementSubstepsEnabled === true,
+            floor:v.questStableFloorMaterial === true && v.questFloorReceivesAvatarShadows === false && v.questFloorColorStableDuringMovement === true,
             desktop:v.desktopVisualsUnchanged === true
           };
           if (!Object.values(checks).every(Boolean)) throw new Error(JSON.stringify({ checks, version:v }, null, 2));
