@@ -32,13 +32,13 @@ jobs:
           done
 
           curl -fsS "http://127.0.0.1:3012/js/ucan_v301_quest_rails_selection_comfort.js?build=V301-20260723-QUEST-RAILS-SELECTION-COMFORT" > /tmp/quest-v301.js
-          curl -fsS "http://127.0.0.1:3012/js/ucan_v303_quest_zone_geometry_cleanup.js?build=V303-20260723-QUEST-ZONE-GLASS-REAR-RAILS" > /tmp/quest-v303.js
+          curl -fsS "http://127.0.0.1:3012/js/ucan_v303_quest_zone_geometry_cleanup_r2.js?build=V303-20260723-QUEST-ZONE-GLASS-REAR-RAILS-R2" > /tmp/quest-v303.js
           curl -fsS http://127.0.0.1:3012/version > /tmp/version-v303.json
 
           CI_USER="civ303${GITHUB_RUN_ID}"
           curl -fsS -c /tmp/cookies-v303.txt \
             -H 'Content-Type: application/json' \
-            -d "{\"username\":\"${CI_USER}\",\"displayName\":\"CI V303\",\"email\":\"${CI_USER}@example.test\",\"password\":\"CI-V303-2026!\"}" \
+            -d "{\"username\":\"${CI_USER}\",\"displayName\":\"CI V303 R2\",\"email\":\"${CI_USER}@example.test\",\"password\":\"CI-V303-2026!\"}" \
             http://127.0.0.1:3012/api/auth/register > /tmp/register-v303.json
           curl -fsS -D /tmp/campus-v303.headers -b /tmp/cookies-v303.txt http://127.0.0.1:3012/campus > /tmp/campus-v303.html
           kill "$(cat /tmp/ucan-v303.pid)"
@@ -52,22 +52,24 @@ jobs:
           const source = fs.readFileSync('/tmp/quest-v303.js', 'utf8');
           const required = [
             "const VERSION = 'V303'",
+            "const REVISION = 'R2'",
             'function worldBounds',
             'function intersects',
-            'floor2EscalatorFront',
-            'floor3RearBottom',
-            'rooftopRearTop',
+            'minX:-43.0',
+            'FLOOR2_ESCALATOR_ROUTE_X = Object.freeze([-34, -26, -20, -8])',
+            'floor2EscalatorAllRoutesCovered',
             'function isDarkGlass',
-            'function isCrossRearRailing',
-            'function isSideRailing',
+            'function rearRailingZone',
+            'function isProtectedCorrectedMetal',
+            'rearRailingsRemovedWithoutOrientationDependency:true',
             'mesh.setEnabled?.(false)',
             'mesh.checkCollisions = false',
             'mesh.isPickable = false',
             '__UCAN_QUEST_V303__'
           ];
           const missing = required.filter(value => !source.includes(value));
-          if (missing.length) throw new Error(`Marcadores V303 ausentes: ${missing.join(', ')}`);
-          console.log({ v303Markers:required.length });
+          if (missing.length) throw new Error(`Marcadores V303 R2 ausentes: ${missing.join(', ')}`);
+          console.log({ v303R2Markers:required.length });
           NODE
 
       - name: Validar orden del campus
@@ -77,14 +79,16 @@ jobs:
           const html = fs.readFileSync('/tmp/campus-v303.html', 'utf8');
           const universal = html.indexOf('ucan_v292_universal_sign_window.js');
           const v301 = html.indexOf('ucan_v301_quest_rails_selection_comfort.js');
-          const v303 = html.indexOf('ucan_v303_quest_zone_geometry_cleanup.js');
+          const v303 = html.indexOf('ucan_v303_quest_zone_geometry_cleanup_r2.js');
           const main = html.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');
           if (!(universal >= 0 && v301 > universal && v303 > v301 && main > v303)) {
             throw new Error(JSON.stringify({ universal, v301, v303, main }));
           }
-          const occurrences = (html.match(/ucan_v303_quest_zone_geometry_cleanup\.js/g) || []).length;
-          if (occurrences !== 1) throw new Error(`V303 aparece ${occurrences} veces.`);
-          if (html.includes('ucan_v302_remove_stair_glass.js')) throw new Error('V302 todavía aparece en el campus.');
+          const occurrences = (html.match(/ucan_v303_quest_zone_geometry_cleanup_r2\.js/g) || []).length;
+          if (occurrences !== 1) throw new Error(`V303 R2 aparece ${occurrences} veces.`);
+          if (html.includes('ucan_v302_remove_stair_glass.js') || html.includes('ucan_v303_quest_zone_geometry_cleanup.js')) {
+            throw new Error('Una capa geométrica anterior todavía aparece en el campus.');
+          }
           console.log({ universal, v301, v303, main, occurrences });
           NODE
 
@@ -93,6 +97,7 @@ jobs:
           grep -Fi "Permissions-Policy: xr-spatial-tracking=(self)" /tmp/campus-v303.headers
           grep -Fi "X-UCAN-XR-Controls: V301" /tmp/campus-v303.headers
           grep -Fi "X-UCAN-XR-Geometry: V303" /tmp/campus-v303.headers
+          grep -Fi "X-UCAN-XR-Geometry-Revision: R2" /tmp/campus-v303.headers
           grep -Fi "X-UCAN-XR-Stair-Glass: V303" /tmp/campus-v303.headers
           grep -Fi "X-UCAN-XR-Release: V303" /tmp/campus-v303.headers
           node - <<'NODE'
@@ -101,14 +106,15 @@ jobs:
           const checks = {
             product:v.productName === 'UCAN Academic',
             base:v.questRuntimeVersion === 'V301' && v.questControlsVersion === 'V301',
-            release:v.questReleaseVersion === 'V303' && v.questGeometryCleanupVersion === 'V303',
-            script:String(v.questGeometryCleanupScript || '').includes('ucan_v303_quest_zone_geometry_cleanup.js'),
+            release:v.questReleaseVersion === 'V303' && v.questGeometryCleanupVersion === 'V303' && v.questGeometryCleanupRevision === 'R2',
+            script:String(v.questGeometryCleanupScript || '').includes('ucan_v303_quest_zone_geometry_cleanup_r2.js'),
             bounding:v.questBoundingBoxZoneDetection === true,
             darkGlass:v.questDarkGlassRemovedGlobally === true,
-            floor2:v.questFloor2EscalatorFrontGlassRemoved === true,
+            floor2:v.questFloor2EscalatorFrontGlassRemoved === true && v.questFloor2EscalatorAllRoutesCovered === true,
+            routes:JSON.stringify(v.questFloor2EscalatorRouteX) === JSON.stringify([-34,-26,-20,-8]),
             rooftopGlass:v.questRooftopStairGlassRemoved === true,
-            rearRails:v.questFloor3RearRailingsRemoved === true && v.questRooftopRearRailingsRemoved === true,
-            sideRails:v.questRooftopSideRailingsPreserved === true,
+            rearRails:v.questFloor3RearRailingsRemoved === true && v.questRooftopRearRailingsRemoved === true && v.questRearRailingsRemovedWithoutOrientationDependency === true,
+            metal:v.questCorrectedMetalSideRailingsPreserved === true,
             disabled:v.questRemovedGeometryCollisionsDisabled === true && v.questRemovedGeometryPickingDisabled === true,
             desktop:v.questDesktopGeometryUnchanged === true && v.desktopVisualsUnchanged === true
           };
@@ -128,4 +134,4 @@ jobs:
           NODE
 
       - name: Construir Docker
-        run: docker build -t ucan-academic:v303 .
+        run: docker build -t ucan-academic:v303-r2 .
