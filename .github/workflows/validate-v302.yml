@@ -1,0 +1,127 @@
+name: Validar Meta Quest V302
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate-v302:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Ejecutar auditorías
+        run: npm test
+
+      - name: Preparar servidor autenticado
+        env:
+          PORT: 3012
+          ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
+        run: |
+          npm start > /tmp/ucan-v302.log 2>&1 &
+          echo $! > /tmp/ucan-v302.pid
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:3012/health > /tmp/health-v302.json && break
+            sleep 1
+          done
+
+          curl -fsS "http://127.0.0.1:3012/js/ucan_v301_quest_rails_selection_comfort.js?build=V301-20260723-QUEST-RAILS-SELECTION-COMFORT" > /tmp/quest-v301.js
+          curl -fsS "http://127.0.0.1:3012/js/ucan_v302_remove_stair_glass.js?build=V302-20260723-REMOVE-QUEST-STAIR-GLASS" > /tmp/quest-v302.js
+          curl -fsS http://127.0.0.1:3012/version > /tmp/version-v302.json
+
+          CI_USER="civ302${GITHUB_RUN_ID}"
+          curl -fsS -c /tmp/cookies-v302.txt \
+            -H 'Content-Type: application/json' \
+            -d "{\"username\":\"${CI_USER}\",\"displayName\":\"CI V302\",\"email\":\"${CI_USER}@example.test\",\"password\":\"CI-V302-2026!\"}" \
+            http://127.0.0.1:3012/api/auth/register > /tmp/register-v302.json
+          curl -fsS -D /tmp/campus-v302.headers -b /tmp/cookies-v302.txt http://127.0.0.1:3012/campus > /tmp/campus-v302.html
+          kill "$(cat /tmp/ucan-v302.pid)"
+
+      - name: Validar JavaScript servido
+        run: |
+          node --check /tmp/quest-v301.js
+          node --check /tmp/quest-v302.js
+          node - <<'NODE'
+          const fs = require('fs');
+          const source = fs.readFileSync('/tmp/quest-v302.js', 'utf8');
+          const required = [
+            "const VERSION = 'V302'",
+            'function isStairGlass',
+            'function isMetalStairPart',
+            'metadata.stairGlassPanel === true',
+            'cristal baranda escalera Quest V301',
+            'baranda hueco escalera terraza',
+            'mesh.setEnabled?.(false)',
+            'mesh.checkCollisions = false',
+            'metalPostsPreserved:true',
+            'metalHandrailsPreserved:true',
+            'noNewStairGlassCreated:true',
+            '__UCAN_QUEST_V302__'
+          ];
+          const missing = required.filter(value => !source.includes(value));
+          if (missing.length) throw new Error(`Marcadores V302 ausentes: ${missing.join(', ')}`);
+          if (source.includes('MeshBuilder.CreateBox')) throw new Error('V302 no debe crear nuevos cristales.');
+          console.log({ v302Markers:required.length });
+          NODE
+
+      - name: Validar orden del campus
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const html = fs.readFileSync('/tmp/campus-v302.html', 'utf8');
+          const universal = html.indexOf('ucan_v292_universal_sign_window.js');
+          const v301 = html.indexOf('ucan_v301_quest_rails_selection_comfort.js');
+          const v302 = html.indexOf('ucan_v302_remove_stair_glass.js');
+          const main = html.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');
+          if (!(universal >= 0 && v301 > universal && v302 > v301 && main > v302)) {
+            throw new Error(JSON.stringify({ universal, v301, v302, main }));
+          }
+          const occurrences = (html.match(/ucan_v302_remove_stair_glass\.js/g) || []).length;
+          if (occurrences !== 1) throw new Error(`V302 aparece ${occurrences} veces.`);
+          console.log({ universal, v301, v302, main, occurrences });
+          NODE
+
+      - name: Validar encabezados y versión
+        run: |
+          grep -Fi "Permissions-Policy: xr-spatial-tracking=(self)" /tmp/campus-v302.headers
+          grep -Fi "X-UCAN-XR-Controls: V301" /tmp/campus-v302.headers
+          grep -Fi "X-UCAN-XR-Stair-Glass: V302" /tmp/campus-v302.headers
+          grep -Fi "X-UCAN-XR-Release: V302" /tmp/campus-v302.headers
+          node - <<'NODE'
+          const fs = require('fs');
+          const v = JSON.parse(fs.readFileSync('/tmp/version-v302.json'));
+          const checks = {
+            product:v.productName === 'UCAN Academic',
+            base:v.questRuntimeVersion === 'V301' && v.questControlsVersion === 'V301',
+            release:v.questReleaseVersion === 'V302' && v.questStairGlassVersion === 'V302',
+            script:String(v.questStairGlassScript || '').includes('ucan_v302_remove_stair_glass.js'),
+            removed:v.questStairGlassRemoved === true && v.questStairGlassMeshesDisabled === true,
+            collision:v.questStairGlassCollisionsDisabled === true,
+            oldPanes:v.questV301GlassPanesRemoved === true && v.questOriginalDarkGlassRailsRemoved === true,
+            metal:v.questStairMetalOnly === true && v.questStairMetalPostsPreserved === true && v.questStairMetalHandrailsPreserved === true,
+            noCreation:v.questNoNewStairGlassCreated === true,
+            desktop:v.questDesktopStairUnchanged === true && v.desktopVisualsUnchanged === true
+          };
+          if (!Object.values(checks).every(Boolean)) throw new Error(JSON.stringify({ checks, version:v }, null, 2));
+          console.log({ checks });
+          NODE
+
+      - name: Validar registro intacto
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const registration = JSON.parse(fs.readFileSync('/tmp/register-v302.json'));
+          if (registration.questStairGlassVersion || registration.questReleaseVersion) {
+            throw new Error('La respuesta de registro fue modificada como /version.');
+          }
+          console.log({ registrationResponseUntouched:true });
+          NODE
+
+      - name: Construir Docker
+        run: docker build -t ucan-academic:v302 .
