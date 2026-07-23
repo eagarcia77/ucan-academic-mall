@@ -8,8 +8,9 @@ const QUEST_RUNTIME_BUILD = BUILD;
 const QUEST_RUNTIME_PATH = '/js/ucan_v301_quest_rails_selection_comfort.js';
 const QUEST_RUNTIME_SCRIPT = `${QUEST_RUNTIME_PATH}?build=${QUEST_RUNTIME_BUILD}`;
 const QUEST_GEOMETRY_VERSION = 'V303';
-const QUEST_GEOMETRY_BUILD = 'V303-20260723-QUEST-ZONE-GLASS-REAR-RAILS';
-const QUEST_GEOMETRY_PATH = '/js/ucan_v303_quest_zone_geometry_cleanup.js';
+const QUEST_GEOMETRY_REVISION = 'R2';
+const QUEST_GEOMETRY_BUILD = 'V303-20260723-QUEST-ZONE-GLASS-REAR-RAILS-R2';
+const QUEST_GEOMETRY_PATH = '/js/ucan_v303_quest_zone_geometry_cleanup_r2.js';
 const QUEST_GEOMETRY_SCRIPT = `${QUEST_GEOMETRY_PATH}?build=${QUEST_GEOMETRY_BUILD}`;
 
 const nativeWriteHead = http.ServerResponse.prototype.writeHead;
@@ -40,7 +41,8 @@ function stripLegacyQuestLayers(html) {
     /\s*<script src="\/js\/ucan_v300_quest_full_controls_floor_lock\.js[^"]*"><\/script>/g,
     /\s*<script src="\/js\/ucan_v301_quest_rails_selection_comfort\.js[^"]*"><\/script>/g,
     /\s*<script src="\/js\/ucan_v302_remove_stair_glass\.js[^"]*"><\/script>/g,
-    /\s*<script src="\/js\/ucan_v303_quest_zone_geometry_cleanup\.js[^"]*"><\/script>/g
+    /\s*<script src="\/js\/ucan_v303_quest_zone_geometry_cleanup\.js[^"]*"><\/script>/g,
+    /\s*<script src="\/js\/ucan_v303_quest_zone_geometry_cleanup_r2\.js[^"]*"><\/script>/g
   ];
   let result = String(html);
   for (const pattern of patterns) result = result.replace(pattern, '');
@@ -59,16 +61,18 @@ function transformCampusHtml(text) {
   else html = html.replace('</body>', `  ${questTags}\n</body>`);
 
   html = html
-    .replaceAll('Meta Quest V290:', 'Meta Quest V303:')
-    .replaceAll('Meta Quest V293:', 'Meta Quest V303:')
-    .replaceAll('Meta Quest V296:', 'Meta Quest V303:')
-    .replaceAll('Meta Quest V298:', 'Meta Quest V303:')
-    .replaceAll('Meta Quest V299:', 'Meta Quest V303:')
-    .replaceAll('Meta Quest V300:', 'Meta Quest V303:')
-    .replaceAll('Meta Quest V301:', 'Meta Quest V303:')
-    .replaceAll('Meta Quest V302:', 'Meta Quest V303:')
-    .replaceAll('V302: escalera sin cristales negros, barandas metálicas, terraza sólida y modo de confort en Meta Quest.', 'V303: limpieza por zonas de cristales negros, paneles del Piso 2 y barandas traseras del Piso 3 en Meta Quest.')
-    .replaceAll('V301: barandas correctas, terraza sólida, selección directa y modo de confort en Meta Quest.', 'V303: limpieza por zonas de cristales negros, paneles del Piso 2 y barandas traseras del Piso 3 en Meta Quest.');
+    .replaceAll('Meta Quest V290:', 'Meta Quest V303 R2:')
+    .replaceAll('Meta Quest V293:', 'Meta Quest V303 R2:')
+    .replaceAll('Meta Quest V296:', 'Meta Quest V303 R2:')
+    .replaceAll('Meta Quest V298:', 'Meta Quest V303 R2:')
+    .replaceAll('Meta Quest V299:', 'Meta Quest V303 R2:')
+    .replaceAll('Meta Quest V300:', 'Meta Quest V303 R2:')
+    .replaceAll('Meta Quest V301:', 'Meta Quest V303 R2:')
+    .replaceAll('Meta Quest V302:', 'Meta Quest V303 R2:')
+    .replaceAll('Meta Quest V303:', 'Meta Quest V303 R2:')
+    .replaceAll('V302: escalera sin cristales negros, barandas metálicas, terraza sólida y modo de confort en Meta Quest.', 'V303 R2: limpieza ampliada de cristales negros, las cuatro rutas del Piso 2 y barandas posteriores del Piso 3 en Meta Quest.')
+    .replaceAll('V301: barandas correctas, terraza sólida, selección directa y modo de confort en Meta Quest.', 'V303 R2: limpieza ampliada de cristales negros, las cuatro rutas del Piso 2 y barandas posteriores del Piso 3 en Meta Quest.')
+    .replaceAll('V303: limpieza por zonas de cristales negros, paneles del Piso 2 y barandas traseras del Piso 3 en Meta Quest.', 'V303 R2: limpieza ampliada de cristales negros, las cuatro rutas del Piso 2 y barandas posteriores del Piso 3 en Meta Quest.');
   return normalizeBranding(html);
 }
 
@@ -89,7 +93,7 @@ function updateVersionData(data) {
   data.questRuntimeScript = QUEST_RUNTIME_SCRIPT;
   data.questRuntimeVersion = QUEST_RUNTIME_VERSION;
   data.questRuntimeBuild = QUEST_RUNTIME_BUILD;
-  data.questArchitecture = 'single-v301-quest-runtime-with-v303-zone-geometry-cleanup';
+  data.questArchitecture = 'single-v301-quest-runtime-with-v303-r2-zone-geometry-cleanup';
   data.questSingleAuthoritativeRuntime = true;
   data.questLegacyRuntimeLayersLoaded = false;
   data.questUsesBrowserScene = true;
@@ -145,16 +149,20 @@ function updateVersionData(data) {
 
   data.questReleaseVersion = QUEST_GEOMETRY_VERSION;
   data.questGeometryCleanupVersion = QUEST_GEOMETRY_VERSION;
+  data.questGeometryCleanupRevision = QUEST_GEOMETRY_REVISION;
   data.questGeometryCleanupBuild = QUEST_GEOMETRY_BUILD;
   data.questGeometryCleanupScript = QUEST_GEOMETRY_SCRIPT;
   data.questBoundingBoxZoneDetection = true;
   data.questParentNameAndMetadataDetection = true;
   data.questDarkGlassRemovedGlobally = true;
   data.questFloor2EscalatorFrontGlassRemoved = true;
+  data.questFloor2EscalatorAllRoutesCovered = true;
+  data.questFloor2EscalatorRouteX = [-34, -26, -20, -8];
   data.questRooftopStairGlassRemoved = true;
   data.questFloor3RearRailingsRemoved = true;
   data.questRooftopRearRailingsRemoved = true;
-  data.questRooftopSideRailingsPreserved = true;
+  data.questRearRailingsRemovedWithoutOrientationDependency = true;
+  data.questCorrectedMetalSideRailingsPreserved = true;
   data.questRemovedGeometryCollisionsDisabled = true;
   data.questRemovedGeometryPickingDisabled = true;
   data.questDesktopGeometryUnchanged = true;
@@ -178,7 +186,7 @@ function transformResponseText(text) {
   return normalizeBranding(value);
 }
 
-http.ServerResponse.prototype.writeHead = function writeHeadV303(statusCode, statusMessage, headers) {
+http.ServerResponse.prototype.writeHead = function writeHeadV303R2(statusCode, statusMessage, headers) {
   let message = statusMessage;
   let nextHeaders = headers;
   if (statusMessage && typeof statusMessage === 'object') {
@@ -198,6 +206,7 @@ http.ServerResponse.prototype.writeHead = function writeHeadV303(statusCode, sta
     nextHeaders['X-UCAN-XR-Selection'] = QUEST_RUNTIME_VERSION;
     nextHeaders['X-UCAN-XR-Comfort'] = QUEST_RUNTIME_VERSION;
     nextHeaders['X-UCAN-XR-Geometry'] = QUEST_GEOMETRY_VERSION;
+    nextHeaders['X-UCAN-XR-Geometry-Revision'] = QUEST_GEOMETRY_REVISION;
     nextHeaders['X-UCAN-XR-Stair-Glass'] = QUEST_GEOMETRY_VERSION;
     nextHeaders['X-UCAN-XR-Release'] = QUEST_GEOMETRY_VERSION;
     nextHeaders['X-UCAN-XR-UI'] = 'V292';
@@ -208,7 +217,7 @@ http.ServerResponse.prototype.writeHead = function writeHeadV303(statusCode, sta
   return nativeWriteHead.call(this, statusCode, message, nextHeaders);
 };
 
-http.ServerResponse.prototype.end = function endV303(chunk, encoding, callback) {
+http.ServerResponse.prototype.end = function endV303R2(chunk, encoding, callback) {
   let body = chunk;
   try {
     if (typeof body === 'string' || Buffer.isBuffer(body)) {
@@ -218,11 +227,11 @@ http.ServerResponse.prototype.end = function endV303(chunk, encoding, callback) 
       body = buffer ? Buffer.from(transformed, 'utf8') : transformed;
     }
   } catch (error) {
-    console.error('[UCAN V303 response compatibility]', error);
+    console.error('[UCAN V303 R2 response compatibility]', error);
   }
   return nativeEnd.call(this, body, encoding, callback);
 };
 
 require('./auth-compat-v287.js');
 
-console.info(`[UCAN ${QUEST_RUNTIME_VERSION}/${QUEST_GEOMETRY_VERSION}] Limpieza geométrica por zonas Meta Quest cargada.`);
+console.info(`[UCAN ${QUEST_RUNTIME_VERSION}/${QUEST_GEOMETRY_VERSION} ${QUEST_GEOMETRY_REVISION}] Limpieza geométrica ampliada Meta Quest cargada.`);
