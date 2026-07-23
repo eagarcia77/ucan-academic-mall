@@ -33,6 +33,7 @@ jobs:
           curl -fsS "http://127.0.0.1:3011/js/ucan_v289_quest_xr_compat.js?build=V289-20260720-QUEST-XR-COMPAT-DIAGNOSTICS" > /tmp/quest-entry.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v292_universal_sign_window.js?build=V292-20260721-UNIVERSAL-SIGN-WINDOW-CLOCK" > /tmp/universal-signs.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v299_quest_navigation_glass_terrace.js?build=V299-20260723-QUEST-NAVIGATION-GLASS-TERRACE" > /tmp/quest-v299.js
+          curl -fsS "http://127.0.0.1:3011/js/ucan_v300_disable_v299_movement.js?build=V300-20260723-DISABLE-V299-MOVEMENT" > /tmp/quest-disable-v299.js
           curl -fsS "http://127.0.0.1:3011/js/ucan_v300_quest_full_controls_floor_lock.js?build=V300-20260723-FULL-CONTROLS-FLOOR-LOCK" > /tmp/quest-v300.js
           curl -fsS http://127.0.0.1:3011/version > /tmp/version.json
           CI_USER="ciquest${GITHUB_RUN_ID}"
@@ -49,6 +50,7 @@ jobs:
           node --check /tmp/quest-entry.js
           node --check /tmp/universal-signs.js
           node --check /tmp/quest-v299.js
+          node --check /tmp/quest-disable-v299.js
           node --check /tmp/quest-v300.js
 
       - name: Validar base de selección V299
@@ -56,15 +58,28 @@ jobs:
           node - <<'NODE'
           const fs = require('fs');
           const base = fs.readFileSync('/tmp/quest-v299.js', 'utf8');
-          const required = [
-            "const VERSION = 'V299'",
-            'function selectFromController',
-            'if (window.__UCAN_QUEST_V300_SUPERSEDES_V299__) return;',
-            'window.__UCAN_V299_PATCHED_FOR_V300__ = true'
-          ];
+          const required = ["const VERSION = 'V299'", 'function selectFromController'];
           const missing = required.filter(value => !base.includes(value));
           if (missing.length) throw new Error(`Marcadores V299 ausentes: ${missing.join(', ')}`);
           console.log({ v299SelectionBaseMarkers:required.length });
+          NODE
+
+      - name: Validar retirada del movimiento V299
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const source = fs.readFileSync('/tmp/quest-disable-v299.js', 'utf8');
+          const required = [
+            "const VERSION = 'V300'",
+            'function callbackLooksLikeV299',
+            'scene?.onBeforeRenderObservable',
+            'observable.remove(target)',
+            '__UCAN_V299_MOVEMENT_DISABLED_BY_V300__',
+            'v299MovementObserverRemoved:true'
+          ];
+          const missing = required.filter(value => !source.includes(value));
+          if (missing.length) throw new Error(`Marcadores desactivador V299 ausentes: ${missing.join(', ')}`);
+          console.log({ disableV299Markers:required.length });
           NODE
 
       - name: Validar controles completos V300
@@ -131,10 +146,11 @@ jobs:
           const entry = html.indexOf('ucan_v289_quest_xr_compat.js');
           const universal = html.indexOf('ucan_v292_universal_sign_window.js');
           const base = html.indexOf('ucan_v299_quest_navigation_glass_terrace.js');
+          const disable = html.indexOf('ucan_v300_disable_v299_movement.js');
           const runtime = html.indexOf('ucan_v300_quest_full_controls_floor_lock.js');
           const main = html.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');
-          if (!(entry >= 0 && universal > entry && base > universal && runtime > base && main > runtime)) {
-            throw new Error(JSON.stringify({ entry, universal, base, runtime, main }));
+          if (!(entry >= 0 && universal > entry && base > universal && disable > base && runtime > disable && main > runtime)) {
+            throw new Error(JSON.stringify({ entry, universal, base, disable, runtime, main }));
           }
           const forbidden = [
             'ucan_v283_unified_xr_runtime.js',
@@ -151,7 +167,7 @@ jobs:
           const found = forbidden.filter(value => html.includes(value));
           if (found.length) throw new Error(`Capas heredadas encontradas: ${found.join(', ')}`);
           if (!html.includes('UCAN Academic') || html.includes('UCAN Academic Mall')) throw new Error('Marca visible incorrecta');
-          console.log({ entry, universal, base, runtime, main, branding:true });
+          console.log({ entry, universal, base, disable, runtime, main, branding:true });
           NODE
 
       - name: Validar encabezados V300
@@ -161,6 +177,7 @@ jobs:
           grep -Fi "X-UCAN-XR-Emulation: V300" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Mode: v299-selection-v300-controls" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Base: V299" /tmp/campus.headers
+          grep -Fi "X-UCAN-XR-V299-Disable: V300" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Floor-Lock: V300" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-Jump: V300" /tmp/campus.headers
           grep -Fi "X-UCAN-XR-UI: V292" /tmp/campus.headers
@@ -176,8 +193,8 @@ jobs:
             product:v.productName === 'UCAN Academic',
             experience:v.questExperienceVersion === 'V300' && v.questRuntimeVersion === 'V300',
             runtime:v.unifiedXrVersion === 'V300' && v.questControlsVersion === 'V300',
-            base:v.questSelectionBaseVersion === 'V299',
-            authority:v.questSingleMovementAuthority === true && v.questV299MovementSuperseded === true,
+            base:v.questSelectionBaseVersion === 'V299' && v.questV299SelectionPreserved === true,
+            authority:v.questSingleMovementAuthority === true && v.questV299MovementSuperseded === true && v.questV299MovementObserverRemovedByV300 === true,
             movement:v.questNormalSpeed === 5 && v.questComfortSpeed === 3.4 && v.questBrowserSprintSpeed === 7,
             controls:v.questFullTouchControllerMapping === true && v.questLeftStickClickSprint === true && v.questLeftGripSprint === true,
             jump:v.questJumpEnabled === true && v.questRightStickClickJump === true && v.questPrimaryButtonJump === true && v.questJumpHeight === 0.92,
