@@ -7,6 +7,10 @@ const QUEST_RUNTIME_VERSION = VERSION;
 const QUEST_RUNTIME_BUILD = BUILD;
 const QUEST_RUNTIME_PATH = '/js/ucan_v301_quest_rails_selection_comfort.js';
 const QUEST_RUNTIME_SCRIPT = `${QUEST_RUNTIME_PATH}?build=${QUEST_RUNTIME_BUILD}`;
+const QUEST_STAIR_GLASS_VERSION = 'V302';
+const QUEST_STAIR_GLASS_BUILD = 'V302-20260723-REMOVE-QUEST-STAIR-GLASS';
+const QUEST_STAIR_GLASS_PATH = '/js/ucan_v302_remove_stair_glass.js';
+const QUEST_STAIR_GLASS_SCRIPT = `${QUEST_STAIR_GLASS_PATH}?build=${QUEST_STAIR_GLASS_BUILD}`;
 
 const nativeWriteHead = http.ServerResponse.prototype.writeHead;
 const nativeEnd = http.ServerResponse.prototype.end;
@@ -34,7 +38,8 @@ function stripLegacyQuestLayers(html) {
     /\s*<script src="\/js\/ucan_v299_quest_navigation_glass_terrace\.js[^"]*"><\/script>/g,
     /\s*<script src="\/js\/ucan_v300_disable_v299_movement\.js[^"]*"><\/script>/g,
     /\s*<script src="\/js\/ucan_v300_quest_full_controls_floor_lock\.js[^"]*"><\/script>/g,
-    /\s*<script src="\/js\/ucan_v301_quest_rails_selection_comfort\.js[^"]*"><\/script>/g
+    /\s*<script src="\/js\/ucan_v301_quest_rails_selection_comfort\.js[^"]*"><\/script>/g,
+    /\s*<script src="\/js\/ucan_v302_remove_stair_glass\.js[^"]*"><\/script>/g
   ];
   let result = String(html);
   for (const pattern of patterns) result = result.replace(pattern, '');
@@ -44,22 +49,26 @@ function stripLegacyQuestLayers(html) {
 function transformCampusHtml(text) {
   let html = stripLegacyQuestLayers(text);
   const runtimeTag = `<script src="${QUEST_RUNTIME_SCRIPT}"></script>`;
+  const stairGlassTag = `<script src="${QUEST_STAIR_GLASS_SCRIPT}"></script>`;
+  const questTags = `${runtimeTag}\n  ${stairGlassTag}`;
   const universalTag = html.match(/<script src="\/js\/ucan_v292_universal_sign_window\.js\?build=[^"]+"><\/script>/)?.[0];
   const mainTag = html.match(/<script src="\/js\/ucan_babylon_mall_v265_accounts_avatars\.js\?build=[^"]+"><\/script>/)?.[0];
-  if (universalTag) html = html.replace(universalTag, `${universalTag}\n  ${runtimeTag}`);
-  else if (mainTag) html = html.replace(mainTag, `${runtimeTag}\n  ${mainTag}`);
-  else html = html.replace('</body>', `  ${runtimeTag}\n</body>`);
+  if (universalTag) html = html.replace(universalTag, `${universalTag}\n  ${questTags}`);
+  else if (mainTag) html = html.replace(mainTag, `${questTags}\n  ${mainTag}`);
+  else html = html.replace('</body>', `  ${questTags}\n</body>`);
 
   html = html
-    .replaceAll('Meta Quest V290:', 'Meta Quest V301:')
-    .replaceAll('Meta Quest V293:', 'Meta Quest V301:')
-    .replaceAll('Meta Quest V296:', 'Meta Quest V301:')
-    .replaceAll('Meta Quest V298:', 'Meta Quest V301:')
-    .replaceAll('Meta Quest V299:', 'Meta Quest V301:')
-    .replaceAll('Meta Quest V300:', 'Meta Quest V301:')
-    .replaceAll('V300: controles completos, correr, brincar, velocidad compensada y piso estable en Meta Quest.', 'V301: barandas correctas, terraza sólida, selección directa y modo de confort en Meta Quest.')
-    .replaceAll('V299: navegación estable, cristales transparentes, escalera completa y terraza sólida en Meta Quest.', 'V301: barandas correctas, terraza sólida, selección directa y modo de confort en Meta Quest.')
-    .replaceAll('V298: Meta Quest emula directamente la escena y el comportamiento del browser.', 'V301: barandas correctas, terraza sólida, selección directa y modo de confort en Meta Quest.');
+    .replaceAll('Meta Quest V290:', 'Meta Quest V302:')
+    .replaceAll('Meta Quest V293:', 'Meta Quest V302:')
+    .replaceAll('Meta Quest V296:', 'Meta Quest V302:')
+    .replaceAll('Meta Quest V298:', 'Meta Quest V302:')
+    .replaceAll('Meta Quest V299:', 'Meta Quest V302:')
+    .replaceAll('Meta Quest V300:', 'Meta Quest V302:')
+    .replaceAll('Meta Quest V301:', 'Meta Quest V302:')
+    .replaceAll('V301: barandas correctas, terraza sólida, selección directa y modo de confort en Meta Quest.', 'V302: escalera sin cristales negros, barandas metálicas, terraza sólida y modo de confort en Meta Quest.')
+    .replaceAll('V300: controles completos, correr, brincar, velocidad compensada y piso estable en Meta Quest.', 'V302: escalera sin cristales negros, barandas metálicas, terraza sólida y modo de confort en Meta Quest.')
+    .replaceAll('V299: navegación estable, cristales transparentes, escalera completa y terraza sólida en Meta Quest.', 'V302: escalera sin cristales negros, barandas metálicas, terraza sólida y modo de confort en Meta Quest.')
+    .replaceAll('V298: Meta Quest emula directamente la escena y el comportamiento del browser.', 'V302: escalera sin cristales negros, barandas metálicas, terraza sólida y modo de confort en Meta Quest.');
   return normalizeBranding(html);
 }
 
@@ -80,7 +89,7 @@ function updateVersionData(data) {
   data.questRuntimeScript = QUEST_RUNTIME_SCRIPT;
   data.questRuntimeVersion = QUEST_RUNTIME_VERSION;
   data.questRuntimeBuild = QUEST_RUNTIME_BUILD;
-  data.questArchitecture = 'single-v301-quest-runtime';
+  data.questArchitecture = 'single-v301-quest-runtime-with-v302-stair-glass-removal';
   data.questSingleAuthoritativeRuntime = true;
   data.questLegacyRuntimeLayersLoaded = false;
   data.questUsesBrowserScene = true;
@@ -99,7 +108,7 @@ function updateVersionData(data) {
   data.questTriggerSelection = true;
 
   data.questCorrectedSlopedStairRailings = true;
-  data.questStairGlassFrontBackVisible = true;
+  data.questStairGlassFrontBackVisible = false;
   data.questOriginalHorizontalStairRailsHidden = true;
   data.questRooftopCenterGlassRemoved = true;
   data.questRooftopCenterGlassRailingsRemoved = true;
@@ -133,6 +142,21 @@ function updateVersionData(data) {
   data.questFloorReceivesAvatarShadows = false;
   data.questFloorColorStableDuringMovement = true;
   data.desktopVisualsUnchanged = true;
+
+  data.questReleaseVersion = QUEST_STAIR_GLASS_VERSION;
+  data.questStairGlassVersion = QUEST_STAIR_GLASS_VERSION;
+  data.questStairGlassBuild = QUEST_STAIR_GLASS_BUILD;
+  data.questStairGlassScript = QUEST_STAIR_GLASS_SCRIPT;
+  data.questStairGlassRemoved = true;
+  data.questStairGlassMeshesDisabled = true;
+  data.questStairGlassCollisionsDisabled = true;
+  data.questV301GlassPanesRemoved = true;
+  data.questOriginalDarkGlassRailsRemoved = true;
+  data.questStairMetalOnly = true;
+  data.questStairMetalPostsPreserved = true;
+  data.questStairMetalHandrailsPreserved = true;
+  data.questNoNewStairGlassCreated = true;
+  data.questDesktopStairUnchanged = true;
   return data;
 }
 
@@ -150,7 +174,7 @@ function transformResponseText(text) {
   return normalizeBranding(value);
 }
 
-http.ServerResponse.prototype.writeHead = function writeHeadV301(statusCode, statusMessage, headers) {
+http.ServerResponse.prototype.writeHead = function writeHeadV302(statusCode, statusMessage, headers) {
   let message = statusMessage;
   let nextHeaders = headers;
   if (statusMessage && typeof statusMessage === 'object') {
@@ -169,6 +193,8 @@ http.ServerResponse.prototype.writeHead = function writeHeadV301(statusCode, sta
     nextHeaders['X-UCAN-XR-Terrace'] = QUEST_RUNTIME_VERSION;
     nextHeaders['X-UCAN-XR-Selection'] = QUEST_RUNTIME_VERSION;
     nextHeaders['X-UCAN-XR-Comfort'] = QUEST_RUNTIME_VERSION;
+    nextHeaders['X-UCAN-XR-Stair-Glass'] = QUEST_STAIR_GLASS_VERSION;
+    nextHeaders['X-UCAN-XR-Release'] = QUEST_STAIR_GLASS_VERSION;
     nextHeaders['X-UCAN-XR-UI'] = 'V292';
     nextHeaders['X-UCAN-XR-Entry'] = 'V289';
     nextHeaders['X-UCAN-Product'] = 'UCAN Academic';
@@ -177,7 +203,7 @@ http.ServerResponse.prototype.writeHead = function writeHeadV301(statusCode, sta
   return nativeWriteHead.call(this, statusCode, message, nextHeaders);
 };
 
-http.ServerResponse.prototype.end = function endV301(chunk, encoding, callback) {
+http.ServerResponse.prototype.end = function endV302(chunk, encoding, callback) {
   let body = chunk;
   try {
     if (typeof body === 'string' || Buffer.isBuffer(body)) {
@@ -187,11 +213,11 @@ http.ServerResponse.prototype.end = function endV301(chunk, encoding, callback) 
       body = buffer ? Buffer.from(transformed, 'utf8') : transformed;
     }
   } catch (error) {
-    console.error('[UCAN V301 response compatibility]', error);
+    console.error('[UCAN V302 response compatibility]', error);
   }
   return nativeEnd.call(this, body, encoding, callback);
 };
 
 require('./auth-compat-v287.js');
 
-console.info(`[UCAN ${QUEST_RUNTIME_VERSION}] Barandas, terraza, selección y confort Meta Quest cargados.`);
+console.info(`[UCAN ${QUEST_RUNTIME_VERSION}/${QUEST_STAIR_GLASS_VERSION}] Barandas metálicas y eliminación de cristales negros Meta Quest cargados.`);
