@@ -47,12 +47,10 @@
 
   document.addEventListener('keydown', event => {
     if (!MOVEMENT_CODES.has(event.code)) return;
-
     if (controlsAreBlocked(event)) {
       event.stopPropagation();
       return;
     }
-
     if (event.code === 'Space') {
       event.preventDefault();
       event.stopPropagation();
@@ -100,21 +98,18 @@
   function updateJump() {
     if (jumpRequested && !jumpActive) beginJump();
     if (!jumpActive) return;
-
     if (!canJump()) {
       camera.position.y = jumpBaseY;
       jumpActive = false;
       jumpRequested = false;
       return;
     }
-
     const progress = (performance.now() - jumpStart) / JUMP_DURATION_MS;
     if (progress >= 1) {
       camera.position.y = jumpBaseY;
       jumpActive = false;
       return;
     }
-
     const normalized = Math.max(0, Math.min(1, progress));
     const offset = 4 * JUMP_HEIGHT * normalized * (1 - normalized);
     camera.position.y = jumpBaseY + offset;
@@ -124,14 +119,11 @@
     scene = window.__UCAN_API__?.getScene?.() || null;
     camera = window.__UCAN_API__?.getCamera?.() || null;
     if (!scene || !camera) return false;
-
     scene.onBeforeRenderObservable.add(updateJump);
     const canvas = document.getElementById('renderCanvas');
     if (canvas) canvas.tabIndex = 0;
-
     const status = document.getElementById('status');
     if (status) status.textContent = 'Use W/A/S/D o las flechas para caminar, la barra espaciadora para saltar y R para reubicarse. Los controles se desactivan automáticamente mientras escribe.';
-
     window.__UCAN_KEYBOARD_JUMP_AUDIT__ = {
       version: VERSION,
       formTypingProtected: true,
@@ -157,17 +149,22 @@
     return script;
   }
 
+  function loadGlobalVisualR5() {
+    const src = '/js/ucan_v304_global_glass_signs_r5.js?build=V304-20260725-GLOBAL-GLASS-UPRIGHT-SIGNS-R5';
+    appendScript(src, 'data-ucan-v304-global-r5', '[UCAN V304 R5] No se pudo cargar la corrección global de cristales y carteles.');
+  }
+
   function loadQuestVisualR4() {
     const runtimeSrc = '/js/ucan_v304_quest_glass_rails_holiday_r4.js?build=V304-20260725-QUEST-GLASS-RAILS-HOLIDAY-R4';
     const protectionSrc = '/js/ucan_v304_r4_geometry_protection.js?build=V304-20260725-R4-GEOMETRY-PROTECTION';
     const runtime = appendScript(runtimeSrc, 'data-ucan-v304-quest-r4', '[UCAN V304 R4] No se pudo cargar la corrección de cristales, barandas y feriados.');
-    if (runtime) {
-      runtime.addEventListener('load', () => {
-        appendScript(protectionSrc, 'data-ucan-v304-r4-protection', '[UCAN V304 R4] No se pudo cargar la protección geométrica.');
-      });
-    } else {
-      appendScript(protectionSrc, 'data-ucan-v304-r4-protection', '[UCAN V304 R4] No se pudo cargar la protección geométrica.');
-    }
+    const loadProtectionAndR5 = () => {
+      const protection = appendScript(protectionSrc, 'data-ucan-v304-r4-protection', '[UCAN V304 R4] No se pudo cargar la protección geométrica.');
+      if (protection) protection.addEventListener('load', loadGlobalVisualR5);
+      else loadGlobalVisualR5();
+    };
+    if (runtime) runtime.addEventListener('load', loadProtectionAndR5);
+    else loadProtectionAndR5();
   }
 
   let attempts = 0;
