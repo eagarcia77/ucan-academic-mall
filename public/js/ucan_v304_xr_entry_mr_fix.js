@@ -2,7 +2,7 @@
   'use strict';
 
   const VERSION = 'V304';
-  const BUILD = 'V304-20260723-XR-FLOATING-VR-MR-BETA';
+  const BUILD = 'V304-20260724-XR-DIRECT-USER-GESTURE-VR-MR';
   const B = window.BABYLON;
   if (!B) return;
 
@@ -23,9 +23,12 @@
     observerInstalled:false,
     hiddenForMR:new Map(),
     savedScene:null,
+    diagnostics:null,
+    diagnosticsBody:null,
     attempts:{ vr:0, mr:0 },
     successfulEntries:{ vr:0, mr:0 },
     exits:0,
+    lastUserActivation:null,
     lastError:null
   };
 
@@ -33,6 +36,17 @@
     window.__UCAN_API__?.setStatus?.(message);
     const element = document.getElementById('status');
     if (element && !window.__UCAN_API__?.setStatus) element.textContent = message;
+  }
+
+  function isTopLevel() {
+    try { return window.top === window.self; }
+    catch (_) { return false; }
+  }
+
+  function helperReady() {
+    state.helper = window.__UCAN_XR_HELPER__ || state.helper;
+    state.scene = window.__UCAN_API__?.getScene?.() || state.scene;
+    return Boolean(state.helper?.baseExperience && state.scene);
   }
 
   function recordError(stage, error) {
@@ -46,13 +60,7 @@
     updateAudit();
   }
 
-  function helperReady() {
-    state.helper = window.__UCAN_XR_HELPER__ || state.helper;
-    state.scene = window.__UCAN_API__?.getScene?.() || state.scene;
-    return Boolean(state.helper?.baseExperience && state.scene);
-  }
-
-  async function sessionSupported(mode) {
+  async function probeSupport(mode) {
     if (!window.isSecureContext || !navigator.xr?.isSessionSupported) return false;
     try { return await navigator.xr.isSessionSupported(mode); }
     catch (error) {
@@ -85,14 +93,90 @@
         -webkit-tap-highlight-color:transparent;
       }
       #ucanVrGogglesV304:hover,#ucanVrGogglesV304:focus-visible{transform:translateY(-2px);box-shadow:0 18px 44px rgba(0,0,0,.58),0 0 0 5px rgba(254,209,65,.34)}
-      #ucanVrGogglesV304:disabled{opacity:.5;cursor:not-allowed;transform:none}
+      #ucanVrGogglesV304:disabled{opacity:.55;cursor:wait;transform:none}
       #ucanVrGogglesV304[aria-pressed="true"]{background:linear-gradient(145deg,#b8402e,#6f1d16)}
       #ucanVrGogglesV304 svg{width:48px;height:34px;display:block}
       #ucanVrGogglesV304 .label{position:absolute;bottom:3px;font:800 9px/1 Segoe UI,Arial,sans-serif;letter-spacing:.08em}
+      #ucanXrDiagnosticV304{position:fixed;inset:0;z-index:130;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.78);backdrop-filter:blur(9px)}
+      #ucanXrDiagnosticV304.open{display:flex}
+      #ucanXrDiagnosticV304 .xr-card{width:min(620px,96vw);max-height:90vh;overflow:auto;border:2px solid #fed141;border-radius:18px;background:#071826;color:#fff;box-shadow:0 26px 90px rgba(0,0,0,.68)}
+      #ucanXrDiagnosticV304 header{position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;background:#0b3d38;border-bottom:1px solid rgba(255,255,255,.18)}
+      #ucanXrDiagnosticV304 h2{margin:0;font-size:18px}
+      #ucanXrDiagnosticV304 .close{min-width:42px;background:#fff;color:#17302b;font-size:22px;padding:5px 10px}
+      #ucanXrDiagnosticBodyV304{padding:14px;font-size:14px;line-height:1.48}
+      #ucanXrDiagnosticBodyV304 .ok{color:#9ff0c8}#ucanXrDiagnosticBodyV304 .bad{color:#ffb4a8}#ucanXrDiagnosticBodyV304 code{color:#fed141;word-break:break-word}
+      #ucanXrDiagnosticV304 .actions{display:flex;flex-wrap:wrap;gap:8px;padding:0 14px 14px}
+      #ucanXrDiagnosticV304 .actions button{flex:1;min-width:180px}
       html.ucan-mr-active-v304,html.ucan-mr-active-v304 body,html.ucan-mr-active-v304 #renderCanvas{background:transparent!important}
       @media(max-width:820px){#ucanVrGogglesV304{right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));width:68px;height:56px}}
     `;
     document.head.appendChild(style);
+  }
+
+  function ensureDiagnosticPanel() {
+    ensureStyles();
+    if (state.diagnostics?.isConnected) return;
+    const panel = document.createElement('section');
+    panel.id = 'ucanXrDiagnosticV304';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'true');
+    panel.setAttribute('aria-hidden', 'true');
+    panel.innerHTML = `<div class="xr-card"><header><h2>Diagnóstico de entrada VR</h2><button id="ucanXrDiagnosticCloseV304" class="close" aria-label="Cerrar">×</button></header><div id="ucanXrDiagnosticBodyV304"></div><div class="actions"><button id="ucanXrRetryVrV304">Intentar entrar en VR</button><button id="ucanXrRetryMrV304">Intentar MR Beta</button><button id="ucanXrOpenDirectV304" class="secondary">Abrir página directamente</button></div></div>`;
+    document.body.appendChild(panel);
+    state.diagnostics = panel;
+    state.diagnosticsBody = panel.querySelector('#ucanXrDiagnosticBodyV304');
+    panel.querySelector('#ucanXrDiagnosticCloseV304')?.addEventListener('click', closeDiagnostics);
+    panel.querySelector('#ucanXrRetryVrV304')?.addEventListener('click', event => {
+      event.preventDefault();
+      enterMode('immersive-vr');
+    });
+    panel.querySelector('#ucanXrRetryMrV304')?.addEventListener('click', event => {
+      event.preventDefault();
+      enterMode('immersive-ar');
+    });
+    panel.querySelector('#ucanXrOpenDirectV304')?.addEventListener('click', () => {
+      try { window.open(location.href, '_blank', 'noopener'); }
+      catch (_) { location.href = location.href; }
+    });
+  }
+
+  function closeDiagnostics() {
+    state.diagnostics?.classList.remove('open');
+    state.diagnostics?.setAttribute('aria-hidden', 'true');
+  }
+
+  function diagnosticAdvice() {
+    const items = [];
+    if (!window.isSecureContext) items.push('Abra la dirección HTTPS del campus. WebXR no puede iniciar mediante HTTP normal.');
+    if (!isTopLevel()) items.push('Abra el campus directamente en Meta Quest Browser; no use una vista previa incrustada de Codespaces o VS Code.');
+    if (!navigator.xr) items.push('Meta Quest Browser no expuso la API WebXR. Actualice y reinicie el navegador del visor.');
+    if (!helperReady()) items.push('La escena todavía no terminó de preparar Babylon WebXR. Espere unos segundos y vuelva a tocar el botón.');
+    if (state.lastError?.name === 'NotAllowedError') items.push('El visor rechazó la activación. Toque nuevamente el botón VR después de cerrar cualquier otra sesión XR.');
+    if (state.lastError?.name === 'InvalidStateError') items.push('Existe otra sesión XR activa o incompleta. Cierre otras pestañas VR y reinicie Meta Quest Browser.');
+    if (state.lastError?.name === 'NotSupportedError') items.push('La página o el navegador no informó compatibilidad con el modo solicitado.');
+    if (!items.length) items.push('Cierre otras pestañas XR, permanezca en esta página y toque Intentar entrar en VR.');
+    return items;
+  }
+
+  function showDiagnostics(title = 'No se pudo entrar en VR') {
+    ensureDiagnosticPanel();
+    const row = (label, value, pass) => `<p class="${pass ? 'ok' : 'bad'}"><strong>${label}:</strong> ${value}</p>`;
+    const activation = state.lastUserActivation;
+    const error = state.lastError;
+    state.diagnostics.querySelector('h2').textContent = title;
+    state.diagnosticsBody.innerHTML = [
+      row('HTTPS seguro', window.isSecureContext ? 'Sí' : 'No', window.isSecureContext),
+      row('Página abierta directamente', isTopLevel() ? 'Sí' : 'No', isTopLevel()),
+      row('API WebXR', navigator.xr ? 'Disponible' : 'No disponible', Boolean(navigator.xr)),
+      row('Ayudante Babylon WebXR', helperReady() ? 'Preparado' : 'No preparado', helperReady()),
+      row('Activación del último toque', activation === true ? 'Activa' : activation === false ? 'No activa' : 'Sin dato', activation === true),
+      row('Compatibilidad VR informada', state.vrSupported === true ? 'Sí' : state.vrSupported === false ? 'No confirmada' : 'Pendiente', state.vrSupported !== false),
+      `<p><strong>Dirección:</strong> <code>${location.href}</code></p>`,
+      error ? `<p class="bad"><strong>Error:</strong> ${error.name}: ${error.message}</p>` : '',
+      `<hr><p><strong>Acciones recomendadas:</strong></p><ol>${diagnosticAdvice().map(item => `<li>${item}</li>`).join('')}</ol>`
+    ].join('');
+    state.diagnostics.classList.add('open');
+    state.diagnostics.setAttribute('aria-hidden', 'false');
   }
 
   function ensureFloatingButton() {
@@ -116,7 +200,7 @@
       button.addEventListener('click', event => {
         event.preventDefault();
         event.stopImmediatePropagation();
-        toggleVR();
+        enterMode('immersive-vr');
       }, true);
       document.body.appendChild(button);
     }
@@ -127,15 +211,14 @@
   function replaceAndBindButton(id, mode) {
     const existing = document.getElementById(id);
     if (!existing) return null;
-    if (existing.dataset.ucanV304XrBound === 'true') return existing;
+    if (existing.dataset.ucanV304XrBound === 'direct-user-gesture') return existing;
     const button = existing.cloneNode(true);
     button.dataset.ucanV289Bound = 'true';
-    button.dataset.ucanV304XrBound = 'true';
+    button.dataset.ucanV304XrBound = 'direct-user-gesture';
     button.addEventListener('click', event => {
       event.preventDefault();
       event.stopImmediatePropagation();
-      if (mode === 'immersive-ar') toggleMR();
-      else toggleVR();
+      enterMode(mode);
     }, true);
     existing.replaceWith(button);
     return button;
@@ -145,6 +228,7 @@
     state.xrButton = replaceAndBindButton('xrBtn', 'immersive-vr') || state.xrButton;
     state.mrButton = replaceAndBindButton('mrBtn', 'immersive-ar') || state.mrButton;
     ensureFloatingButton();
+    ensureDiagnosticPanel();
     updateButtons();
   }
 
@@ -159,20 +243,21 @@
     const mode = state.activeMode || state.requestedMode;
 
     if (state.xrButton) {
-      state.xrButton.disabled = state.entering || !state.helper;
+      state.xrButton.disabled = state.entering;
       state.xrButton.textContent = active && mode === 'immersive-vr' ? 'Salir de VR' : state.entering && state.requestedMode === 'immersive-vr' ? 'Entrando en VR…' : 'Entrar en VR';
       state.xrButton.setAttribute('aria-pressed', String(active && mode === 'immersive-vr'));
+      state.xrButton.title = helperReady() ? 'Entrar directamente en una sesión immersive-vr' : 'WebXR está inicializando; toque para ver el diagnóstico';
     }
     if (state.mrButton) {
-      state.mrButton.disabled = state.entering || !state.helper || state.mrSupported === false;
-      state.mrButton.textContent = active && mode === 'immersive-ar' ? 'Salir de MR' : state.entering && state.requestedMode === 'immersive-ar' ? 'Entrando en MR…' : state.mrSupported === false ? 'MR no disponible' : 'MR beta';
+      state.mrButton.disabled = state.entering;
+      state.mrButton.textContent = active && mode === 'immersive-ar' ? 'Salir de MR' : state.entering && state.requestedMode === 'immersive-ar' ? 'Entrando en MR…' : 'MR beta';
       state.mrButton.setAttribute('aria-pressed', String(active && mode === 'immersive-ar'));
-      state.mrButton.title = state.mrSupported === false ? 'Este navegador no informó soporte para immersive-ar.' : 'Activar realidad mixta con passthrough';
+      state.mrButton.title = 'Intentar realidad mixta con passthrough';
     }
     if (state.floatingButton) {
-      state.floatingButton.disabled = state.entering || !state.helper || state.vrSupported === false;
+      state.floatingButton.disabled = state.entering;
       state.floatingButton.setAttribute('aria-pressed', String(active && mode === 'immersive-vr'));
-      state.floatingButton.setAttribute('aria-label', active ? 'Salir del entorno de realidad virtual' : 'Entrar al entorno en realidad virtual');
+      state.floatingButton.setAttribute('aria-label', active ? 'Salir del entorno XR' : 'Entrar al entorno en realidad virtual');
       state.floatingButton.title = active ? `Salir de ${mode === 'immersive-ar' ? 'MR' : 'VR'}` : 'Entrar en VR';
     }
     updateAudit();
@@ -233,19 +318,13 @@
     document.documentElement.classList.remove('ucan-mr-active-v304');
   }
 
-  async function waitForNotInXR(timeoutMs = 5000) {
-    const start = performance.now();
-    while (currentXRState() !== XR_STATE.NOT_IN_XR && performance.now() - start < timeoutMs) {
-      await new Promise(resolve => setTimeout(resolve, 80));
-    }
-    return currentXRState() === XR_STATE.NOT_IN_XR;
-  }
-
   async function exitXR() {
-    if (!helperReady()) return false;
+    if (!helperReady()) {
+      showDiagnostics('WebXR todavía no está preparado');
+      return false;
+    }
     try {
       await state.helper.baseExperience.exitXRAsync();
-      await waitForNotInXR();
       restoreMixedReality();
       state.exits += 1;
       state.inXR = false;
@@ -256,23 +335,25 @@
       return true;
     } catch (error) {
       recordError('exitXR', error);
-      status('No se pudo cerrar la sesión XR. Recargue la página si el visor permanece conectado.');
+      status('No se pudo cerrar la sesión XR. Reinicie el navegador si permanece conectada.');
+      showDiagnostics('No se pudo cerrar la sesión XR');
       return false;
     }
   }
 
   async function enterMode(mode) {
-    if (!helperReady()) {
-      status('WebXR todavía está inicializando. Espere unos segundos y vuelva a intentarlo.');
-      return false;
-    }
     if (state.entering) return false;
 
     const active = currentXRState() === XR_STATE.ENTERING_XR || currentXRState() === XR_STATE.IN_XR;
-    if (active) {
-      if (state.activeMode === mode || state.requestedMode === mode) return exitXR();
-      const exited = await exitXR();
-      if (!exited) return false;
+    if (active) return exitXR();
+
+    state.lastUserActivation = Boolean(navigator.userActivation?.isActive);
+    if (!helperReady() || !window.isSecureContext || !navigator.xr) {
+      if (!helperReady()) recordError('pre-entry', new Error('No se encontró el ayudante WebXR de Babylon.js.'));
+      else if (!window.isSecureContext) recordError('pre-entry', new DOMException('WebXR requiere HTTPS.', 'SecurityError'));
+      else recordError('pre-entry', new DOMException('La API WebXR no está disponible.', 'NotSupportedError'));
+      showDiagnostics('El campus todavía no puede entrar en XR');
+      return false;
     }
 
     state.entering = true;
@@ -281,34 +362,27 @@
     if (mode === 'immersive-ar') state.attempts.mr += 1;
     else state.attempts.vr += 1;
     updateButtons();
+    closeDiagnostics();
 
     try {
-      if (!window.isSecureContext) throw new DOMException('WebXR requiere HTTPS.', 'SecurityError');
-      if (!navigator.xr) throw new DOMException('La API WebXR no está disponible.', 'NotSupportedError');
-      const supported = await sessionSupported(mode);
-      if (mode === 'immersive-ar') state.mrSupported = supported;
-      else state.vrSupported = supported;
-      if (!supported) throw new DOMException(`${mode} no está disponible en este navegador o dispositivo.`, 'NotSupportedError');
+      let enterPromise;
+      if (mode === 'immersive-ar') {
+        prepareMixedReality();
+        const renderTarget = state.helper.renderTarget || state.helper.baseExperience?.renderTarget;
+        const optionalFeatures = ['local-floor', 'bounded-floor', 'hand-tracking', 'hit-test', 'anchors', 'layers'];
+        status('Solicitando realidad mixta directamente desde el toque del usuario…');
+        enterPromise = state.helper.baseExperience.enterXRAsync('immersive-ar', 'local-floor', renderTarget, { optionalFeatures });
+      } else {
+        restoreMixedReality();
+        status('Solicitando entrada directa al entorno VR…');
+        enterPromise = state.helper.baseExperience.enterXRAsync('immersive-vr', 'local-floor');
+      }
 
-      if (mode === 'immersive-ar') prepareMixedReality();
-      else restoreMixedReality();
-
-      const optionalFeatures = mode === 'immersive-ar'
-        ? ['local-floor', 'bounded-floor', 'hand-tracking', 'hit-test', 'anchors', 'layers']
-        : ['local-floor', 'bounded-floor', 'hand-tracking', 'layers'];
-      const renderTarget = state.helper.renderTarget || state.helper.baseExperience?.renderTarget;
-      status(mode === 'immersive-ar' ? 'Solicitando realidad mixta y passthrough en Meta Quest…' : 'Solicitando entrada al entorno VR…');
-      await state.helper.baseExperience.enterXRAsync(
-        mode,
-        'local-floor',
-        renderTarget,
-        { optionalFeatures }
-      );
-
+      await enterPromise;
       state.inXR = true;
       if (mode === 'immersive-ar') {
         state.successfulEntries.mr += 1;
-        status('MR Beta activo: la escena virtual está conectada al passthrough del Meta Quest.');
+        status('MR Beta activo: escena virtual conectada al passthrough.');
       } else {
         state.successfulEntries.vr += 1;
         status('Entorno VR activo. Use los controles del Meta Quest para desplazarse.');
@@ -320,23 +394,14 @@
       state.inXR = false;
       state.activeMode = null;
       state.requestedMode = null;
-      const name = String(error?.name || 'Error');
-      if (mode === 'immersive-ar' && name === 'NotSupportedError') {
-        status('MR Beta no está disponible en este navegador. Actualice Meta Quest Browser o use Entrar en VR.');
-      } else if (name === 'SecurityError') {
-        status('WebXR requiere abrir el campus directamente mediante HTTPS.');
-      } else {
-        status(`No se pudo iniciar ${mode === 'immersive-ar' ? 'MR' : 'VR'}: ${error?.message || error}`);
-      }
+      status(`No se pudo iniciar ${mode === 'immersive-ar' ? 'MR' : 'VR'}: ${error?.name || 'Error'} — ${error?.message || error}`);
+      showDiagnostics(mode === 'immersive-ar' ? 'MR Beta no pudo iniciar' : 'VR no pudo iniciar');
       return false;
     } finally {
       state.entering = false;
       updateButtons();
     }
   }
-
-  const toggleVR = () => enterMode('immersive-vr');
-  const toggleMR = () => enterMode('immersive-ar');
 
   function observeXRState() {
     if (state.observerInstalled || !helperReady()) return;
@@ -352,9 +417,13 @@
     });
   }
 
-  async function detectSupport() {
-    state.vrSupported = await sessionSupported('immersive-vr');
-    state.mrSupported = await sessionSupported('immersive-ar');
+  async function detectSupportInBackground() {
+    const [vr, mr] = await Promise.all([
+      probeSupport('immersive-vr'),
+      probeSupport('immersive-ar')
+    ]);
+    state.vrSupported = vr;
+    state.mrSupported = mr;
     updateButtons();
   }
 
@@ -366,8 +435,12 @@
       helperReady:Boolean(state.helper),
       floatingVrGogglesVisible:Boolean(state.floatingButton?.isConnected),
       floatingVrGogglesLowerRight:true,
-      existingVrButtonRebound:Boolean(state.xrButton?.dataset?.ucanV304XrBound),
-      mrBetaButtonRebound:Boolean(state.mrButton?.dataset?.ucanV304XrBound),
+      existingVrButtonRebound:state.xrButton?.dataset?.ucanV304XrBound === 'direct-user-gesture',
+      mrBetaButtonRebound:state.mrButton?.dataset?.ucanV304XrBound === 'direct-user-gesture',
+      directUserGestureEntryWithoutAwait:true,
+      supportCheckAdvisoryOnly:true,
+      vrButtonNeverDisabledBySupportProbe:true,
+      diagnosticsVisibleOnFailure:true,
       vrUsesBabylonExperienceHelper:true,
       mrUsesBabylonExperienceHelper:true,
       mrSessionMode:'immersive-ar',
@@ -376,27 +449,36 @@
       transparentPassthroughBackground:true,
       skyHiddenOnlyDuringMR:true,
       sceneRestoredAfterMR:true,
+      secureContext:window.isSecureContext,
+      topLevel:isTopLevel(),
+      navigatorXR:Boolean(navigator.xr),
       vrSupported:state.vrSupported,
       mrSupported:state.mrSupported,
       entering:state.entering,
       inXR:state.inXR,
       activeMode:state.activeMode,
+      lastUserActivation:state.lastUserActivation,
       attempts:{ ...state.attempts },
       successfulEntries:{ ...state.successfulEntries },
       exits:state.exits,
       lastError:state.lastError,
-      enterVR:toggleVR,
-      enterMR:toggleMR,
+      enterVR:() => enterMode('immersive-vr'),
+      enterMR:() => enterMode('immersive-ar'),
       exit:exitXR,
+      showDiagnostics,
       getState:() => ({
         installed:state.installed,
         helperReady:Boolean(state.helper),
         floatingButtonVisible:Boolean(state.floatingButton?.isConnected),
+        secureContext:window.isSecureContext,
+        topLevel:isTopLevel(),
+        navigatorXR:Boolean(navigator.xr),
         vrSupported:state.vrSupported,
         mrSupported:state.mrSupported,
         entering:state.entering,
         inXR:state.inXR,
         activeMode:state.activeMode,
+        lastUserActivation:state.lastUserActivation,
         hiddenForMR:state.hiddenForMR.size,
         lastError:state.lastError
       })
@@ -404,13 +486,16 @@
   }
 
   function install() {
-    if (!helperReady()) return false;
     bindButtons();
+    if (!helperReady()) {
+      updateAudit();
+      return false;
+    }
     observeXRState();
     state.installed = true;
-    detectSupport().catch(error => recordError('detectSupport', error));
+    detectSupportInBackground().catch(error => recordError('detectSupportInBackground', error));
     updateAudit();
-    console.info(`[UCAN ${VERSION}] Acceso flotante VR y MR Beta funcional instalados.`);
+    console.info(`[UCAN ${VERSION}] Entrada VR directa por gesto del usuario y MR Beta instalados.`);
     return true;
   }
 
