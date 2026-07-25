@@ -148,9 +148,22 @@
     return true;
   }
 
+  function loadQuestVisualEntryR2() {
+    const src = '/js/ucan_v304_quest_visual_entry_r2.js?build=V304-20260724-QUEST-GLASS-SIGNS-VR-R2';
+    if (document.querySelector('script[data-ucan-v304-quest-r2="true"]')) return;
+    const script = document.createElement('script');
+    script.src = src;
+    script.async = false;
+    script.dataset.ucanV304QuestR2 = 'true';
+    script.addEventListener('error', () => console.error('[UCAN V304 R2] No se pudo cargar la corrección Quest.'));
+    document.head.appendChild(script);
+  }
+
   let attempts = 0;
   const timer = window.setInterval(() => {
     attempts += 1;
     if (connectToScene() || attempts >= 200) window.clearInterval(timer);
   }, 100);
+
+  loadQuestVisualEntryR2();
 })();
