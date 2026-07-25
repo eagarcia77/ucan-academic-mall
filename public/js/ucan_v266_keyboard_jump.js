@@ -49,8 +49,6 @@
     if (!MOVEMENT_CODES.has(event.code)) return;
 
     if (controlsAreBlocked(event)) {
-      // Detiene el controlador global del campus, pero no cancela la escritura ni
-      // el comportamiento normal de botones, campos, selectores o enlaces.
       event.stopPropagation();
       return;
     }
@@ -148,14 +146,14 @@
     return true;
   }
 
-  function loadQuestVisualEntryR2() {
-    const src = '/js/ucan_v304_quest_visual_entry_r2.js?build=V304-20260724-QUEST-GLASS-SIGNS-VR-R2';
-    if (document.querySelector('script[data-ucan-v304-quest-r2="true"]')) return;
+  function loadQuestVisualEntryR3() {
+    const src = '/js/ucan_v304_quest_visual_entry_r3.js?build=V304-20260724-QUEST-VR-NONBLOCKING-R3';
+    if (document.querySelector('script[data-ucan-v304-quest-r3="true"]')) return;
     const script = document.createElement('script');
     script.src = src;
     script.async = false;
-    script.dataset.ucanV304QuestR2 = 'true';
-    script.addEventListener('error', () => console.error('[UCAN V304 R2] No se pudo cargar la corrección Quest.'));
+    script.dataset.ucanV304QuestR3 = 'true';
+    script.addEventListener('error', () => console.error('[UCAN V304 R3] No se pudo cargar la corrección VR no bloqueante.'));
     document.head.appendChild(script);
   }
 
@@ -165,5 +163,5 @@
     if (connectToScene() || attempts >= 200) window.clearInterval(timer);
   }, 100);
 
-  loadQuestVisualEntryR2();
+  loadQuestVisualEntryR3();
 })();
