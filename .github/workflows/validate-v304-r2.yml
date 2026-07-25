@@ -1,4 +1,4 @@
-name: Validar Quest V304 R3
+name: Validar Quest V304 R4
 on:
   push:
     branches: [main]
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  validate-v304-r3:
+  validate-v304-r4:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -16,80 +16,89 @@ jobs:
         with:
           node-version: 20
 
-      - name: Validar sintaxis y auditoría R3
+      - name: Validar sintaxis y auditoría R4
         run: |
           npm run check
-          npm run audit:quest-v304-r2
+          npm run audit:quest-v304-r4
 
       - name: Iniciar servidor autenticado
         env:
           PORT: 3018
           ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
         run: |
-          npm start > /tmp/ucan-v304-r3.log 2>&1 &
-          echo $! > /tmp/ucan-v304-r3.pid
+          npm start > /tmp/ucan-v304-r4.log 2>&1 &
+          echo $! > /tmp/ucan-v304-r4.pid
           for i in {1..30}; do
-            curl -fsS http://127.0.0.1:3018/health > /tmp/health-v304-r3.json && break
+            curl -fsS http://127.0.0.1:3018/health > /tmp/health-v304-r4.json && break
             sleep 1
           done
-          curl -fsS "http://127.0.0.1:3018/js/ucan_v304_quest_visual_entry_r3.js?build=V304-20260724-QUEST-VR-NONBLOCKING-R3" > /tmp/quest-v304-r3.js
+          curl -fsS "http://127.0.0.1:3018/js/ucan_v304_quest_glass_rails_holiday_r4.js?build=V304-20260725-QUEST-GLASS-RAILS-HOLIDAY-R4" > /tmp/quest-v304-r4.js
           curl -fsS "http://127.0.0.1:3018/js/ucan_v266_keyboard_jump.js" > /tmp/keyboard-v266.js
-          CI_USER="civ304r3${GITHUB_RUN_ID}"
-          curl -fsS -c /tmp/cookies-v304-r3.txt \
+          curl -fsS http://127.0.0.1:3018/version > /tmp/version-v304-r4.json
+          CI_USER="civ304r4${GITHUB_RUN_ID}"
+          curl -fsS -c /tmp/cookies-v304-r4.txt \
             -H 'Content-Type: application/json' \
-            -d "{\"username\":\"${CI_USER}\",\"displayName\":\"CI Quest V304 R3\",\"email\":\"${CI_USER}@example.test\",\"password\":\"CI-V304-R3-2026!\"}" \
-            http://127.0.0.1:3018/api/auth/register > /tmp/register-v304-r3.json
-          curl -fsS -b /tmp/cookies-v304-r3.txt http://127.0.0.1:3018/campus > /tmp/campus-v304-r3.html
+            -d "{\"username\":\"${CI_USER}\",\"displayName\":\"CI Quest V304 R4\",\"email\":\"${CI_USER}@example.test\",\"password\":\"CI-V304-R4-2026!\"}" \
+            http://127.0.0.1:3018/api/auth/register > /tmp/register-v304-r4.json
+          curl -fsS -D /tmp/campus-v304-r4.headers -b /tmp/cookies-v304-r4.txt http://127.0.0.1:3018/campus > /tmp/campus-v304-r4.html
 
       - name: Validar JavaScript servido
         run: |
-          node --check /tmp/quest-v304-r3.js
+          node --check /tmp/quest-v304-r4.js
           node --check /tmp/keyboard-v266.js
           node - <<'NODE'
           const fs = require('fs');
-          const source = fs.readFileSync('/tmp/quest-v304-r3.js', 'utf8');
+          const source = fs.readFileSync('/tmp/quest-v304-r4.js', 'utf8');
           const required = [
-            "const REVISION = 'R3'",
-            "FromHexString('#9bc8d3')",
+            "const REVISION = 'R4'",
+            "FromHexString('#b8e2ea')",
+            'material.alpha = 0.965',
+            'mesh.visibility = GLASS_VISIBILITY',
             'material.needDepthPrePass = false',
             'material.disableDepthWrite = true',
+            'STAIR.minX + 0.34',
+            'STAIR.maxX - 0.34',
+            "'hacia edificio'",
+            "'hacia exterior'",
             'sideOrientation:B.Mesh.FRONTSIDE',
-            'B.Mesh.BILLBOARDMODE_Y',
+            'B.Mesh.BILLBOARDMODE_NONE',
             "base.enterXRAsync('immersive-vr', 'local-floor')",
-            'VISUAL_START_DELAY_MS = 650',
-            'VISUAL_REFRESH_MS = 1500',
-            'MAX_SIGN_REPLACEMENTS = 24',
-            '__UCAN_QUEST_V304_R3__'
+            '__UCAN_QUEST_V304_R4__'
           ];
           const missing = required.filter(value => !source.includes(value));
-          if (missing.length) throw new Error(`Marcadores V304 R3 ausentes: ${missing.join(', ')}`);
-          if (source.includes('for (const mesh of state.scene.meshes || []) createReadableSignReplacement(mesh)')) {
-            throw new Error('Se detectó nuevamente el recorrido vivo que congelaba Meta Quest.');
-          }
-          if (source.includes('state.scene.onBeforeRenderObservable.add')) {
-            throw new Error('R3 no debe escanear toda la escena en cada cuadro.');
-          }
-          console.log({ markers:required.length, nonBlocking:true });
+          if (missing.length) throw new Error(`Marcadores V304 R4 ausentes: ${missing.join(', ')}`);
+          if (source.includes('state.scene.onBeforeRenderObservable.add')) throw new Error('R4 no debe escanear toda la escena en cada cuadro.');
+          console.log({ markers:required.length, glass:true, railings:true, holiday:true });
           NODE
 
-      - name: Validar cargador y campus V304
+      - name: Validar cargador, campus y versión
         run: |
+          grep -Fi "X-UCAN-Quest-Visual-Revision: R4" /tmp/campus-v304-r4.headers
+          grep -Fi "X-UCAN-Quest-Glass: R4" /tmp/campus-v304-r4.headers
           node - <<'NODE'
           const fs = require('fs');
           const keyboard = fs.readFileSync('/tmp/keyboard-v266.js', 'utf8');
-          const campus = fs.readFileSync('/tmp/campus-v304-r3.html', 'utf8');
-          const path = '/js/ucan_v304_quest_visual_entry_r3.js?build=V304-20260724-QUEST-VR-NONBLOCKING-R3';
-          if (!keyboard.includes(path)) throw new Error('El cargador V266 no incluye la revisión Quest R3.');
-          if (keyboard.includes('ucan_v304_quest_visual_entry_r2.js')) throw new Error('El cargador anterior R2 sigue activo.');
-          if (!campus.includes('ucan_v266_keyboard_jump.js')) throw new Error('El campus no carga el archivo que instala R3.');
+          const campus = fs.readFileSync('/tmp/campus-v304-r4.html', 'utf8');
+          const version = JSON.parse(fs.readFileSync('/tmp/version-v304-r4.json', 'utf8'));
+          const path = '/js/ucan_v304_quest_glass_rails_holiday_r4.js?build=V304-20260725-QUEST-GLASS-RAILS-HOLIDAY-R4';
+          if (!keyboard.includes(path)) throw new Error('El cargador V266 no incluye R4.');
+          if (keyboard.includes('ucan_v304_quest_visual_entry_r3.js?build=')) throw new Error('El cargador R3 sigue activo.');
+          if (!campus.includes('ucan_v266_keyboard_jump.js?build=V304-20260725-QUEST-R4-LOADER')) throw new Error('El campus no usa el identificador R4.');
           if (campus.includes('ucan_v305_') || campus.includes('ucan_v306_')) throw new Error('Se reactivó una versión posterior a V304.');
-          console.log({ loader:true, v304:true, nonBlocking:true });
+          const checks = {
+            revision:version.questVisualRevision === 'R4',
+            glass:version.questGlassConvertedFromBlack === true && version.questGlassColor === '#b8e2ea',
+            rails:version.questStairRailingsRebuiltOnSideEdges === true,
+            holiday:version.questHolidayBoardTwoReadableFaces === true && version.questHolidayBoardBacksideMirroringDisabled === true
+          };
+          if (!Object.values(checks).every(Boolean)) throw new Error(JSON.stringify({ checks, version }, null, 2));
+          console.log({ checks });
           NODE
 
-      - name: Construir Docker V304 R3
-        run: docker build -t ucan-academic:v304-r3 .
+      - name: Construir Docker V304 R4
+        run: docker build -t ucan-academic:v304-r4 .
 
       - name: Detener servidor
         if: always()
         run: |
-          test -f /tmp/ucan-v304-r3.pid && kill "$(cat /tmp/ucan-v304-r3.pid)" || true
+          test -f /tmp/ucan-v304-r4.pid && kill "$(cat /tmp/ucan-v304-r4.pid)" || true
