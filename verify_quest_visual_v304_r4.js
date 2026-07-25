@@ -6,6 +6,7 @@ const runtime = fs.readFileSync('public/js/ucan_v304_quest_glass_rails_holiday_r
 const protection = fs.readFileSync('public/js/ucan_v304_r4_geometry_protection.js', 'utf8');
 const loader = fs.readFileSync('public/js/ucan_v266_keyboard_jump.js', 'utf8');
 const preloader = fs.readFileSync('auth-compat-v304-r4.js', 'utf8');
+const r5Preloader = fs.readFileSync('auth-compat-v304-r5.js', 'utf8');
 const docker = fs.readFileSync('Dockerfile', 'utf8');
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
@@ -19,6 +20,11 @@ try {
 } catch (error) {
   syntaxError = error.message;
 }
+
+const startsR4 = pkg.scripts?.start === 'node -r ./auth-compat-v304-r4.js server.js';
+const startsR5 = pkg.scripts?.start === 'node -r ./auth-compat-v304-r5.js server.js' && r5Preloader.includes("require('./auth-compat-v304-r4.js')");
+const dockerR4 = docker.includes('"./auth-compat-v304-r4.js"');
+const dockerR5 = docker.includes('"./auth-compat-v304-r5.js"') && r5Preloader.includes("require('./auth-compat-v304-r4.js')");
 
 const checks = {
   syntaxValid,
@@ -43,19 +49,19 @@ const checks = {
   protectionAudit:protection.includes('__UCAN_QUEST_V304_R4_PROTECTION__') && protection.includes('v303RehidePrevented:true'),
   loaderR4:loader.includes('/js/ucan_v304_quest_glass_rails_holiday_r4.js?build=V304-20260725-QUEST-GLASS-RAILS-HOLIDAY-R4'),
   loaderProtection:loader.includes('/js/ucan_v304_r4_geometry_protection.js?build=V304-20260725-R4-GEOMETRY-PROTECTION'),
-  loaderOrder:loader.indexOf('runtime.addEventListener') < loader.indexOf('appendScript(protectionSrc'),
+  loaderOrder:loader.indexOf('ucan_v304_quest_glass_rails_holiday_r4.js') < loader.indexOf('ucan_v304_r4_geometry_protection.js'),
   noR3Loader:!loader.includes('ucan_v304_quest_visual_entry_r3.js?build='),
   preloaderChain:preloader.includes("require('./auth-compat-v293.js')"),
-  preloaderCacheBust:preloader.includes('V304-20260725-QUEST-R4-LOADER'),
+  r5PreservesR4:!startsR5 || r5Preloader.includes("require('./auth-compat-v304-r4.js')"),
   preloaderVersion:preloader.includes('questHolidayBoardTwoReadableFaces') && preloader.includes('questStairRailingsRebuiltOnSideEdges'),
-  packageStart:pkg.scripts?.start === 'node -r ./auth-compat-v304-r4.js server.js',
+  packageStart:startsR4 || startsR5,
   packageCheckRuntime:pkg.scripts?.check?.includes('public/js/ucan_v304_quest_glass_rails_holiday_r4.js') === true,
   packageCheckProtection:pkg.scripts?.check?.includes('public/js/ucan_v304_r4_geometry_protection.js') === true,
   packageAudit:pkg.scripts?.['audit:quest-v304-r4'] === 'node verify_quest_visual_v304_r4.js',
   packageTest:pkg.scripts?.test?.includes('audit:quest-v304-r4') === true,
-  dockerPreloader:docker.includes('"./auth-compat-v304-r4.js"')
+  dockerPreloader:dockerR4 || dockerR5
 };
 
 const ok = Object.values(checks).every(Boolean);
-console.log(JSON.stringify({ ok, checks, syntaxError }, null, 2));
+console.log(JSON.stringify({ ok, checks, syntaxError, chain:{ startsR4, startsR5, dockerR4, dockerR5 } }, null, 2));
 if (!ok) process.exit(1);
