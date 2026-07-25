@@ -32,7 +32,7 @@ jobs:
             curl -fsS http://127.0.0.1:3016/health > /tmp/health-xr-v304.json && break
             sleep 1
           done
-          curl -fsS "http://127.0.0.1:3016/js/ucan_v304_xr_entry_mr_fix.js?build=V304-20260723-XR-FLOATING-VR-MR-BETA" > /tmp/xr-entry-v304.js
+          curl -fsS "http://127.0.0.1:3016/js/ucan_v304_xr_entry_mr_fix.js?build=V304-20260724-XR-DIRECT-USER-GESTURE-VR-MR" > /tmp/xr-entry-v304.js
           curl -fsS http://127.0.0.1:3016/version > /tmp/version-xr-v304.json
           CI_USER="cixrv304${GITHUB_RUN_ID}"
           curl -fsS -c /tmp/cookies-xr-v304.txt \
@@ -49,19 +49,32 @@ jobs:
           const source = fs.readFileSync('/tmp/xr-entry-v304.js', 'utf8');
           const required = [
             "const VERSION = 'V304'",
+            'V304-20260724-XR-DIRECT-USER-GESTURE-VR-MR',
             'ucanVrGogglesV304',
             'floatingVrGogglesLowerRight:true',
             "enterMode('immersive-vr')",
             "enterMode('immersive-ar')",
-            'baseExperience.enterXRAsync',
-            'state.helper.renderTarget',
+            "enterXRAsync('immersive-vr', 'local-floor')",
+            "enterXRAsync('immersive-ar', 'local-floor'",
+            'directUserGestureEntryWithoutAwait:true',
+            'supportCheckAdvisoryOnly:true',
+            'vrButtonNeverDisabledBySupportProbe:true',
+            'diagnosticsVisibleOnFailure:true',
+            'navigator.userActivation?.isActive',
+            'ucanXrDiagnosticV304',
             'new B.Color4(0, 0, 0, 0)',
             'function restoreMixedReality',
             '__UCAN_XR_ENTRY_MR_V304__'
           ];
           const missing = required.filter(value => !source.includes(value));
           if (missing.length) throw new Error(`Marcadores XR V304 ausentes: ${missing.join(', ')}`);
-          console.log({ markers:required.length });
+          const start = source.indexOf('async function enterMode(mode)');
+          const call = source.indexOf("enterPromise = state.helper.baseExperience.enterXRAsync('immersive-vr', 'local-floor');", start);
+          const firstAwait = source.indexOf('await ', start);
+          if (!(start >= 0 && call > start && (firstAwait < 0 || call < firstAwait))) {
+            throw new Error(JSON.stringify({ start, call, firstAwait }));
+          }
+          console.log({ markers:required.length, start, call, firstAwait });
           NODE
 
       - name: Validar campus autenticado
@@ -75,6 +88,7 @@ jobs:
           const occurrences = (html.match(/ucan_v304_xr_entry_mr_fix\.js/g) || []).length;
           if (!(main >= 0 && ecosystem > main && xrFix > main)) throw new Error(JSON.stringify({ main, ecosystem, xrFix }));
           if (occurrences !== 1) throw new Error(`La capa XR V304 aparece ${occurrences} veces.`);
+          if (!html.includes('V304-20260724-XR-DIRECT-USER-GESTURE-VR-MR')) throw new Error('El campus no usa el build nuevo para evitar caché.');
           if (html.includes('ucan_v305_') || html.includes('ucan_v306_')) throw new Error('Se reactivó una capa posterior a V304.');
           if (!html.includes('id="xrBtn"') || !html.includes('id="mrBtn"')) throw new Error('Faltan los botones XR del HUD.');
           console.log({ main, ecosystem, xrFix, occurrences });
@@ -92,7 +106,7 @@ jobs:
           NODE
 
       - name: Construir Docker V304
-        run: docker build -t ucan-academic:v304-xr .
+        run: docker build -t ucan-academic:v304-xr-direct .
 
       - name: Detener servidor
         if: always()
