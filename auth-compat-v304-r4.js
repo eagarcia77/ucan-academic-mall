@@ -43,7 +43,7 @@ function updateVersionData(data) {
 
 function transformText(text) {
   let value = String(text);
-  if (/<html|<body|<script/i.test(value)) {
+  if (/<html|<body|<script/i.test(value) && !value.includes('V304-20260725-GLOBAL-R5-LOADER')) {
     value = value.replace(
       /\/js\/ucan_v266_keyboard_jump\.js\?build=[^"']+/g,
       `/js/ucan_v266_keyboard_jump.js?build=${LOADER_BUILD}`
