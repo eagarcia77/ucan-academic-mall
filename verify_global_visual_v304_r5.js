@@ -36,7 +36,7 @@ const checks = {
   sourceHidden:runtime.includes('Fuente oculta cartel global R5') && runtime.includes('source.setEnabled?.(false)'),
   r4DuplicatePrevented:runtime.includes('holidayBoardPuertoRicoV304R4') && runtime.includes('globalBoardSourceV304R5'),
   noPerFrameScan:!runtime.includes('scene.onBeforeRenderObservable.add'),
-  loaderOrder:loader.indexOf('ucan_v304_quest_glass_rails_holiday_r4.js') < loader.indexOf('ucan_v304_global_glass_signs_r5.js'),
+  loaderOrderByEvents:loader.includes("runtime.addEventListener('load', loadProtectionAndR5)") && loader.includes("protection.addEventListener('load', loadGlobalVisualR5)"),
   loaderR5:loader.includes('/js/ucan_v304_global_glass_signs_r5.js?build=V304-20260725-GLOBAL-GLASS-UPRIGHT-SIGNS-R5'),
   preloaderChain:preloader.includes("require('./auth-compat-v304-r4.js')") && r4Preloader.includes("require('./auth-compat-v293.js')"),
   preloaderCacheBust:preloader.includes('V304-20260725-GLOBAL-R5-LOADER'),
