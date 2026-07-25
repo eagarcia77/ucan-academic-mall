@@ -1,0 +1,85 @@
+name: Validar Quest V304 R2
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate-v304-r2:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validar sintaxis y auditoría R2
+        run: |
+          npm run check
+          npm run audit:quest-v304-r2
+
+      - name: Iniciar servidor autenticado
+        env:
+          PORT: 3018
+          ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
+        run: |
+          npm start > /tmp/ucan-v304-r2.log 2>&1 &
+          echo $! > /tmp/ucan-v304-r2.pid
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:3018/health > /tmp/health-v304-r2.json && break
+            sleep 1
+          done
+          curl -fsS "http://127.0.0.1:3018/js/ucan_v304_quest_visual_entry_r2.js?build=V304-20260724-QUEST-GLASS-SIGNS-VR-R2" > /tmp/quest-v304-r2.js
+          curl -fsS "http://127.0.0.1:3018/js/ucan_v266_keyboard_jump.js" > /tmp/keyboard-v266.js
+          CI_USER="civ304r2${GITHUB_RUN_ID}"
+          curl -fsS -c /tmp/cookies-v304-r2.txt \
+            -H 'Content-Type: application/json' \
+            -d "{\"username\":\"${CI_USER}\",\"displayName\":\"CI Quest V304 R2\",\"email\":\"${CI_USER}@example.test\",\"password\":\"CI-V304-R2-2026!\"}" \
+            http://127.0.0.1:3018/api/auth/register > /tmp/register-v304-r2.json
+          curl -fsS -b /tmp/cookies-v304-r2.txt http://127.0.0.1:3018/campus > /tmp/campus-v304-r2.html
+
+      - name: Validar JavaScript servido
+        run: |
+          node --check /tmp/quest-v304-r2.js
+          node --check /tmp/keyboard-v266.js
+          node - <<'NODE'
+          const fs = require('fs');
+          const source = fs.readFileSync('/tmp/quest-v304-r2.js', 'utf8');
+          const required = [
+            "const REVISION = 'R2'",
+            "FromHexString('#9bc8d3')",
+            'material.needDepthPrePass = false',
+            'material.disableDepthWrite = true',
+            'sideOrientation:B.Mesh.FRONTSIDE',
+            'B.Mesh.BILLBOARDMODE_Y',
+            "base.enterXRAsync(mode, 'local-floor', renderTarget, { optionalFeatures })",
+            '__UCAN_QUEST_V304_R2__'
+          ];
+          const missing = required.filter(value => !source.includes(value));
+          if (missing.length) throw new Error(`Marcadores V304 R2 ausentes: ${missing.join(', ')}`);
+          console.log({ markers:required.length });
+          NODE
+
+      - name: Validar cargador y campus V304
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const keyboard = fs.readFileSync('/tmp/keyboard-v266.js', 'utf8');
+          const campus = fs.readFileSync('/tmp/campus-v304-r2.html', 'utf8');
+          const path = '/js/ucan_v304_quest_visual_entry_r2.js?build=V304-20260724-QUEST-GLASS-SIGNS-VR-R2';
+          if (!keyboard.includes(path)) throw new Error('El cargador V266 no incluye la revisión Quest R2.');
+          if (!campus.includes('ucan_v266_keyboard_jump.js')) throw new Error('El campus no carga el archivo que instala R2.');
+          if (campus.includes('ucan_v305_') || campus.includes('ucan_v306_')) throw new Error('Se reactivó una versión posterior a V304.');
+          console.log({ loader:true, v304:true });
+          NODE
+
+      - name: Construir Docker V304 R2
+        run: docker build -t ucan-academic:v304-r2 .
+
+      - name: Detener servidor
+        if: always()
+        run: |
+          test -f /tmp/ucan-v304-r2.pid && kill "$(cat /tmp/ucan-v304-r2.pid)" || true
