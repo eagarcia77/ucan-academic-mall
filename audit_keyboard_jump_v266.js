@@ -13,7 +13,7 @@ const checks={
   moduleLoaded:legacyLoader||sourceV304Loader,
   questR4RuntimeValid:runtimeR4,
   globalR5RuntimeValid:runtimeR5,
-  runtimeOrder:main.indexOf('ucan_v304_quest_glass_rails_holiday_r4.js')<main.indexOf('ucan_v304_global_glass_signs_r5.js'),
+  runtimeOrderByEvents:/runtime\.addEventListener\('load', loadProtectionAndR5\)/.test(main)&&/protection\.addEventListener\('load', loadGlobalVisualR5\)/.test(main),
   runtimeCacheBust:preloaderR5||preloaderR4,
   oldQuestRuntimeInactive:!/ucan_v304_quest_visual_entry_r[23]\.js\?build=/.test(main),
   formProtection:/isTextEntryTarget/.test(main)&&/event\.stopPropagation/.test(main),
