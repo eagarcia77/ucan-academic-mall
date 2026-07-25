@@ -90,12 +90,9 @@ jobs:
           const keyboard = fs.readFileSync('/tmp/keyboard-v266.js', 'utf8');
           const campus = fs.readFileSync('/tmp/campus-v304-r5.html', 'utf8');
           const version = JSON.parse(fs.readFileSync('/tmp/version-v304-r5.json', 'utf8'));
-          const r4 = 'ucan_v304_quest_glass_rails_holiday_r4.js';
-          const protection = 'ucan_v304_r4_geometry_protection.js';
-          const r5 = 'ucan_v304_global_glass_signs_r5.js';
-          if (!(keyboard.indexOf(r4) >= 0 && keyboard.indexOf(protection) > keyboard.indexOf(r4) && keyboard.indexOf(r5) > keyboard.indexOf(protection))) {
-            throw new Error('El orden debe ser R4, protección y R5.');
-          }
+          const orderByEvents = keyboard.includes("runtime.addEventListener('load', loadProtectionAndR5)") &&
+            keyboard.includes("protection.addEventListener('load', loadGlobalVisualR5)");
+          if (!orderByEvents) throw new Error('El orden real debe ser R4, protección y R5 mediante eventos load.');
           if (!campus.includes('ucan_v266_keyboard_jump.js?build=V304-20260725-GLOBAL-R5-LOADER')) throw new Error('El campus no usa el identificador R5.');
           if (campus.includes('ucan_v305_') || campus.includes('ucan_v306_')) throw new Error('Se reactivó una versión posterior a V304.');
           const checks = {
@@ -108,7 +105,7 @@ jobs:
             r4:version.questR4Preserved === true
           };
           if (!Object.values(checks).every(Boolean)) throw new Error(JSON.stringify({ checks, version }, null, 2));
-          console.log({ checks });
+          console.log({ checks, orderByEvents });
           NODE
 
       - name: Construir Docker V304 R5
