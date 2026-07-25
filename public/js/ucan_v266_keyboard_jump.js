@@ -146,15 +146,28 @@
     return true;
   }
 
-  function loadQuestVisualR4() {
-    const src = '/js/ucan_v304_quest_glass_rails_holiday_r4.js?build=V304-20260725-QUEST-GLASS-RAILS-HOLIDAY-R4';
-    if (document.querySelector('script[data-ucan-v304-quest-r4="true"]')) return;
+  function appendScript(src, marker, errorMessage) {
+    if (document.querySelector(`script[${marker}="true"]`)) return null;
     const script = document.createElement('script');
     script.src = src;
     script.async = false;
-    script.dataset.ucanV304QuestR4 = 'true';
-    script.addEventListener('error', () => console.error('[UCAN V304 R4] No se pudo cargar la corrección de cristales, barandas y feriados.'));
+    script.setAttribute(marker, 'true');
+    script.addEventListener('error', () => console.error(errorMessage));
     document.head.appendChild(script);
+    return script;
+  }
+
+  function loadQuestVisualR4() {
+    const runtimeSrc = '/js/ucan_v304_quest_glass_rails_holiday_r4.js?build=V304-20260725-QUEST-GLASS-RAILS-HOLIDAY-R4';
+    const protectionSrc = '/js/ucan_v304_r4_geometry_protection.js?build=V304-20260725-R4-GEOMETRY-PROTECTION';
+    const runtime = appendScript(runtimeSrc, 'data-ucan-v304-quest-r4', '[UCAN V304 R4] No se pudo cargar la corrección de cristales, barandas y feriados.');
+    if (runtime) {
+      runtime.addEventListener('load', () => {
+        appendScript(protectionSrc, 'data-ucan-v304-r4-protection', '[UCAN V304 R4] No se pudo cargar la protección geométrica.');
+      });
+    } else {
+      appendScript(protectionSrc, 'data-ucan-v304-r4-protection', '[UCAN V304 R4] No se pudo cargar la protección geométrica.');
+    }
   }
 
   let attempts = 0;
