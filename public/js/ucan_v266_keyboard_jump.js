@@ -146,14 +146,14 @@
     return true;
   }
 
-  function loadQuestVisualEntryR3() {
-    const src = '/js/ucan_v304_quest_visual_entry_r3.js?build=V304-20260724-QUEST-VR-NONBLOCKING-R3';
-    if (document.querySelector('script[data-ucan-v304-quest-r3="true"]')) return;
+  function loadQuestVisualR4() {
+    const src = '/js/ucan_v304_quest_glass_rails_holiday_r4.js?build=V304-20260725-QUEST-GLASS-RAILS-HOLIDAY-R4';
+    if (document.querySelector('script[data-ucan-v304-quest-r4="true"]')) return;
     const script = document.createElement('script');
     script.src = src;
     script.async = false;
-    script.dataset.ucanV304QuestR3 = 'true';
-    script.addEventListener('error', () => console.error('[UCAN V304 R3] No se pudo cargar la corrección VR no bloqueante.'));
+    script.dataset.ucanV304QuestR4 = 'true';
+    script.addEventListener('error', () => console.error('[UCAN V304 R4] No se pudo cargar la corrección de cristales, barandas y feriados.'));
     document.head.appendChild(script);
   }
 
@@ -163,5 +163,5 @@
     if (connectToScene() || attempts >= 200) window.clearInterval(timer);
   }, 100);
 
-  loadQuestVisualEntryR3();
+  loadQuestVisualR4();
 })();
