@@ -16,11 +16,14 @@ jobs:
         with:
           node-version: 20
 
-      - name: Validar sintaxis y auditorías R4 R5
-        run: |
-          npm run check
-          npm run audit:quest-v304-r4
-          npm run audit:global-v304-r5
+      - name: Validar sintaxis global
+        run: npm run check
+
+      - name: Validar compatibilidad Quest R4
+        run: npm run audit:quest-v304-r4
+
+      - name: Validar corrección global R5
+        run: npm run audit:global-v304-r5
 
       - name: Iniciar servidor autenticado
         env:
