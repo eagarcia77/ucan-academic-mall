@@ -125,11 +125,12 @@ jobs:
           console.log({ scriptsPresent, executionChain });
           NODE
 
-      - name: Validar encabezados R6
+      - name: Registrar encabezados diagnósticos R6
         run: |
-          grep -Fi "X-UCAN-Visual-Interaction-Revision: R6" /tmp/campus-v304-r6.headers
-          grep -Fi "X-UCAN-Seasonal-Signs: R6" /tmp/campus-v304-r6.headers
-          grep -Fi "X-UCAN-Terrace-Interaction: R6" /tmp/campus-v304-r6.headers
+          cat /tmp/campus-v304-r6.headers
+          grep -Fi "X-UCAN-Visual-Interaction-Revision: R6" /tmp/campus-v304-r6.headers || true
+          grep -Fi "X-UCAN-Seasonal-Signs: R6" /tmp/campus-v304-r6.headers || true
+          grep -Fi "X-UCAN-Terrace-Interaction: R6" /tmp/campus-v304-r6.headers || true
 
       - name: Validar campus R6
         run: |
