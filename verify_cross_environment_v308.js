@@ -17,6 +17,7 @@ const files = {
 
 const text = Object.fromEntries(Object.entries(files).map(([key, file]) => [key, fs.readFileSync(file, 'utf8')]));
 const pkg = JSON.parse(text.package);
+const voiceLoaderBlock = text.loader.match(/function loadVoiceBridgeV306\(\)\s*\{[\s\S]*?\n  \}/)?.[0] || '';
 const checks = {
   serverSyntax:true,
   preloaderSyntax:true,
@@ -40,7 +41,7 @@ const checks = {
   speechBubble:text.client.includes('burbuja interacción V308'),
   focusMarker:text.client.includes('anillo foco V308'),
   loaderIncludesV308:text.loader.includes('/js/ucan_v308_cross_environment_interaction.js?build=V308-20260728-SINGLE-SCENE-CROSS-ENV-INTERACTION'),
-  loaderOrder:text.loader.indexOf('loadCrossEnvironmentV308') > text.loader.indexOf('loadVoiceBridgeV306'),
+  loaderOrder:voiceLoaderBlock.includes("runtime.addEventListener('load', loadCrossEnvironmentV308") && voiceLoaderBlock.includes('else loadCrossEnvironmentV308()'),
   dockerStartsV308:text.docker.includes('auth-compat-v308-world.js'),
   packageStartsV308:String(pkg.scripts?.start || '').includes('auth-compat-v308-world.js'),
   packageChecksV308:String(pkg.scripts?.check || '').includes('ucan_v308_cross_environment_interaction.js') && String(pkg.scripts?.check || '').includes('world-sync-v308.js'),
