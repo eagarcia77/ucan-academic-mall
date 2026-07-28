@@ -149,9 +149,18 @@
     return script;
   }
 
+  function loadVoiceBridgeV306() {
+    const src = '/js/ucan_v306_voice_xr_bridge.js?build=V306-20260728-VOICE-XR-ROOM-BRIDGE';
+    appendScript(src, 'data-ucan-v306-voice-xr-bridge', '[UCAN Voice V306] No se pudo cargar el puente de audio para Meta Quest.');
+  }
+
   function loadFloor1TerraceR9() {
     const src = '/js/ucan_v305_floor1_terrace_vr_r9.js?build=V305-20260728-FLOOR1-ADS-TERRACE-XR-R9';
-    appendScript(src, 'data-ucan-v305-floor1-terrace-r9', '[UCAN V305 R9] No se pudo cargar la corrección real de anuncios y joystick XR.');
+    const runtime = appendScript(src, 'data-ucan-v305-floor1-terrace-r9', '[UCAN V305 R9] No se pudo cargar la corrección real de anuncios y joystick XR.');
+    if (runtime) {
+      runtime.addEventListener('load', loadVoiceBridgeV306, { once:true });
+      runtime.addEventListener('error', loadVoiceBridgeV306, { once:true });
+    } else loadVoiceBridgeV306();
   }
 
   function loadVrSignsR7() {
