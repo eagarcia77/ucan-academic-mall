@@ -149,9 +149,16 @@
     return script;
   }
 
+  function loadR6Guard() {
+    const src = '/js/ucan_v304_r6_legacy_sign_guard.js?build=V304-20260728-R6-LEGACY-SIGN-GUARD';
+    appendScript(src, 'data-ucan-v304-r6-sign-guard', '[UCAN V304 R6] No se pudo cargar la protección contra carteles antiguos.');
+  }
+
   function loadInteractionR6() {
     const src = '/js/ucan_v304_signs_terrace_interaction_r6.js?build=V304-20260728-UPRIGHT-SIGNS-TERRACE-XR-INTERACTION-R6';
-    appendScript(src, 'data-ucan-v304-interaction-r6', '[UCAN V304 R6] No se pudo cargar la corrección de carteles e interacción de terraza.');
+    const runtime = appendScript(src, 'data-ucan-v304-interaction-r6', '[UCAN V304 R6] No se pudo cargar la corrección de carteles e interacción de terraza.');
+    if (runtime) runtime.addEventListener('load', loadR6Guard);
+    else loadR6Guard();
   }
 
   function loadGlobalVisualR5() {
