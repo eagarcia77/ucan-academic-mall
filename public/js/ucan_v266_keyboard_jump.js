@@ -149,9 +149,18 @@
     return script;
   }
 
+  function loadCrossEnvironmentV308() {
+    const src = '/js/ucan_v308_cross_environment_interaction.js?build=V308-20260728-SINGLE-SCENE-CROSS-ENV-INTERACTION';
+    appendScript(src, 'data-ucan-v308-cross-environment', '[UCAN V308] No se pudo cargar la interacción compartida entre browser y Meta Quest.');
+  }
+
   function loadVoiceBridgeV306() {
     const src = '/js/ucan_v306_voice_xr_bridge.js?build=V306-20260728-VOICE-XR-ROOM-BRIDGE';
-    appendScript(src, 'data-ucan-v306-voice-xr-bridge', '[UCAN Voice V306] No se pudo cargar el puente de audio para Meta Quest.');
+    const runtime = appendScript(src, 'data-ucan-v306-voice-xr-bridge', '[UCAN Voice V306] No se pudo cargar el puente de audio para Meta Quest.');
+    if (runtime) {
+      runtime.addEventListener('load', loadCrossEnvironmentV308, { once:true });
+      runtime.addEventListener('error', loadCrossEnvironmentV308, { once:true });
+    } else loadCrossEnvironmentV308();
   }
 
   function loadPresenceBridgeV307() {
