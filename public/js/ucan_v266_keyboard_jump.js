@@ -149,9 +149,16 @@
     return script;
   }
 
+  function loadFloor1TerraceR8() {
+    const src = '/js/ucan_v305_floor1_terrace_vr_r8.js?build=V305-20260728-FLOOR1-UPRIGHT-TERRACE-JOYSTICK-R8';
+    appendScript(src, 'data-ucan-v305-floor1-terrace-r8', '[UCAN V305 R8] No se pudo cargar la corrección de anuncios del piso 1 y joystick de terraza.');
+  }
+
   function loadVrSignsR7() {
     const src = '/js/ucan_v305_vr_signs_interaction_r7.js?build=V305-20260728-VR-UPRIGHT-SIGNS-INTERACTION-R7';
-    appendScript(src, 'data-ucan-v305-vr-signs-r7', '[UCAN V305 R7] No se pudo cargar la corrección final de carteles e interacción VR.');
+    const runtime = appendScript(src, 'data-ucan-v305-vr-signs-r7', '[UCAN V305 R7] No se pudo cargar la corrección final de carteles e interacción VR.');
+    if (runtime) runtime.addEventListener('load', loadFloor1TerraceR8);
+    else loadFloor1TerraceR8();
   }
 
   function loadExternalPatioV305() {
