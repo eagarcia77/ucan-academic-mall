@@ -149,9 +149,18 @@
     return script;
   }
 
+  function loadStrictParityV309() {
+    const src = '/js/ucan_v309_strict_visual_parity.js?build=V309-20260728-STRICT-BROWSER-VR-VISUAL-PARITY-R13';
+    appendScript(src, 'data-ucan-v309-strict-visual-parity', '[UCAN V309 R13] No se pudo cargar la paridad visual estricta entre browser y VR.');
+  }
+
   function loadCrossEnvironmentV308() {
     const src = '/js/ucan_v308_cross_environment_interaction.js?build=V308-20260728-SINGLE-SCENE-CROSS-ENV-INTERACTION';
-    appendScript(src, 'data-ucan-v308-cross-environment', '[UCAN V308] No se pudo cargar la interacción compartida entre browser y Meta Quest.');
+    const runtime = appendScript(src, 'data-ucan-v308-cross-environment', '[UCAN V308] No se pudo cargar la interacción compartida entre browser y Meta Quest.');
+    if (runtime) {
+      runtime.addEventListener('load', loadStrictParityV309, { once:true });
+      runtime.addEventListener('error', loadStrictParityV309, { once:true });
+    } else loadStrictParityV309();
   }
 
   function loadVoiceBridgeV306() {
