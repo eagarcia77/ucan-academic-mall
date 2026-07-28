@@ -125,17 +125,27 @@ jobs:
           console.log({ scriptsPresent, executionChain });
           NODE
 
-      - name: Validar campus encabezados y versión
+      - name: Validar encabezados R6
         run: |
           grep -Fi "X-UCAN-Visual-Interaction-Revision: R6" /tmp/campus-v304-r6.headers
           grep -Fi "X-UCAN-Seasonal-Signs: R6" /tmp/campus-v304-r6.headers
           grep -Fi "X-UCAN-Terrace-Interaction: R6" /tmp/campus-v304-r6.headers
+
+      - name: Validar campus R6
+        run: |
           node - <<'NODE'
           const fs = require('fs');
           const campus = fs.readFileSync('/tmp/campus-v304-r6.html', 'utf8');
-          const version = JSON.parse(fs.readFileSync('/tmp/version-v304-r6.json', 'utf8'));
           if (!campus.includes('ucan_v266_keyboard_jump.js?build=V304-20260728-R6-SIGNS-TERRACE-LOADER')) throw new Error('El campus no usa el identificador R6.');
           if (campus.includes('ucan_v305_') || campus.includes('ucan_v306_')) throw new Error('Se reactivó una versión posterior a V304.');
+          console.log({ cacheBuild:'R6', laterVersionsAbsent:true });
+          NODE
+
+      - name: Validar endpoint version R6
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const version = JSON.parse(fs.readFileSync('/tmp/version-v304-r6.json', 'utf8'));
           const checks = {
             revision:version.visualInteractionRevision === 'R6',
             signs:version.seasonalSignsCopiedFromSourceCanvas === true && version.seasonalSignsDynamicTextureInvertY === true && version.seasonalSignsTwoFrontFacesR6 === true && version.seasonalSignsBacksideDisabledR6 === true,
@@ -145,8 +155,8 @@ jobs:
             panel:version.terraceOwnXRInfoPanelR6 === true && version.terraceInfoTextureInvertYR6 === true,
             runtimeInfo:version.universalInfoTextureRuntimeCorrectedR6 === true && version.skyInfoTextureRuntimeCorrectedR6 === true
           };
-          if (!Object.values(checks).every(Boolean)) throw new Error(JSON.stringify({ checks, version }, null, 2));
-          console.log({ checks });
+          console.log(JSON.stringify({ checks, version }, null, 2));
+          if (!Object.values(checks).every(Boolean)) throw new Error('El endpoint /version no contiene todos los indicadores R6.');
           NODE
 
       - name: Construir Docker V304 R6
