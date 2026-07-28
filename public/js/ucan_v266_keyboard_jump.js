@@ -149,9 +149,16 @@
     return script;
   }
 
+  function loadVrSignsR7() {
+    const src = '/js/ucan_v305_vr_signs_interaction_r7.js?build=V305-20260728-VR-UPRIGHT-SIGNS-INTERACTION-R7';
+    appendScript(src, 'data-ucan-v305-vr-signs-r7', '[UCAN V305 R7] No se pudo cargar la corrección final de carteles e interacción VR.');
+  }
+
   function loadExternalPatioV305() {
     const src = '/js/ucan_v305_external_tropical_patio_fix.js?build=V305-20260728-EXTERNAL-TROPICAL-PATIO-PERIMETER-R1';
-    appendScript(src, 'data-ucan-v305-external-tropical-patio', '[UCAN V305] No se pudo cargar la reubicación exterior del patio tropical.');
+    const runtime = appendScript(src, 'data-ucan-v305-external-tropical-patio', '[UCAN V305] No se pudo cargar la reubicación exterior del patio tropical.');
+    if (runtime) runtime.addEventListener('load', loadVrSignsR7);
+    else loadVrSignsR7();
   }
 
   function loadR6Guard() {
