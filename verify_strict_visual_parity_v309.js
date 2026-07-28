@@ -29,7 +29,7 @@ const checks = {
   suppressesQuestOnlyGeometry:text.runtime.includes('function suppressQuestOnly') && text.runtime.includes('questCorrectedStairRailV301') && text.runtime.includes('questSolidFloorV301'),
   disablesQuestVignette:text.runtime.includes('viñeta confort Meta Quest V301') && text.runtime.includes('questComfortVignetteDisabled:true'),
   loaderIncludesV309:text.loader.includes('/js/ucan_v309_strict_visual_parity.js?build=V309-20260728-STRICT-BROWSER-VR-VISUAL-PARITY-R13'),
-  loaderRunsV309AfterV308:text.loader.indexOf('loadStrictParityV309') > -1 && text.loader.indexOf('loadStrictParityV309') > text.loader.indexOf('loadCrossEnvironmentV308'),
+  loaderRunsV309AfterV308:text.loader.includes("runtime.addEventListener('load', loadStrictParityV309") && text.loader.includes("runtime.addEventListener('error', loadStrictParityV309"),
   responsePatchesV301:text.responseCompat.includes("patched.includes('V301-20260723-QUEST-RAILS-SELECTION-COMFORT')") && text.responseCompat.includes('decorateRooftopInteractions(true)'),
   responseDisablesV303Cleanup:text.responseCompat.includes("patched.includes('V303-20260723-QUEST-ZONE-GLASS-REAR-RAILS-R2')") && text.responseCompat.includes('function scanAndClean(force = false)'),
   responseDisablesR4Replacement:text.responseCompat.includes("patched.includes('V304-20260725-QUEST-GLASS-RAILS-HOLIDAY-R4')") && text.responseCompat.includes('state.visualsReady = true; restoreVisuals();'),
