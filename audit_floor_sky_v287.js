@@ -9,6 +9,7 @@ const compatSource = fs.readFileSync('auth-compat-v287.js', 'utf8');
 const layeredCompatSource = fs.readFileSync('auth-compat-v293.js', 'utf8');
 const r4CompatSource = fs.readFileSync('auth-compat-v304-r4.js', 'utf8');
 const r5CompatSource = fs.readFileSync('auth-compat-v304-r5.js', 'utf8');
+const r6CompatSource = fs.readFileSync('auth-compat-v304-r6.js', 'utf8');
 const dockerfileSource = fs.readFileSync('Dockerfile', 'utf8');
 const codespaceStartSource = fs.readFileSync('.devcontainer/start-codespace.sh', 'utf8');
 const devcontainer = JSON.parse(fs.readFileSync('.devcontainer/devcontainer.json', 'utf8'));
@@ -37,14 +38,17 @@ try {
 const v293PreservesV287 = /require\('\.\/auth-compat-v287\.js'\)/.test(layeredCompatSource);
 const r4PreservesV293 = /require\('\.\/auth-compat-v293\.js'\)/.test(r4CompatSource);
 const r5PreservesR4 = /require\('\.\/auth-compat-v304-r4\.js'\)/.test(r5CompatSource);
+const r6PreservesR5 = /require\('\.\/auth-compat-v304-r5\.js'\)/.test(r6CompatSource);
 const startsDirectV287 = pkg.scripts?.start === 'node -r ./auth-compat-v287.js server.js';
 const startsLayeredV293 = pkg.scripts?.start === 'node -r ./auth-compat-v293.js server.js' && v293PreservesV287;
 const startsLayeredR4 = pkg.scripts?.start === 'node -r ./auth-compat-v304-r4.js server.js' && r4PreservesV293 && v293PreservesV287;
 const startsLayeredR5 = pkg.scripts?.start === 'node -r ./auth-compat-v304-r5.js server.js' && r5PreservesR4 && r4PreservesV293 && v293PreservesV287;
+const startsLayeredR6 = pkg.scripts?.start === 'node -r ./auth-compat-v304-r6.js server.js' && r6PreservesR5 && r5PreservesR4 && r4PreservesV293 && v293PreservesV287;
 const dockerDirectV287 = /CMD \["node", "-r", "\.\/auth-compat-v287\.js", "server\.js"\]/.test(dockerfileSource);
 const dockerLayeredV293 = /CMD \["node", "-r", "\.\/auth-compat-v293\.js", "server\.js"\]/.test(dockerfileSource) && v293PreservesV287;
 const dockerLayeredR4 = /CMD \["node", "-r", "\.\/auth-compat-v304-r4\.js", "server\.js"\]/.test(dockerfileSource) && r4PreservesV293 && v293PreservesV287;
 const dockerLayeredR5 = /CMD \["node", "-r", "\.\/auth-compat-v304-r5\.js", "server\.js"\]/.test(dockerfileSource) && r5PreservesR4 && r4PreservesV293 && v293PreservesV287;
+const dockerLayeredR6 = /CMD \["node", "-r", "\.\/auth-compat-v304-r6\.js", "server\.js"\]/.test(dockerfileSource) && r6PreservesR5 && r5PreservesR4 && r4PreservesV293 && v293PreservesV287;
 
 const checks = {
   version:VERSION === 'V287',
@@ -79,12 +83,13 @@ const checks = {
   serverUsesNewSky:/ucan_v287_rooftop_sky\.js/.test(compatSource),
   oldSkyRefreshRemoved:/ucan_v276_sky_refresh/.test(compatSource) && /skyRefreshScript = null/.test(compatSource),
   noCacheMain:/X-UCAN-Floor-State/.test(compatSource) && /no-store, no-cache/.test(compatSource),
-  packageStartsV287Base:startsDirectV287 || startsLayeredV293 || startsLayeredR4 || startsLayeredR5,
+  packageStartsV287Base:startsDirectV287 || startsLayeredV293 || startsLayeredR4 || startsLayeredR5 || startsLayeredR6,
   layeredPreloaderPreservesV287:startsDirectV287 || v293PreservesV287,
   r4PreloaderPreservesV287:!startsLayeredR4 || (r4PreservesV293 && v293PreservesV287),
   r5PreloaderPreservesV287:!startsLayeredR5 || (r5PreservesR4 && r4PreservesV293 && v293PreservesV287),
+  r6PreloaderPreservesV287:!startsLayeredR6 || (r6PreservesR5 && r5PreservesR4 && r4PreservesV293 && v293PreservesV287),
   packageAudit:pkg.scripts?.['audit:floor-sky'] === 'node audit_floor_sky_v287.js',
-  dockerStartsV287Base:dockerDirectV287 || dockerLayeredV293 || dockerLayeredR4 || dockerLayeredR5,
+  dockerStartsV287Base:dockerDirectV287 || dockerLayeredV293 || dockerLayeredR4 || dockerLayeredR5 || dockerLayeredR6,
   codespacesUsesNpmStart:/nohup npm start/.test(codespaceStartSource),
   codespacesRejectsOldVersion:/v\.version==='V287'/.test(codespaceStartSource),
   codespacesBuildIsV287:devcontainer?.remoteEnv?.UCAN_BUILD === BUILD,
@@ -97,7 +102,7 @@ console.log(JSON.stringify({
   version:VERSION,
   build:BUILD,
   checks,
-  preloaderChain:{ startsDirectV287, startsLayeredV293, startsLayeredR4, startsLayeredR5, r5PreservesR4, r4PreservesV293, v293PreservesV287 },
+  preloaderChain:{ startsDirectV287, startsLayeredV293, startsLayeredR4, startsLayeredR5, startsLayeredR6, r6PreservesR5, r5PreservesR4, r4PreservesV293, v293PreservesV287 },
   patchError,
   transformChecks:result.checks || null
 }, null, 2));
