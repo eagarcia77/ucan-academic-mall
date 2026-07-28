@@ -3,6 +3,7 @@
 const fs = require('fs');
 
 const runtime = fs.readFileSync('public/js/ucan_v304_signs_terrace_interaction_r6.js', 'utf8');
+const guard = fs.readFileSync('public/js/ucan_v304_r6_legacy_sign_guard.js', 'utf8');
 const loader = fs.readFileSync('public/js/ucan_v266_keyboard_jump.js', 'utf8');
 const preloader = fs.readFileSync('auth-compat-v304-r6.js', 'utf8');
 const r5Preloader = fs.readFileSync('auth-compat-v304-r5.js', 'utf8');
@@ -13,6 +14,7 @@ let syntaxValid = false;
 let syntaxError = null;
 try {
   new Function(runtime);
+  new Function(guard);
   new Function(loader);
   new Function(preloader);
   syntaxValid = true;
@@ -28,7 +30,7 @@ const checks = {
   twoFrontFaces:runtime.includes('sideOrientation:B.Mesh.FRONTSIDE') && runtime.includes("'hacia centro'") && runtime.includes("'hacia exterior'"),
   noBillboard:runtime.includes('face.billboardMode = B.Mesh.BILLBOARDMODE_NONE') && runtime.includes('signsBillboardDisabled:true'),
   uprightRotation:runtime.includes('face.rotation.set(0, angle, 0)') && runtime.includes('face.rotation.x = 0') && runtime.includes('face.rotation.z = 0'),
-  legacyFacesSuppressed:runtime.includes('globalBoardFaceV304R5') && runtime.includes('holidayBoardPuertoRicoV304R4') && runtime.includes('hiddenByCorrectedBoardV304R6'),
+  legacyFacesIdentified:runtime.includes('globalBoardFaceV304R5') && runtime.includes('holidayBoardPuertoRicoV304R4') && runtime.includes('hiddenByCorrectedBoardV304R6'),
   allThreeBoards:runtime.includes("'season-current-v304'") && runtime.includes("'pr-celebration-v304'") && runtime.includes("'four-seasons-v304'"),
   triggerSelection:runtime.includes("selectFromController(controller, 'trigger')"),
   joystickSelection:runtime.includes("selectFromController(controller, 'joystick')"),
@@ -43,14 +45,22 @@ const checks = {
   universalIntegration:runtime.includes("window.__UCAN_UNIVERSAL_SIGN_WINDOW__?.openPanelByMesh?.(face)"),
   infoTextureFix:runtime.includes('contenido ventana universal V292|panel cielo optimizado V287') && runtime.includes('texture.update?.(true)'),
   throttledFrame:runtime.includes('CONTROLLER_POLL_MS = 80') && runtime.includes('CANDIDATE_REFRESH_MS = 1700') && runtime.includes('SIGN_REFRESH_MS = 2500'),
+  guardVersion:guard.includes("const REVISION = 'R6-GUARD'") && guard.includes('V304-20260728-R6-LEGACY-SIGN-GUARD'),
+  guardTargetsR4R5:guard.includes('globalBoardFaceV304R5') && guard.includes('holidayBoardPuertoRicoV304R4'),
+  guardBeforeRender:guard.includes('state.scene.onBeforeRenderObservable.add') && guard.includes('suppress();'),
+  guardSmallSet:guard.includes('legacyMeshes:new Set()') && guard.includes('correctedFaces:new Set()') && guard.includes('fullSceneScanPerFrame:false'),
+  guardForcesR6:guard.includes('correctedBoardFaceV304R6') && guard.includes('correctedR6FacesForcedVisible:true'),
+  guardAudit:guard.includes('__UCAN_R6_LEGACY_SIGN_GUARD__'),
   loaderR6:loader.includes('/js/ucan_v304_signs_terrace_interaction_r6.js?build=V304-20260728-UPRIGHT-SIGNS-TERRACE-XR-INTERACTION-R6'),
-  loaderExecutionOrder:loader.includes("runtime.addEventListener('load', loadInteractionR6)") && loader.includes('else loadInteractionR6();'),
+  loaderGuard:loader.includes('/js/ucan_v304_r6_legacy_sign_guard.js?build=V304-20260728-R6-LEGACY-SIGN-GUARD'),
+  loaderExecutionOrder:loader.includes("runtime.addEventListener('load', loadInteractionR6)") && loader.includes("runtime.addEventListener('load', loadR6Guard)"),
   loaderR5BeforeR6:loader.includes("const runtime = appendScript(src, 'data-ucan-v304-global-r5'") && loader.includes("runtime.addEventListener('load', loadInteractionR6)"),
   preloaderChain:preloader.includes("require('./auth-compat-v304-r5.js')") && r5Preloader.includes("require('./auth-compat-v304-r4.js')"),
   preloaderCacheBust:preloader.includes('V304-20260728-R6-SIGNS-TERRACE-LOADER'),
   versionFlags:preloader.includes('seasonalSignsDynamicTextureInvertY') && preloader.includes('terraceJoystickSelectionR6'),
   packageStart:pkg.scripts?.start === 'node -r ./auth-compat-v304-r6.js server.js',
-  packageCheck:pkg.scripts?.check?.includes('public/js/ucan_v304_signs_terrace_interaction_r6.js') === true,
+  packageCheckRuntime:pkg.scripts?.check?.includes('public/js/ucan_v304_signs_terrace_interaction_r6.js') === true,
+  packageCheckGuard:pkg.scripts?.check?.includes('public/js/ucan_v304_r6_legacy_sign_guard.js') === true,
   packageAudit:pkg.scripts?.['audit:visual-interaction-v304-r6'] === 'node verify_visual_interaction_v304_r6.js',
   packageTest:pkg.scripts?.test?.includes('audit:visual-interaction-v304-r6') === true,
   dockerPreloader:docker.includes('"./auth-compat-v304-r6.js"')
