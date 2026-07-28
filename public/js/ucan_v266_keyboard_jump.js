@@ -123,7 +123,7 @@
     const canvas = document.getElementById('renderCanvas');
     if (canvas) canvas.tabIndex = 0;
     const status = document.getElementById('status');
-    if (status) status.textContent = 'Use W/A/S/D o las flechas para caminar, la barra espaciadora para saltar y R para reubicarse. Los controles se desactivan automáticamente mientras escribe.';
+    if (status) status.textContent = 'Use W/A/S/D o las flechas para caminar, la barra espaciadora para saltar y R para reubicarse. Los controles se desactivan mientras escribe.';
     window.__UCAN_KEYBOARD_JUMP_AUDIT__ = {
       version: VERSION,
       formTypingProtected: true,
@@ -154,13 +154,22 @@
     appendScript(src, 'data-ucan-v306-voice-xr-bridge', '[UCAN Voice V306] No se pudo cargar el puente de audio para Meta Quest.');
   }
 
-  function loadFloor1BrandR10() {
-    const src = '/js/ucan_v306_floor1_brand_orientation_r10.js?build=V306-20260728-FLOOR1-BRAND-UPRIGHT-VR-R10';
-    const runtime = appendScript(src, 'data-ucan-v306-floor1-brand-r10', '[UCAN V306 R10] No se pudo cargar la corrección exacta de anuncios institucionales del piso 1.');
+  function loadPresenceBridgeV307() {
+    const src = '/js/ucan_v307_presence_xr_bridge.js?build=V307-20260728-BROWSER-XR-DEVICE-PRESENCE';
+    const runtime = appendScript(src, 'data-ucan-v307-presence-xr-bridge', '[UCAN V307] No se pudo cargar la presencia compartida entre browser y Meta Quest.');
     if (runtime) {
       runtime.addEventListener('load', loadVoiceBridgeV306, { once:true });
       runtime.addEventListener('error', loadVoiceBridgeV306, { once:true });
     } else loadVoiceBridgeV306();
+  }
+
+  function loadFloor1BrandR10() {
+    const src = '/js/ucan_v306_floor1_brand_orientation_r10.js?build=V306-20260728-FLOOR1-BRAND-UPRIGHT-VR-R10';
+    const runtime = appendScript(src, 'data-ucan-v306-floor1-brand-r10', '[UCAN V306 R10] No se pudo cargar la corrección exacta de anuncios institucionales del piso 1.');
+    if (runtime) {
+      runtime.addEventListener('load', loadPresenceBridgeV307, { once:true });
+      runtime.addEventListener('error', loadPresenceBridgeV307, { once:true });
+    } else loadPresenceBridgeV307();
   }
 
   function loadFloor1TerraceR9() {
