@@ -110,6 +110,15 @@ http.ServerResponse.prototype.writeHead = function writeHeadV304R6(statusCode, s
     nextHeaders = statusMessage;
     message = undefined;
   }
+
+  // Se fijan directamente antes de delegar para que sobrevivan toda la cadena R6→R5→R4.
+  try {
+    this.removeHeader?.('Content-Length');
+    this.setHeader?.('X-UCAN-Visual-Interaction-Revision', REVISION);
+    this.setHeader?.('X-UCAN-Seasonal-Signs', REVISION);
+    this.setHeader?.('X-UCAN-Terrace-Interaction', REVISION);
+  } catch (_) {}
+
   if (nextHeaders && typeof nextHeaders === 'object') {
     nextHeaders = { ...nextHeaders };
     for (const key of Object.keys(nextHeaders)) {
