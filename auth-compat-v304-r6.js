@@ -9,12 +9,14 @@ const previousWriteHead = http.ServerResponse.prototype.writeHead;
 const previousWrite = http.ServerResponse.prototype.write;
 const previousEnd = http.ServerResponse.prototype.end;
 
-const VERSION = 'V305';
-const REVISION = 'R9';
-const BUILD = 'V305-20260728-FLOOR1-ADS-TERRACE-XR-R9';
-const LOADER_BUILD = 'V305-20260728-R9-NO-CACHE-LOADER';
+const VERSION = 'V306';
+const REVISION = 'R10';
+const BUILD = 'V306-20260728-FLOOR1-BRAND-UPRIGHT-VR-R10';
+const LOADER_BUILD = 'V306-20260728-R10-NO-CACHE-LOADER';
 const RUNTIME_PATH = '/js/ucan_v305_floor1_terrace_vr_r9.js';
-const RUNTIME_SCRIPT = `${RUNTIME_PATH}?build=${BUILD}`;
+const RUNTIME_SCRIPT = `${RUNTIME_PATH}?build=V305-20260728-FLOOR1-ADS-TERRACE-XR-R9`;
+const BRAND_RUNTIME_PATH = '/js/ucan_v306_floor1_brand_orientation_r10.js';
+const BRAND_RUNTIME_SCRIPT = `${BRAND_RUNTIME_PATH}?build=${BUILD}`;
 const BUFFERABLE_CONTENT = /(?:text\/html|application\/javascript|text\/javascript)/i;
 
 function updateVersionData(data) {
@@ -26,20 +28,18 @@ function updateVersionData(data) {
   if (!versionPayload) return data;
 
   data.releaseVersion = VERSION;
-  data.floor1TerraceVrRevision = REVISION;
-  data.floor1TerraceVrBuild = BUILD;
+  data.floor1BrandVrRevision = REVISION;
+  data.floor1BrandVrBuild = BUILD;
+  data.floor1BrandVrRuntime = BRAND_RUNTIME_SCRIPT;
+  data.floor1BrandExactMetadataTarget = 'brandLogo';
+  data.floor1BrandOriginalDoubleSideCauseConfirmed = true;
+  data.floor1BrandTwoIndependentFrontFacesR10 = true;
+  data.floor1BrandBillboardDisabledR10 = true;
+  data.floor1BrandMirroredBackfaceSuppressedR10 = true;
+  data.floor1BrandR8R9FacesSuppressedR10 = true;
   data.floor1TerraceVrRuntime = RUNTIME_SCRIPT;
-  data.floor1AdsTwoIndependentFrontFacesR9 = true;
-  data.floor1AdsDynamicTextureInvertYR9 = false;
-  data.floor1AdsImageTexturesSupportedR9 = true;
-  data.terraceJoystickXRStateDefinedR9 = true;
-  data.terraceJoystickComponentEventsR9 = true;
-  data.terraceJoystickGamepadIndexR9 = true;
-  data.terracePlanetsSelectableR9 = true;
-  data.terraceSignsSelectableR9 = true;
-  data.questHtmlJsNoCacheR9 = true;
-  data.r8UndefinedXRStateRemoved = true;
-  data.r6ForcedTextureInversionRemovedR9 = true;
+  data.questHtmlJsNoCacheR10 = true;
+  data.loaderBuild = LOADER_BUILD;
   return data;
 }
 
@@ -48,11 +48,11 @@ function patchR5Runtime(value) {
   let patched = value;
   patched = patched.replace(
     "function normalizeBoards() {\n    if (!state.scene) return;",
-    "function normalizeBoards() {\n    if (window.__UCAN_VR_INTERACTION_V305_R9__?.installed === true || window.__UCAN_VISUAL_INTERACTION_V304_R6__?.installed === true) return;\n    if (!state.scene) return;"
+    "function normalizeBoards() {\n    if (window.__UCAN_FLOOR1_BRAND_VR_V306_R10__?.installed === true || window.__UCAN_VR_INTERACTION_V305_R9__?.installed === true || window.__UCAN_VISUAL_INTERACTION_V304_R6__?.installed === true) return;\n    if (!state.scene) return;"
   );
   patched = patched.replace(
     "function maintainBoards() {\n    for (const [source, faces] of state.boardFaces) {",
-    "function maintainBoards() {\n    const newerRuntimeOwnsBoards = window.__UCAN_VR_INTERACTION_V305_R9__?.installed === true || window.__UCAN_VISUAL_INTERACTION_V304_R6__?.installed === true;\n    for (const [source, faces] of state.boardFaces) {"
+    "function maintainBoards() {\n    const newerRuntimeOwnsBoards = window.__UCAN_FLOOR1_BRAND_VR_V306_R10__?.installed === true || window.__UCAN_VR_INTERACTION_V305_R9__?.installed === true || window.__UCAN_VISUAL_INTERACTION_V304_R6__?.installed === true;\n    for (const [source, faces] of state.boardFaces) {"
   );
   patched = patched.replace(
     "for (const face of faces) {\n        try {\n          face.setEnabled?.(true);\n          face.isVisible = true;\n          face.visibility = 1;",
@@ -75,7 +75,7 @@ function normalizeTextureOrientation(value) {
   return patched;
 }
 
-function upgradeLoaderToR9(value) {
+function upgradeLoaderToR10(value) {
   let patched = value;
   patched = patched.replace(
     /\/js\/ucan_v266_keyboard_jump\.js(?:\?build=[^"']+)?/g,
@@ -87,13 +87,13 @@ function upgradeLoaderToR9(value) {
     RUNTIME_SCRIPT
   );
   patched = patched.replace(/data-ucan-v305-floor1-terrace-r8/g, 'data-ucan-v305-floor1-terrace-r9');
-  patched = patched.replace(/\[UCAN V305 R8\][^'"\n]*/g, '[UCAN V305 R9] No se pudo cargar la corrección real de anuncios y joystick XR.');
+  patched = patched.replace(/\[UCAN V305 R8\][^'"\n]*/g, '[UCAN V305 R9] No se pudo cargar la corrección de terraza XR.');
   return patched;
 }
 
 function transformText(text) {
   let value = String(text);
-  value = upgradeLoaderToR9(value);
+  value = upgradeLoaderToR10(value);
   value = patchR5Runtime(value);
   value = normalizeTextureOrientation(value);
 
@@ -145,7 +145,7 @@ function applyDiagnosticHeaders(response, headers, contentType) {
   return next;
 }
 
-http.ServerResponse.prototype.writeHead = function writeHeadV305R9(statusCode, statusMessage, headers) {
+http.ServerResponse.prototype.writeHead = function writeHeadV306R10(statusCode, statusMessage, headers) {
   let message = statusMessage;
   let nextHeaders = headers;
   if (statusMessage && typeof statusMessage === 'object') {
@@ -154,16 +154,16 @@ http.ServerResponse.prototype.writeHead = function writeHeadV305R9(statusCode, s
   }
 
   const contentType = headerValue(nextHeaders, 'content-type') || String(this.getHeader?.('Content-Type') || '');
-  if (BUFFERABLE_CONTENT.test(contentType)) this.__ucanR9TextChunks = [];
+  if (BUFFERABLE_CONTENT.test(contentType)) this.__ucanR10TextChunks = [];
   nextHeaders = applyDiagnosticHeaders(this, nextHeaders, contentType);
 
   if (message === undefined) return previousWriteHead.call(this, statusCode, nextHeaders);
   return previousWriteHead.call(this, statusCode, message, nextHeaders);
 };
 
-http.ServerResponse.prototype.write = function writeV305R9(chunk, encoding, callback) {
-  if (Array.isArray(this.__ucanR9TextChunks)) {
-    if (chunk != null) this.__ucanR9TextChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk), typeof encoding === 'string' ? encoding : 'utf8'));
+http.ServerResponse.prototype.write = function writeV306R10(chunk, encoding, callback) {
+  if (Array.isArray(this.__ucanR10TextChunks)) {
+    if (chunk != null) this.__ucanR10TextChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk), typeof encoding === 'string' ? encoding : 'utf8'));
     if (typeof encoding === 'function') process.nextTick(encoding);
     else if (typeof callback === 'function') process.nextTick(callback);
     return true;
@@ -171,13 +171,13 @@ http.ServerResponse.prototype.write = function writeV305R9(chunk, encoding, call
   return previousWrite.call(this, chunk, encoding, callback);
 };
 
-http.ServerResponse.prototype.end = function endV305R9(chunk, encoding, callback) {
+http.ServerResponse.prototype.end = function endV306R10(chunk, encoding, callback) {
   let body = chunk;
   try {
-    if (Array.isArray(this.__ucanR9TextChunks)) {
-      if (body != null) this.__ucanR9TextChunks.push(Buffer.isBuffer(body) ? body : Buffer.from(String(body), typeof encoding === 'string' ? encoding : 'utf8'));
-      const combined = Buffer.concat(this.__ucanR9TextChunks).toString('utf8');
-      delete this.__ucanR9TextChunks;
+    if (Array.isArray(this.__ucanR10TextChunks)) {
+      if (body != null) this.__ucanR10TextChunks.push(Buffer.isBuffer(body) ? body : Buffer.from(String(body), typeof encoding === 'string' ? encoding : 'utf8'));
+      const combined = Buffer.concat(this.__ucanR10TextChunks).toString('utf8');
+      delete this.__ucanR10TextChunks;
       body = Buffer.from(transformText(combined), 'utf8');
     } else if (typeof body === 'string' || Buffer.isBuffer(body)) {
       const isBuffer = Buffer.isBuffer(body);
@@ -186,9 +186,9 @@ http.ServerResponse.prototype.end = function endV305R9(chunk, encoding, callback
       body = isBuffer ? Buffer.from(transformed, 'utf8') : transformed;
     }
   } catch (error) {
-    console.error('[UCAN V305 R9 response compatibility]', error);
+    console.error('[UCAN V306 R10 response compatibility]', error);
   }
   return previousEnd.call(this, body, encoding, callback);
 };
 
-console.info(`[UCAN ${VERSION} ${REVISION}] Preloader sin caché de Quest y corrección XR activo.`);
+console.info(`[UCAN ${VERSION} ${REVISION}] Preloader sin caché de Quest y anuncios institucionales corregidos.`);
