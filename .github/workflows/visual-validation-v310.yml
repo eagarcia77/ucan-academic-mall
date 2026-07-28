@@ -1,0 +1,41 @@
+name: Visual Validation V310
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/js/ucan_v310_visual_validation.js'
+      - 'lib/visual-validation-v310.js'
+      - 'auth-compat-v309-parity.js'
+      - 'verify_visual_validation_v310.js'
+      - '.github/workflows/visual-validation-v310.yml'
+  pull_request:
+    paths:
+      - 'public/js/ucan_v310_visual_validation.js'
+      - 'lib/visual-validation-v310.js'
+      - 'auth-compat-v309-parity.js'
+      - 'verify_visual_validation_v310.js'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Audit browser-WebXR validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Syntax checks
+        run: |
+          node --check public/js/ucan_v310_visual_validation.js
+          node --check lib/visual-validation-v310.js
+          node --check auth-compat-v309-parity.js
+          node --check verify_visual_validation_v310.js
+      - name: Visual validation audit
+        run: node verify_visual_validation_v310.js
