@@ -1,0 +1,129 @@
+name: Validar Carteles e Interacción V304 R6
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate-v304-r6:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validar sintaxis y auditoría R6
+        run: |
+          npm run check
+          npm run audit:visual-interaction-v304-r6
+          npm run audit:global-v304-r5
+          npm run audit:quest-v304-r4
+
+      - name: Iniciar servidor autenticado
+        env:
+          PORT: 3019
+          ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
+        run: |
+          npm start > /tmp/ucan-v304-r6.log 2>&1 &
+          echo $! > /tmp/ucan-v304-r6.pid
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:3019/health > /tmp/health-v304-r6.json && break
+            sleep 1
+          done
+
+          curl -fsS "http://127.0.0.1:3019/js/ucan_v304_signs_terrace_interaction_r6.js?build=V304-20260728-UPRIGHT-SIGNS-TERRACE-XR-INTERACTION-R6" > /tmp/runtime-r6.js
+          curl -fsS "http://127.0.0.1:3019/js/ucan_v304_global_glass_signs_r5.js?build=V304-20260725-GLOBAL-GLASS-UPRIGHT-SIGNS-R5" > /tmp/runtime-r5-served.js
+          curl -fsS "http://127.0.0.1:3019/js/ucan_v304_seasonal_natural_ecosystem.js" > /tmp/seasonal-v304-served.js
+          curl -fsS "http://127.0.0.1:3019/js/ucan_v292_universal_sign_window.js" > /tmp/universal-v292-served.js
+          curl -fsS "http://127.0.0.1:3019/js/ucan_v287_rooftop_sky.js" > /tmp/sky-v287-served.js
+          curl -fsS "http://127.0.0.1:3019/js/ucan_v266_keyboard_jump.js" > /tmp/loader-v266.js
+          curl -fsS http://127.0.0.1:3019/version > /tmp/version-v304-r6.json
+
+          CI_USER="civ304r6${GITHUB_RUN_ID}"
+          curl -fsS -c /tmp/cookies-v304-r6.txt \
+            -H 'Content-Type: application/json' \
+            -d "{\"username\":\"${CI_USER}\",\"displayName\":\"CI V304 R6\",\"email\":\"${CI_USER}@example.test\",\"password\":\"CI-V304-R6-2026!\"}" \
+            http://127.0.0.1:3019/api/auth/register > /tmp/register-v304-r6.json
+          curl -fsS -D /tmp/campus-v304-r6.headers -b /tmp/cookies-v304-r6.txt http://127.0.0.1:3019/campus > /tmp/campus-v304-r6.html
+
+      - name: Validar JavaScript servido y orientación
+        run: |
+          node --check /tmp/runtime-r6.js
+          node --check /tmp/runtime-r5-served.js
+          node --check /tmp/seasonal-v304-served.js
+          node --check /tmp/universal-v292-served.js
+          node --check /tmp/sky-v287-served.js
+          node --check /tmp/loader-v266.js
+          node - <<'NODE'
+          const fs = require('fs');
+          const r6 = fs.readFileSync('/tmp/runtime-r6.js', 'utf8');
+          const r5 = fs.readFileSync('/tmp/runtime-r5-served.js', 'utf8');
+          const seasonal = fs.readFileSync('/tmp/seasonal-v304-served.js', 'utf8');
+          const universal = fs.readFileSync('/tmp/universal-v292-served.js', 'utf8');
+          const sky = fs.readFileSync('/tmp/sky-v287-served.js', 'utf8');
+          const loader = fs.readFileSync('/tmp/loader-v266.js', 'utf8');
+
+          const required = [
+            "const REVISION = 'R6'",
+            'record.texture.update(true)',
+            'sideOrientation:B.Mesh.FRONTSIDE',
+            "'hacia centro'",
+            "'hacia exterior'",
+            'face.billboardMode = B.Mesh.BILLBOARDMODE_NONE',
+            "selectFromController(controller, 'trigger')",
+            "selectFromController(controller, 'joystick')",
+            'headGazeRay()',
+            "new B.TransformNode('Panel información terraza R6'",
+            'state.infoTexture.update(true)',
+            '__UCAN_VISUAL_INTERACTION_V304_R6__'
+          ];
+          const missing = required.filter(value => !r6.includes(value));
+          if (missing.length) throw new Error(`Marcadores R6 ausentes: ${missing.join(', ')}`);
+          if (!r5.includes("window.__UCAN_VISUAL_INTERACTION_V304_R6__?.installed === true")) throw new Error('R5 servido no cede los carteles a R6.');
+          if (!seasonal.includes('board.texture.update(true);')) throw new Error('El calendario V304 servido no invierte correctamente la textura.');
+          if (!universal.includes('state.texture.update(true);')) throw new Error('La ventana universal servida no corrige su textura.');
+          if (!sky.includes('state.infoTexture.update(true);')) throw new Error('El panel celeste servido no corrige su textura.');
+          const order = [
+            loader.indexOf('ucan_v304_quest_glass_rails_holiday_r4.js'),
+            loader.indexOf('ucan_v304_r4_geometry_protection.js'),
+            loader.indexOf('ucan_v304_global_glass_signs_r5.js'),
+            loader.indexOf('ucan_v304_signs_terrace_interaction_r6.js')
+          ];
+          if (!(order[0] >= 0 && order[1] > order[0] && order[2] > order[1] && order[3] > order[2])) throw new Error(`Orden incorrecto: ${order.join(',')}`);
+          console.log({ markers:required.length, order, transformed:true });
+          NODE
+
+      - name: Validar campus, encabezados y versión
+        run: |
+          grep -Fi "X-UCAN-Visual-Interaction-Revision: R6" /tmp/campus-v304-r6.headers
+          grep -Fi "X-UCAN-Seasonal-Signs: R6" /tmp/campus-v304-r6.headers
+          grep -Fi "X-UCAN-Terrace-Interaction: R6" /tmp/campus-v304-r6.headers
+          node - <<'NODE'
+          const fs = require('fs');
+          const campus = fs.readFileSync('/tmp/campus-v304-r6.html', 'utf8');
+          const version = JSON.parse(fs.readFileSync('/tmp/version-v304-r6.json', 'utf8'));
+          if (!campus.includes('ucan_v266_keyboard_jump.js?build=V304-20260728-R6-SIGNS-TERRACE-LOADER')) throw new Error('El campus no usa el identificador R6.');
+          if (campus.includes('ucan_v305_') || campus.includes('ucan_v306_')) throw new Error('Se reactivó una versión posterior a V304.');
+          const checks = {
+            revision:version.visualInteractionRevision === 'R6',
+            signs:version.seasonalSignsDynamicTextureInvertY === true && version.seasonalSignsTwoFrontFacesR6 === true && version.seasonalSignsBacksideDisabledR6 === true,
+            r5:version.r5LegacySignMaintenanceSuppressedByR6 === true && version.r5GlobalGlassPreserved === true,
+            selection:version.terraceTriggerSelectionR6 === true && version.terraceJoystickSelectionR6 === true && version.terraceHeadGazeFallbackR6 === true,
+            panel:version.terraceOwnXRInfoPanelR6 === true && version.terraceInfoTextureInvertYR6 === true,
+            legacyInfo:version.universalInfoTextureInvertYPatched === true && version.skyInfoTextureInvertYPatched === true
+          };
+          if (!Object.values(checks).every(Boolean)) throw new Error(JSON.stringify({ checks, version }, null, 2));
+          console.log({ checks });
+          NODE
+
+      - name: Construir Docker V304 R6
+        run: docker build -t ucan-academic:v304-r6 .
+
+      - name: Detener servidor
+        if: always()
+        run: |
+          test -f /tmp/ucan-v304-r6.pid && kill "$(cat /tmp/ucan-v304-r6.pid)" || true
