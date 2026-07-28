@@ -36,6 +36,7 @@ jobs:
           done
 
           curl -fsS "http://127.0.0.1:3019/js/ucan_v304_signs_terrace_interaction_r6.js?build=V304-20260728-UPRIGHT-SIGNS-TERRACE-XR-INTERACTION-R6" > /tmp/runtime-r6.js
+          curl -fsS "http://127.0.0.1:3019/js/ucan_v304_r6_legacy_sign_guard.js?build=V304-20260728-R6-LEGACY-SIGN-GUARD" > /tmp/guard-r6.js
           curl -fsS "http://127.0.0.1:3019/js/ucan_v304_global_glass_signs_r5.js?build=V304-20260725-GLOBAL-GLASS-UPRIGHT-SIGNS-R5" > /tmp/runtime-r5-served.js
           curl -fsS "http://127.0.0.1:3019/js/ucan_v304_seasonal_natural_ecosystem.js" > /tmp/seasonal-v304-served.js
           curl -fsS "http://127.0.0.1:3019/js/ucan_v292_universal_sign_window.js" > /tmp/universal-v292-served.js
@@ -53,6 +54,7 @@ jobs:
       - name: Validar sintaxis de archivos servidos
         run: |
           node --check /tmp/runtime-r6.js
+          node --check /tmp/guard-r6.js
           node --check /tmp/runtime-r5-served.js
           node --check /tmp/seasonal-v304-served.js
           node --check /tmp/universal-v292-served.js
@@ -83,10 +85,14 @@ jobs:
           console.log({ markers:required.length });
           NODE
 
-      - name: Validar que R5 cede los carteles a R6
+      - name: Validar guardia de carteles antiguos R4 R5
         run: |
-          grep -F "window.__UCAN_VISUAL_INTERACTION_V304_R6__?.installed === true" /tmp/runtime-r5-served.js
-          grep -F "face.setEnabled?.(!r6OwnsBoards)" /tmp/runtime-r5-served.js
+          grep -F "const REVISION = 'R6-GUARD'" /tmp/guard-r6.js
+          grep -F "metadata.globalBoardFaceV304R5 === true" /tmp/guard-r6.js
+          grep -F "metadata.holidayBoardPuertoRicoV304R4 === true" /tmp/guard-r6.js
+          grep -F "state.scene.onBeforeRenderObservable.add" /tmp/guard-r6.js
+          grep -F "fullSceneScanPerFrame:false" /tmp/guard-r6.js
+          grep -F "correctedR6FacesForcedVisible:true" /tmp/guard-r6.js
 
       - name: Validar textura vertical del calendario V304
         run: |
@@ -100,7 +106,7 @@ jobs:
         run: |
           grep -F "state.infoTexture.update(true);" /tmp/sky-v287-served.js
 
-      - name: Validar cadena de carga R4 R5 R6
+      - name: Validar cadena de carga R4 R5 R6 y guardia
         run: |
           node - <<'NODE'
           const fs = require('fs');
@@ -109,11 +115,13 @@ jobs:
             'ucan_v304_quest_glass_rails_holiday_r4.js',
             'ucan_v304_r4_geometry_protection.js',
             'ucan_v304_global_glass_signs_r5.js',
-            'ucan_v304_signs_terrace_interaction_r6.js'
+            'ucan_v304_signs_terrace_interaction_r6.js',
+            'ucan_v304_r6_legacy_sign_guard.js'
           ].every(value => loader.includes(value));
           const executionChain = loader.includes("runtime.addEventListener('load', loadProtectionAndR5)") &&
             loader.includes("protection.addEventListener('load', loadGlobalVisualR5)") &&
-            loader.includes("runtime.addEventListener('load', loadInteractionR6)");
+            loader.includes("runtime.addEventListener('load', loadInteractionR6)") &&
+            loader.includes("runtime.addEventListener('load', loadR6Guard)");
           if (!scriptsPresent || !executionChain) throw new Error(JSON.stringify({ scriptsPresent, executionChain }));
           console.log({ scriptsPresent, executionChain });
           NODE
