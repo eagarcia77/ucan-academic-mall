@@ -2,17 +2,17 @@
 
 const http = require('http');
 
-// Conserva autenticación, pisos, cristales, barandas y revisiones anteriores.
+// Conserva autenticación, presencia, voz, interacción y revisiones anteriores.
 require('./auth-compat-v304-r5.js');
 
 const previousWriteHead = http.ServerResponse.prototype.writeHead;
 const previousWrite = http.ServerResponse.prototype.write;
 const previousEnd = http.ServerResponse.prototype.end;
 
-const VERSION = 'V308';
-const REVISION = 'R12';
-const BUILD = 'V308-20260728-SINGLE-SCENE-CROSS-ENV-INTERACTION-R12';
-const LOADER_BUILD = 'V308-20260728-R12-NO-CACHE-LOADER';
+const VERSION = 'V309';
+const REVISION = 'R13';
+const BUILD = 'V309-20260728-STRICT-BROWSER-VR-VISUAL-PARITY-R13';
+const LOADER_BUILD = 'V309-20260728-R13-NO-CACHE-LOADER';
 const RUNTIME_PATH = '/js/ucan_v305_floor1_terrace_vr_r9.js';
 const RUNTIME_SCRIPT = `${RUNTIME_PATH}?build=V305-20260728-FLOOR1-ADS-TERRACE-XR-R9`;
 const BRAND_BUILD = 'V306-20260728-FLOOR1-BRAND-UPRIGHT-VR-R10';
@@ -22,6 +22,8 @@ const PRESENCE_RUNTIME_PATH = '/js/ucan_v307_presence_xr_bridge.js';
 const PRESENCE_RUNTIME_SCRIPT = `${PRESENCE_RUNTIME_PATH}?build=V307-20260728-BROWSER-XR-DEVICE-PRESENCE`;
 const WORLD_RUNTIME_PATH = '/js/ucan_v308_cross_environment_interaction.js';
 const WORLD_RUNTIME_SCRIPT = `${WORLD_RUNTIME_PATH}?build=V308-20260728-SINGLE-SCENE-CROSS-ENV-INTERACTION`;
+const PARITY_RUNTIME_PATH = '/js/ucan_v309_strict_visual_parity.js';
+const PARITY_RUNTIME_SCRIPT = `${PARITY_RUNTIME_PATH}?build=${BUILD}`;
 const BUFFERABLE_CONTENT = /(?:text\/html|application\/javascript|text\/javascript)/i;
 
 function updateVersionData(data) {
@@ -33,13 +35,28 @@ function updateVersionData(data) {
   if (!versionPayload) return data;
 
   data.releaseVersion = VERSION;
-  data.crossEnvironmentRevision = REVISION;
-  data.crossEnvironmentBuild = BUILD;
-  data.crossEnvironmentRuntime = WORLD_RUNTIME_SCRIPT;
-  data.crossEnvironmentApi = '/api/world-v308';
+  data.strictVisualParityRevision = REVISION;
+  data.strictVisualParityBuild = BUILD;
+  data.strictVisualParityRuntime = PARITY_RUNTIME_SCRIPT;
+  data.browserSceneAuthoritative = true;
   data.oneBabylonSceneBrowserVr = true;
   data.sameGeometryBrowserVr = true;
+  data.sameMeshVisibilityBrowserVr = true;
+  data.sameMaterialsBrowserVr = true;
+  data.sameLightingBrowserVr = true;
+  data.sameFogAndEnvironmentBrowserVr = true;
   data.sameUsersBrowserVr = true;
+  data.cameraAndControlsOnlyDifference = true;
+  data.questOnlyGeometryDisabled = true;
+  data.questOnlyMaterialReplacementDisabled = true;
+  data.questOnlyGlassRemovalDisabled = true;
+  data.questOnlyRailingReplacementDisabled = true;
+  data.questOnlyTerraceReplacementDisabled = true;
+  data.questComfortVignetteDisabled = true;
+  data.crossEnvironmentRevision = 'R12';
+  data.crossEnvironmentBuild = 'V308-20260728-SINGLE-SCENE-CROSS-ENV-INTERACTION-R12';
+  data.crossEnvironmentRuntime = WORLD_RUNTIME_SCRIPT;
+  data.crossEnvironmentApi = '/api/world-v308';
   data.browserToVrInteraction = true;
   data.vrToBrowserInteraction = true;
   data.sharedVoice = true;
@@ -61,13 +78,10 @@ function updateVersionData(data) {
   data.floor1BrandVrBuild = BRAND_BUILD;
   data.floor1BrandVrRuntime = BRAND_RUNTIME_SCRIPT;
   data.floor1BrandExactMetadataTarget = 'brandLogo';
-  data.floor1BrandOriginalDoubleSideCauseConfirmed = true;
   data.floor1BrandTwoIndependentFrontFacesR10 = true;
-  data.floor1BrandBillboardDisabledR10 = true;
   data.floor1BrandMirroredBackfaceSuppressedR10 = true;
-  data.floor1BrandR8R9FacesSuppressedR10 = true;
   data.floor1TerraceVrRuntime = RUNTIME_SCRIPT;
-  data.questHtmlJsNoCacheR12 = true;
+  data.questHtmlJsNoCacheR13 = true;
   data.loaderBuild = LOADER_BUILD;
   return data;
 }
@@ -104,7 +118,46 @@ function normalizeTextureOrientation(value) {
   return patched;
 }
 
-function upgradeLoaderToR12(value) {
+function patchQuestVisualDivergence(value) {
+  let patched = value;
+
+  if (patched.includes('V301-20260723-QUEST-RAILS-SELECTION-COMFORT')) {
+    patched = patched.replace(
+      /window\.__UCAN_BROWSER_XR_EMULATION_ACTIVE__ = true;\s*forceComfortDefault\(\);\s*hideIncorrectRooftopGeometry\(\);\s*buildCorrectedStairRailings\(\);\s*buildCompleteTerraceFloor\(\);\s*lockFloorMaterials\(\);\s*decorateRooftopInteractions\(true\);\s*refreshCollisionCache\(true\);\s*createVignette\(\);/m,
+      "window.__UCAN_BROWSER_XR_EMULATION_ACTIVE__ = true;\n    decorateRooftopInteractions(true);\n    refreshCollisionCache(true);"
+    );
+    patched = patched.replace(
+      /refreshCollisionCache\(\);\s*hideIncorrectRooftopGeometry\(\);\s*lockFloorMaterials\(\);\s*decorateRooftopInteractions\(\);/m,
+      "refreshCollisionCache();\n    decorateRooftopInteractions();"
+    );
+    patched = patched.replace(/\s*updateVignette\(movementAmount, turning\);/g, '\n    void movementAmount; void turning;');
+    patched = patched.replace('Meta Quest V301: barandas corregidas, terraza sólida, selección directa y modo de confort activados.', 'V309: controles Meta Quest activos sin modificar la escena del browser.');
+  }
+
+  if (patched.includes('V303-20260723-QUEST-ZONE-GLASS-REAR-RAILS-R2')) {
+    patched = patched.replace(
+      "function scanAndClean(force = false) {\n    if (!state.scene || !state.inXR || !state.questDevice) return;",
+      "function scanAndClean(force = false) {\n    return;"
+    );
+    patched = patched.replace('Meta Quest V303 R2: cristales negros, cristales frente a las escaleras del Piso 2 y barandas posteriores del Piso 3 eliminados.', 'V309: la geometría del browser se conserva completa en VR.');
+  }
+
+  if (patched.includes('V304-20260725-QUEST-GLASS-RAILS-HOLIDAY-R4')) {
+    patched = patched.replace(/scheduleVisualFixes\(\);/g, 'state.visualsReady = true; restoreVisuals();');
+    patched = patched.replace('Meta Quest V304 R4: cristales, barandas laterales y cartel de feriados corregidos.', 'V309: no se aplican reemplazos visuales exclusivos de Quest.');
+  }
+
+  if (patched.includes('V289-20260720-QUEST-XR-COMPAT-DIAGNOSTICS')) {
+    patched = patched.replace(
+      /\s*if \(isQuest\(\) && engine\?\.setHardwareScalingLevel\) \{\s*const current = Number\(engine\.getHardwareScalingLevel\?\.\(\) \|\| 1\);\s*engine\.setHardwareScalingLevel\(Math\.max\(current, 1\.25\)\);\s*\}/m,
+      '\n      // V309 conserva el mismo ajuste visual seleccionado en el browser.'
+    );
+  }
+
+  return patched;
+}
+
+function upgradeLoaderToR13(value) {
   let patched = value;
   patched = patched.replace(
     /\/js\/ucan_v266_keyboard_jump\.js(?:\?build=[^"']+)?/g,
@@ -122,9 +175,10 @@ function upgradeLoaderToR12(value) {
 
 function transformText(text) {
   let value = String(text);
-  value = upgradeLoaderToR12(value);
+  value = upgradeLoaderToR13(value);
   value = patchR5Runtime(value);
   value = normalizeTextureOrientation(value);
+  value = patchQuestVisualDivergence(value);
 
   const trimmed = value.trim();
   if (/^[\[{]/.test(trimmed)) {
@@ -147,7 +201,8 @@ function applyDiagnosticHeaders(response, headers, contentType) {
     response.setHeader?.('X-UCAN-VR-Revision', REVISION);
     response.setHeader?.('X-UCAN-VR-Build', BUILD);
     response.setHeader?.('X-UCAN-Presence-Version', 'V307');
-    response.setHeader?.('X-UCAN-World-Version', VERSION);
+    response.setHeader?.('X-UCAN-World-Version', 'V308');
+    response.setHeader?.('X-UCAN-Visual-Parity', VERSION);
     response.setHeader?.('X-UCAN-Quest-Cache', noCache ? 'no-store' : 'default');
     if (noCache) {
       response.setHeader?.('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
@@ -167,7 +222,8 @@ function applyDiagnosticHeaders(response, headers, contentType) {
   next['X-UCAN-VR-Revision'] = REVISION;
   next['X-UCAN-VR-Build'] = BUILD;
   next['X-UCAN-Presence-Version'] = 'V307';
-  next['X-UCAN-World-Version'] = VERSION;
+  next['X-UCAN-World-Version'] = 'V308';
+  next['X-UCAN-Visual-Parity'] = VERSION;
   next['X-UCAN-Quest-Cache'] = noCache ? 'no-store' : 'default';
   if (noCache) {
     next['Cache-Control'] = 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0';
@@ -178,7 +234,7 @@ function applyDiagnosticHeaders(response, headers, contentType) {
   return next;
 }
 
-http.ServerResponse.prototype.writeHead = function writeHeadV308R12(statusCode, statusMessage, headers) {
+http.ServerResponse.prototype.writeHead = function writeHeadV309R13(statusCode, statusMessage, headers) {
   let message = statusMessage;
   let nextHeaders = headers;
   if (statusMessage && typeof statusMessage === 'object') {
@@ -187,16 +243,16 @@ http.ServerResponse.prototype.writeHead = function writeHeadV308R12(statusCode, 
   }
 
   const contentType = headerValue(nextHeaders, 'content-type') || String(this.getHeader?.('Content-Type') || '');
-  if (BUFFERABLE_CONTENT.test(contentType)) this.__ucanR12TextChunks = [];
+  if (BUFFERABLE_CONTENT.test(contentType)) this.__ucanR13TextChunks = [];
   nextHeaders = applyDiagnosticHeaders(this, nextHeaders, contentType);
 
   if (message === undefined) return previousWriteHead.call(this, statusCode, nextHeaders);
   return previousWriteHead.call(this, statusCode, message, nextHeaders);
 };
 
-http.ServerResponse.prototype.write = function writeV308R12(chunk, encoding, callback) {
-  if (Array.isArray(this.__ucanR12TextChunks)) {
-    if (chunk != null) this.__ucanR12TextChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk), typeof encoding === 'string' ? encoding : 'utf8'));
+http.ServerResponse.prototype.write = function writeV309R13(chunk, encoding, callback) {
+  if (Array.isArray(this.__ucanR13TextChunks)) {
+    if (chunk != null) this.__ucanR13TextChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk), typeof encoding === 'string' ? encoding : 'utf8'));
     if (typeof encoding === 'function') process.nextTick(encoding);
     else if (typeof callback === 'function') process.nextTick(callback);
     return true;
@@ -204,24 +260,24 @@ http.ServerResponse.prototype.write = function writeV308R12(chunk, encoding, cal
   return previousWrite.call(this, chunk, encoding, callback);
 };
 
-http.ServerResponse.prototype.end = function endV308R12(chunk, encoding, callback) {
+http.ServerResponse.prototype.end = function endV309R13(chunk, encoding, callback) {
   let body = chunk;
   try {
-    if (Array.isArray(this.__ucanR12TextChunks)) {
-      if (body != null) this.__ucanR12TextChunks.push(Buffer.isBuffer(body) ? body : Buffer.from(String(body), typeof encoding === 'string' ? encoding : 'utf8'));
-      const combined = Buffer.concat(this.__ucanR12TextChunks).toString('utf8');
-      delete this.__ucanR12TextChunks;
+    if (Array.isArray(this.__ucanR13TextChunks)) {
+      if (body != null) this.__ucanR13TextChunks.push(Buffer.isBuffer(body) ? body : Buffer.from(String(body), typeof encoding === 'string' ? encoding : 'utf8'));
+      const combined = Buffer.concat(this.__ucanR13TextChunks).toString('utf8');
+      delete this.__ucanR13TextChunks;
       body = Buffer.from(transformText(combined), 'utf8');
     } else if (typeof body === 'string' || Buffer.isBuffer(body)) {
       const isBuffer = Buffer.isBuffer(body);
-      const text = isBuffer ? body.toString(typeof encoding === 'string' ? encoding : 'utf8') : body;
-      const transformed = transformText(text);
+      const source = isBuffer ? body.toString(typeof encoding === 'string' ? encoding : 'utf8') : body;
+      const transformed = transformText(source);
       body = isBuffer ? Buffer.from(transformed, 'utf8') : transformed;
     }
   } catch (error) {
-    console.error('[UCAN V308 R12 response compatibility]', error);
+    console.error('[UCAN V309 R13 response compatibility]', error);
   }
   return previousEnd.call(this, body, encoding, callback);
 };
 
-console.info(`[UCAN ${VERSION} ${REVISION}] Cargador sin caché y mundo browser/WebXR unificado activos.`);
+console.info(`[UCAN ${VERSION} ${REVISION}] Paridad visual estricta browser/WebXR y caché desactivada.`);
