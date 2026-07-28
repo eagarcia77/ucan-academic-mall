@@ -149,9 +149,16 @@
     return script;
   }
 
+  function loadInteractionR6() {
+    const src = '/js/ucan_v304_signs_terrace_interaction_r6.js?build=V304-20260728-UPRIGHT-SIGNS-TERRACE-XR-INTERACTION-R6';
+    appendScript(src, 'data-ucan-v304-interaction-r6', '[UCAN V304 R6] No se pudo cargar la corrección de carteles e interacción de terraza.');
+  }
+
   function loadGlobalVisualR5() {
     const src = '/js/ucan_v304_global_glass_signs_r5.js?build=V304-20260725-GLOBAL-GLASS-UPRIGHT-SIGNS-R5';
-    appendScript(src, 'data-ucan-v304-global-r5', '[UCAN V304 R5] No se pudo cargar la corrección global de cristales y carteles.');
+    const runtime = appendScript(src, 'data-ucan-v304-global-r5', '[UCAN V304 R5] No se pudo cargar la corrección global de cristales y carteles.');
+    if (runtime) runtime.addEventListener('load', loadInteractionR6);
+    else loadInteractionR6();
   }
 
   function loadQuestVisualR4() {
