@@ -80,8 +80,4 @@ http.createServer = function createServerWithVoiceV306(listener) {
   });
 };
 
-for (const signal of ['SIGTERM', 'SIGINT']) {
-  process.once(signal, () => voiceSystem.close());
-}
-
 console.info('[UCAN Voice V306] Señalización WebRTC por salas y anfiteatro activa.');
