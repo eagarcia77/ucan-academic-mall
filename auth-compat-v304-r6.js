@@ -31,7 +31,9 @@ function updateVersionData(data) {
   data.seasonalSignsBacksideDisabledR6 = true;
   data.seasonalSignsBillboardDisabledR6 = true;
   data.seasonalSignsUprightBrowserQuestMR = true;
-  data.seasonalSourceTextureInvertYPatched = true;
+  data.seasonalOriginalBoardsHiddenByR6 = true;
+  data.r6LegacySignGuardEnabled = true;
+  data.r6LegacySignsSuppressedBeforeRender = true;
   data.r5LegacySignMaintenanceSuppressedByR6 = true;
   data.terraceTriggerSelectionR6 = true;
   data.terracePrimarySelectionR6 = true;
@@ -40,8 +42,8 @@ function updateVersionData(data) {
   data.terraceHeadGazeFallbackR6 = true;
   data.terraceOwnXRInfoPanelR6 = true;
   data.terraceInfoTextureInvertYR6 = true;
-  data.universalInfoTextureInvertYPatched = true;
-  data.skyInfoTextureInvertYPatched = true;
+  data.universalInfoTextureRuntimeCorrectedR6 = true;
+  data.skyInfoTextureRuntimeCorrectedR6 = true;
   data.r5GlobalGlassPreserved = true;
   data.r4QuestRailsPreserved = true;
   return data;
