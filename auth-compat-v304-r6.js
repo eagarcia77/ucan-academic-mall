@@ -9,10 +9,10 @@ const previousWriteHead = http.ServerResponse.prototype.writeHead;
 const previousWrite = http.ServerResponse.prototype.write;
 const previousEnd = http.ServerResponse.prototype.end;
 
-const VERSION = 'V307';
-const REVISION = 'R11';
-const BUILD = 'V307-20260728-BROWSER-XR-DEVICE-PRESENCE-R11';
-const LOADER_BUILD = 'V307-20260728-R11-NO-CACHE-LOADER';
+const VERSION = 'V308';
+const REVISION = 'R12';
+const BUILD = 'V308-20260728-SINGLE-SCENE-CROSS-ENV-INTERACTION-R12';
+const LOADER_BUILD = 'V308-20260728-R12-NO-CACHE-LOADER';
 const RUNTIME_PATH = '/js/ucan_v305_floor1_terrace_vr_r9.js';
 const RUNTIME_SCRIPT = `${RUNTIME_PATH}?build=V305-20260728-FLOOR1-ADS-TERRACE-XR-R9`;
 const BRAND_BUILD = 'V306-20260728-FLOOR1-BRAND-UPRIGHT-VR-R10';
@@ -20,6 +20,8 @@ const BRAND_RUNTIME_PATH = '/js/ucan_v306_floor1_brand_orientation_r10.js';
 const BRAND_RUNTIME_SCRIPT = `${BRAND_RUNTIME_PATH}?build=${BRAND_BUILD}`;
 const PRESENCE_RUNTIME_PATH = '/js/ucan_v307_presence_xr_bridge.js';
 const PRESENCE_RUNTIME_SCRIPT = `${PRESENCE_RUNTIME_PATH}?build=V307-20260728-BROWSER-XR-DEVICE-PRESENCE`;
+const WORLD_RUNTIME_PATH = '/js/ucan_v308_cross_environment_interaction.js';
+const WORLD_RUNTIME_SCRIPT = `${WORLD_RUNTIME_PATH}?build=V308-20260728-SINGLE-SCENE-CROSS-ENV-INTERACTION`;
 const BUFFERABLE_CONTENT = /(?:text\/html|application\/javascript|text\/javascript)/i;
 
 function updateVersionData(data) {
@@ -31,8 +33,22 @@ function updateVersionData(data) {
   if (!versionPayload) return data;
 
   data.releaseVersion = VERSION;
-  data.presenceRevision = REVISION;
-  data.presenceBuild = BUILD;
+  data.crossEnvironmentRevision = REVISION;
+  data.crossEnvironmentBuild = BUILD;
+  data.crossEnvironmentRuntime = WORLD_RUNTIME_SCRIPT;
+  data.crossEnvironmentApi = '/api/world-v308';
+  data.oneBabylonSceneBrowserVr = true;
+  data.sameGeometryBrowserVr = true;
+  data.sameUsersBrowserVr = true;
+  data.browserToVrInteraction = true;
+  data.vrToBrowserInteraction = true;
+  data.sharedVoice = true;
+  data.sharedChat = true;
+  data.sharedGestures = true;
+  data.sharedReactions = true;
+  data.sharedObjectFocus = true;
+  data.presenceRevision = 'R11';
+  data.presenceBuild = 'V307-20260728-BROWSER-XR-DEVICE-PRESENCE-R11';
   data.presenceRuntime = PRESENCE_RUNTIME_SCRIPT;
   data.presenceApi = '/api/presence-v2';
   data.presenceByDeviceSession = true;
@@ -51,7 +67,7 @@ function updateVersionData(data) {
   data.floor1BrandMirroredBackfaceSuppressedR10 = true;
   data.floor1BrandR8R9FacesSuppressedR10 = true;
   data.floor1TerraceVrRuntime = RUNTIME_SCRIPT;
-  data.questHtmlJsNoCacheR11 = true;
+  data.questHtmlJsNoCacheR12 = true;
   data.loaderBuild = LOADER_BUILD;
   return data;
 }
@@ -88,7 +104,7 @@ function normalizeTextureOrientation(value) {
   return patched;
 }
 
-function upgradeLoaderToR11(value) {
+function upgradeLoaderToR12(value) {
   let patched = value;
   patched = patched.replace(
     /\/js\/ucan_v266_keyboard_jump\.js(?:\?build=[^"']+)?/g,
@@ -106,7 +122,7 @@ function upgradeLoaderToR11(value) {
 
 function transformText(text) {
   let value = String(text);
-  value = upgradeLoaderToR11(value);
+  value = upgradeLoaderToR12(value);
   value = patchR5Runtime(value);
   value = normalizeTextureOrientation(value);
 
@@ -130,7 +146,8 @@ function applyDiagnosticHeaders(response, headers, contentType) {
     response.removeHeader?.('Content-Length');
     response.setHeader?.('X-UCAN-VR-Revision', REVISION);
     response.setHeader?.('X-UCAN-VR-Build', BUILD);
-    response.setHeader?.('X-UCAN-Presence-Version', VERSION);
+    response.setHeader?.('X-UCAN-Presence-Version', 'V307');
+    response.setHeader?.('X-UCAN-World-Version', VERSION);
     response.setHeader?.('X-UCAN-Quest-Cache', noCache ? 'no-store' : 'default');
     if (noCache) {
       response.setHeader?.('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
@@ -149,7 +166,8 @@ function applyDiagnosticHeaders(response, headers, contentType) {
   }
   next['X-UCAN-VR-Revision'] = REVISION;
   next['X-UCAN-VR-Build'] = BUILD;
-  next['X-UCAN-Presence-Version'] = VERSION;
+  next['X-UCAN-Presence-Version'] = 'V307';
+  next['X-UCAN-World-Version'] = VERSION;
   next['X-UCAN-Quest-Cache'] = noCache ? 'no-store' : 'default';
   if (noCache) {
     next['Cache-Control'] = 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0';
@@ -160,7 +178,7 @@ function applyDiagnosticHeaders(response, headers, contentType) {
   return next;
 }
 
-http.ServerResponse.prototype.writeHead = function writeHeadV307R11(statusCode, statusMessage, headers) {
+http.ServerResponse.prototype.writeHead = function writeHeadV308R12(statusCode, statusMessage, headers) {
   let message = statusMessage;
   let nextHeaders = headers;
   if (statusMessage && typeof statusMessage === 'object') {
@@ -169,16 +187,16 @@ http.ServerResponse.prototype.writeHead = function writeHeadV307R11(statusCode, 
   }
 
   const contentType = headerValue(nextHeaders, 'content-type') || String(this.getHeader?.('Content-Type') || '');
-  if (BUFFERABLE_CONTENT.test(contentType)) this.__ucanR11TextChunks = [];
+  if (BUFFERABLE_CONTENT.test(contentType)) this.__ucanR12TextChunks = [];
   nextHeaders = applyDiagnosticHeaders(this, nextHeaders, contentType);
 
   if (message === undefined) return previousWriteHead.call(this, statusCode, nextHeaders);
   return previousWriteHead.call(this, statusCode, message, nextHeaders);
 };
 
-http.ServerResponse.prototype.write = function writeV307R11(chunk, encoding, callback) {
-  if (Array.isArray(this.__ucanR11TextChunks)) {
-    if (chunk != null) this.__ucanR11TextChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk), typeof encoding === 'string' ? encoding : 'utf8'));
+http.ServerResponse.prototype.write = function writeV308R12(chunk, encoding, callback) {
+  if (Array.isArray(this.__ucanR12TextChunks)) {
+    if (chunk != null) this.__ucanR12TextChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk), typeof encoding === 'string' ? encoding : 'utf8'));
     if (typeof encoding === 'function') process.nextTick(encoding);
     else if (typeof callback === 'function') process.nextTick(callback);
     return true;
@@ -186,13 +204,13 @@ http.ServerResponse.prototype.write = function writeV307R11(chunk, encoding, cal
   return previousWrite.call(this, chunk, encoding, callback);
 };
 
-http.ServerResponse.prototype.end = function endV307R11(chunk, encoding, callback) {
+http.ServerResponse.prototype.end = function endV308R12(chunk, encoding, callback) {
   let body = chunk;
   try {
-    if (Array.isArray(this.__ucanR11TextChunks)) {
-      if (body != null) this.__ucanR11TextChunks.push(Buffer.isBuffer(body) ? body : Buffer.from(String(body), typeof encoding === 'string' ? encoding : 'utf8'));
-      const combined = Buffer.concat(this.__ucanR11TextChunks).toString('utf8');
-      delete this.__ucanR11TextChunks;
+    if (Array.isArray(this.__ucanR12TextChunks)) {
+      if (body != null) this.__ucanR12TextChunks.push(Buffer.isBuffer(body) ? body : Buffer.from(String(body), typeof encoding === 'string' ? encoding : 'utf8'));
+      const combined = Buffer.concat(this.__ucanR12TextChunks).toString('utf8');
+      delete this.__ucanR12TextChunks;
       body = Buffer.from(transformText(combined), 'utf8');
     } else if (typeof body === 'string' || Buffer.isBuffer(body)) {
       const isBuffer = Buffer.isBuffer(body);
@@ -201,9 +219,9 @@ http.ServerResponse.prototype.end = function endV307R11(chunk, encoding, callbac
       body = isBuffer ? Buffer.from(transformed, 'utf8') : transformed;
     }
   } catch (error) {
-    console.error('[UCAN V307 R11 response compatibility]', error);
+    console.error('[UCAN V308 R12 response compatibility]', error);
   }
   return previousEnd.call(this, body, encoding, callback);
 };
 
-console.info(`[UCAN ${VERSION} ${REVISION}] Cargador sin caché y presencia browser/WebXR activos.`);
+console.info(`[UCAN ${VERSION} ${REVISION}] Cargador sin caché y mundo browser/WebXR unificado activos.`);
