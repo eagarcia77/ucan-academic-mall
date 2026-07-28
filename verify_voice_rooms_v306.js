@@ -5,26 +5,37 @@ const path = require('path');
 
 const root = __dirname;
 const frontendPath = path.join(root, 'public/js/ucan_v240_voice.js');
+const bridgePath = path.join(root, 'public/js/ucan_v306_voice_xr_bridge.js');
+const loaderPath = path.join(root, 'public/js/ucan_v266_keyboard_jump.js');
 const backendPath = path.join(root, 'lib/voice-signaling.js');
 const preloaderPath = path.join(root, 'auth-compat-v306-voice.js');
 const campusPath = path.join(root, 'public/campus.html');
+const dockerPath = path.join(root, 'Dockerfile');
 const packagePath = path.join(root, 'package.json');
 
 const frontend = fs.readFileSync(frontendPath, 'utf8');
+const bridge = fs.readFileSync(bridgePath, 'utf8');
+const loader = fs.readFileSync(loaderPath, 'utf8');
 const backend = fs.readFileSync(backendPath, 'utf8');
 const preloader = fs.readFileSync(preloaderPath, 'utf8');
 const campus = fs.readFileSync(campusPath, 'utf8');
+const docker = fs.readFileSync(dockerPath, 'utf8');
 const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
 
 const rooms = ['SV-201', 'SV-202', 'SV-203', 'SV-204', 'SV-205', 'ANF-301'];
 const checks = {
   frontendSyntax:true,
+  bridgeSyntax:true,
+  loaderSyntax:true,
   backendSyntax:true,
   preloaderSyntax:true,
   voiceScriptLoaded:campus.includes('/js/ucan_v240_voice.js'),
+  voiceBridgeLoaded:loader.includes('/js/ucan_v306_voice_xr_bridge.js?build=V306-20260728-VOICE-XR-ROOM-BRIDGE'),
   allRoomsInFrontend:rooms.every(room => frontend.includes(`'${room}'`)),
+  allRoomsInBridge:rooms.every(room => bridge.includes(`'${room}'`)),
   allRoomsInBackend:rooms.every(room => backend.includes(`'${room}'`)),
   microphoneCapture:/navigator\.mediaDevices\.getUserMedia/.test(frontend),
+  microphoneDiagnostic:/async function testMicrophone/.test(bridge),
   echoCancellation:/echoCancellation:true/.test(frontend),
   noiseSuppression:/noiseSuppression:true/.test(frontend),
   autoGainControl:/autoGainControl:true/.test(frontend),
@@ -35,6 +46,8 @@ const checks = {
   perParticipantVolume:/personalVolumes/.test(frontend),
   roomIsolationFrontend:/currentRoom/.test(frontend) && /ROOM_BOUNDS/.test(frontend),
   roomIsolationBackend:/target\.room !== source\.room/.test(backend),
+  xrUsesRealCameraPosition:/xr\?\.globalPosition/.test(bridge) && /scene\?\.activeCamera\?\.globalPosition/.test(bridge),
+  xrAutomaticRoomSwitch:/joinRoom\?\./.test(bridge) && /selectRoom\?\./.test(bridge),
   sseSignaling:/text\/event-stream/.test(backend) && /peer-joined/.test(backend),
   queuedSignals:/client\.queue\.push/.test(backend),
   heartbeat:/api\/voice\/heartbeat/.test(frontend) && /handleHeartbeat/.test(backend),
@@ -43,13 +56,16 @@ const checks = {
   turnEnvironmentSupported:/VOICE_TURN_URLS/.test(backend) && /VOICE_TURN_USERNAME/.test(backend) && /VOICE_TURN_CREDENTIAL/.test(backend),
   authenticationRequired:/Inicie sesión para usar el audio/.test(backend),
   voicePreloaderChainsR9:preloader.includes("require('./auth-compat-v304-r6.js')"),
-  startUsesVoicePreloader:String(pkg.scripts?.start || '').includes('auth-compat-v306-voice.js'),
-  packageChecksVoiceFiles:String(pkg.scripts?.check || '').includes('lib/voice-signaling.js') && String(pkg.scripts?.check || '').includes('auth-compat-v306-voice.js'),
+  packageStartUsesVoicePreloader:String(pkg.scripts?.start || '').includes('auth-compat-v306-voice.js'),
+  dockerUsesVoicePreloader:docker.includes('auth-compat-v306-voice.js'),
+  packageChecksVoiceFiles:String(pkg.scripts?.check || '').includes('lib/voice-signaling.js') && String(pkg.scripts?.check || '').includes('auth-compat-v306-voice.js') && String(pkg.scripts?.check || '').includes('ucan_v306_voice_xr_bridge.js'),
   packageRunsVoiceAudit:String(pkg.scripts?.test || '').includes('audit:voice-v306')
 };
 
 for (const [name, code] of [
   ['frontendSyntax', frontend],
+  ['bridgeSyntax', bridge],
+  ['loaderSyntax', loader],
   ['backendSyntax', backend],
   ['preloaderSyntax', preloader]
 ]) {
