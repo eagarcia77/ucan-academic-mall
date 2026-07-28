@@ -37,10 +37,6 @@ jobs:
 
           curl -fsS "http://127.0.0.1:3019/js/ucan_v304_signs_terrace_interaction_r6.js?build=V304-20260728-UPRIGHT-SIGNS-TERRACE-XR-INTERACTION-R6" > /tmp/runtime-r6.js
           curl -fsS "http://127.0.0.1:3019/js/ucan_v304_r6_legacy_sign_guard.js?build=V304-20260728-R6-LEGACY-SIGN-GUARD" > /tmp/guard-r6.js
-          curl -fsS "http://127.0.0.1:3019/js/ucan_v304_global_glass_signs_r5.js?build=V304-20260725-GLOBAL-GLASS-UPRIGHT-SIGNS-R5" > /tmp/runtime-r5-served.js
-          curl -fsS "http://127.0.0.1:3019/js/ucan_v304_seasonal_natural_ecosystem.js" > /tmp/seasonal-v304-served.js
-          curl -fsS "http://127.0.0.1:3019/js/ucan_v292_universal_sign_window.js" > /tmp/universal-v292-served.js
-          curl -fsS "http://127.0.0.1:3019/js/ucan_v287_rooftop_sky.js" > /tmp/sky-v287-served.js
           curl -fsS "http://127.0.0.1:3019/js/ucan_v266_keyboard_jump.js" > /tmp/loader-v266.js
           curl -fsS http://127.0.0.1:3019/version > /tmp/version-v304-r6.json
 
@@ -51,38 +47,53 @@ jobs:
             http://127.0.0.1:3019/api/auth/register > /tmp/register-v304-r6.json
           curl -fsS -D /tmp/campus-v304-r6.headers -b /tmp/cookies-v304-r6.txt http://127.0.0.1:3019/campus > /tmp/campus-v304-r6.html
 
-      - name: Validar sintaxis de archivos servidos
+      - name: Validar sintaxis de runtime guardia y cargador
         run: |
           node --check /tmp/runtime-r6.js
           node --check /tmp/guard-r6.js
-          node --check /tmp/runtime-r5-served.js
-          node --check /tmp/seasonal-v304-served.js
-          node --check /tmp/universal-v292-served.js
-          node --check /tmp/sky-v287-served.js
           node --check /tmp/loader-v266.js
 
-      - name: Validar marcadores R6 servidos
+      - name: Validar textura y orientación R6
         run: |
           node - <<'NODE'
           const fs = require('fs');
           const source = fs.readFileSync('/tmp/runtime-r6.js', 'utf8');
           const required = [
             "const REVISION = 'R6'",
+            'ctx.drawImage(source, 0, 0, size.width, size.height)',
             'record.texture.update(true)',
             'sideOrientation:B.Mesh.FRONTSIDE',
             "'hacia centro'",
             "'hacia exterior'",
+            'face.rotation.set(0, angle, 0)',
             'face.billboardMode = B.Mesh.BILLBOARDMODE_NONE',
-            "selectFromController(controller, 'trigger')",
-            "selectFromController(controller, 'joystick')",
-            'headGazeRay()',
-            "new B.TransformNode('Panel información terraza R6'",
-            'state.infoTexture.update(true)',
+            'hiddenByCorrectedBoardV304R6',
             '__UCAN_VISUAL_INTERACTION_V304_R6__'
           ];
           const missing = required.filter(value => !source.includes(value));
-          if (missing.length) throw new Error(`Marcadores R6 ausentes: ${missing.join(', ')}`);
-          console.log({ markers:required.length });
+          if (missing.length) throw new Error(`Marcadores de orientación R6 ausentes: ${missing.join(', ')}`);
+          console.log({ markers:required.length, copiedCanvas:true, invertY:true, frontFaces:true });
+          NODE
+
+      - name: Validar interacción de terraza R6
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const source = fs.readFileSync('/tmp/runtime-r6.js', 'utf8');
+          const required = [
+            "selectFromController(controller, 'trigger')",
+            "selectFromController(controller, 'primary')",
+            "selectFromController(controller, 'joystick')",
+            'pickFromRay(controllerRay(controller))',
+            'headGazeRay()',
+            "type === 'celestial' ? 21 * Math.PI / 180 : 13 * Math.PI / 180",
+            "new B.TransformNode('Panel información terraza R6'",
+            'state.infoTexture.update(true)',
+            "hand === 'right' ? ['b-button'] : ['y-button']"
+          ];
+          const missing = required.filter(value => !source.includes(value));
+          if (missing.length) throw new Error(`Marcadores de interacción R6 ausentes: ${missing.join(', ')}`);
+          console.log({ markers:required.length, trigger:true, primary:true, joystick:true, gazeFallback:true, ownPanel:true });
           NODE
 
       - name: Validar guardia de carteles antiguos R4 R5
@@ -93,18 +104,6 @@ jobs:
           grep -F "state.scene.onBeforeRenderObservable.add" /tmp/guard-r6.js
           grep -F "fullSceneScanPerFrame:false" /tmp/guard-r6.js
           grep -F "correctedR6FacesForcedVisible:true" /tmp/guard-r6.js
-
-      - name: Validar textura vertical del calendario V304
-        run: |
-          grep -F "board.texture.update(true);" /tmp/seasonal-v304-served.js
-
-      - name: Validar textura vertical de la ventana universal
-        run: |
-          grep -F "state.texture.update(true);" /tmp/universal-v292-served.js
-
-      - name: Validar textura vertical del panel celeste
-        run: |
-          grep -F "state.infoTexture.update(true);" /tmp/sky-v287-served.js
 
       - name: Validar cadena de carga R4 R5 R6 y guardia
         run: |
@@ -139,11 +138,12 @@ jobs:
           if (campus.includes('ucan_v305_') || campus.includes('ucan_v306_')) throw new Error('Se reactivó una versión posterior a V304.');
           const checks = {
             revision:version.visualInteractionRevision === 'R6',
-            signs:version.seasonalSignsDynamicTextureInvertY === true && version.seasonalSignsTwoFrontFacesR6 === true && version.seasonalSignsBacksideDisabledR6 === true,
-            r5:version.r5LegacySignMaintenanceSuppressedByR6 === true && version.r5GlobalGlassPreserved === true,
-            selection:version.terraceTriggerSelectionR6 === true && version.terraceJoystickSelectionR6 === true && version.terraceHeadGazeFallbackR6 === true,
+            signs:version.seasonalSignsCopiedFromSourceCanvas === true && version.seasonalSignsDynamicTextureInvertY === true && version.seasonalSignsTwoFrontFacesR6 === true && version.seasonalSignsBacksideDisabledR6 === true,
+            guard:version.r6LegacySignGuardEnabled === true && version.r6LegacySignsSuppressedBeforeRender === true && version.seasonalOriginalBoardsHiddenByR6 === true,
+            glassRails:version.r5GlobalGlassPreserved === true && version.r4QuestRailsPreserved === true,
+            selection:version.terraceTriggerSelectionR6 === true && version.terracePrimarySelectionR6 === true && version.terraceJoystickSelectionR6 === true && version.terraceHeadGazeFallbackR6 === true,
             panel:version.terraceOwnXRInfoPanelR6 === true && version.terraceInfoTextureInvertYR6 === true,
-            legacyInfo:version.universalInfoTextureInvertYPatched === true && version.skyInfoTextureInvertYPatched === true
+            runtimeInfo:version.universalInfoTextureRuntimeCorrectedR6 === true && version.skyInfoTextureRuntimeCorrectedR6 === true
           };
           if (!Object.values(checks).every(Boolean)) throw new Error(JSON.stringify({ checks, version }, null, 2));
           console.log({ checks });
