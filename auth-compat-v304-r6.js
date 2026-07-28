@@ -6,6 +6,7 @@ const http = require('http');
 require('./auth-compat-v304-r5.js');
 
 const previousWriteHead = http.ServerResponse.prototype.writeHead;
+const previousWrite = http.ServerResponse.prototype.write;
 const previousEnd = http.ServerResponse.prototype.end;
 
 const REVISION = 'R6';
@@ -13,6 +14,7 @@ const BUILD = 'V304-20260728-UPRIGHT-SIGNS-TERRACE-XR-INTERACTION-R6';
 const LOADER_BUILD = 'V304-20260728-R6-SIGNS-TERRACE-LOADER';
 const RUNTIME_PATH = '/js/ucan_v304_signs_terrace_interaction_r6.js';
 const RUNTIME_SCRIPT = `${RUNTIME_PATH}?build=${BUILD}`;
+const BUFFERABLE_CONTENT = /(?:text\/html|application\/javascript|text\/javascript)/i;
 
 function updateVersionData(data) {
   if (!data || typeof data !== 'object') return data;
@@ -46,6 +48,7 @@ function updateVersionData(data) {
   data.skyInfoTextureRuntimeCorrectedR6 = true;
   data.r5GlobalGlassPreserved = true;
   data.r4QuestRailsPreserved = true;
+  data.r6StreamingHtmlJsTransform = true;
   return data;
 }
 
@@ -103,6 +106,12 @@ function transformText(text) {
   return value;
 }
 
+function headerValue(headers, name) {
+  if (!headers || typeof headers !== 'object') return '';
+  const key = Object.keys(headers).find(candidate => candidate.toLowerCase() === name.toLowerCase());
+  return key ? String(headers[key] || '') : '';
+}
+
 http.ServerResponse.prototype.writeHead = function writeHeadV304R6(statusCode, statusMessage, headers) {
   let message = statusMessage;
   let nextHeaders = headers;
@@ -111,7 +120,9 @@ http.ServerResponse.prototype.writeHead = function writeHeadV304R6(statusCode, s
     message = undefined;
   }
 
-  // Se fijan directamente antes de delegar para que sobrevivan toda la cadena R6→R5→R4.
+  const contentType = headerValue(nextHeaders, 'content-type') || String(this.getHeader?.('Content-Type') || '');
+  if (BUFFERABLE_CONTENT.test(contentType)) this.__ucanR6TextChunks = [];
+
   try {
     this.removeHeader?.('Content-Length');
     this.setHeader?.('X-UCAN-Visual-Interaction-Revision', REVISION);
@@ -132,10 +143,25 @@ http.ServerResponse.prototype.writeHead = function writeHeadV304R6(statusCode, s
   return previousWriteHead.call(this, statusCode, message, nextHeaders);
 };
 
+http.ServerResponse.prototype.write = function writeV304R6(chunk, encoding, callback) {
+  if (Array.isArray(this.__ucanR6TextChunks)) {
+    if (chunk != null) this.__ucanR6TextChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk), typeof encoding === 'string' ? encoding : 'utf8'));
+    if (typeof encoding === 'function') process.nextTick(encoding);
+    else if (typeof callback === 'function') process.nextTick(callback);
+    return true;
+  }
+  return previousWrite.call(this, chunk, encoding, callback);
+};
+
 http.ServerResponse.prototype.end = function endV304R6(chunk, encoding, callback) {
   let body = chunk;
   try {
-    if (typeof body === 'string' || Buffer.isBuffer(body)) {
+    if (Array.isArray(this.__ucanR6TextChunks)) {
+      if (body != null) this.__ucanR6TextChunks.push(Buffer.isBuffer(body) ? body : Buffer.from(String(body), typeof encoding === 'string' ? encoding : 'utf8'));
+      const combined = Buffer.concat(this.__ucanR6TextChunks).toString('utf8');
+      delete this.__ucanR6TextChunks;
+      body = Buffer.from(transformText(combined), 'utf8');
+    } else if (typeof body === 'string' || Buffer.isBuffer(body)) {
       const isBuffer = Buffer.isBuffer(body);
       const text = isBuffer ? body.toString(typeof encoding === 'string' ? encoding : 'utf8') : body;
       const transformed = transformText(text);
