@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: 20
 
-      - name: Validar sintaxis y auditoría R6
+      - name: Validar sintaxis y auditorías R6 R5 R4
         run: |
           npm run check
           npm run audit:visual-interaction-v304-r6
@@ -50,7 +50,7 @@ jobs:
             http://127.0.0.1:3019/api/auth/register > /tmp/register-v304-r6.json
           curl -fsS -D /tmp/campus-v304-r6.headers -b /tmp/cookies-v304-r6.txt http://127.0.0.1:3019/campus > /tmp/campus-v304-r6.html
 
-      - name: Validar JavaScript servido y orientación
+      - name: Validar sintaxis de archivos servidos
         run: |
           node --check /tmp/runtime-r6.js
           node --check /tmp/runtime-r5-served.js
@@ -58,15 +58,12 @@ jobs:
           node --check /tmp/universal-v292-served.js
           node --check /tmp/sky-v287-served.js
           node --check /tmp/loader-v266.js
+
+      - name: Validar marcadores R6 servidos
+        run: |
           node - <<'NODE'
           const fs = require('fs');
-          const r6 = fs.readFileSync('/tmp/runtime-r6.js', 'utf8');
-          const r5 = fs.readFileSync('/tmp/runtime-r5-served.js', 'utf8');
-          const seasonal = fs.readFileSync('/tmp/seasonal-v304-served.js', 'utf8');
-          const universal = fs.readFileSync('/tmp/universal-v292-served.js', 'utf8');
-          const sky = fs.readFileSync('/tmp/sky-v287-served.js', 'utf8');
-          const loader = fs.readFileSync('/tmp/loader-v266.js', 'utf8');
-
+          const source = fs.readFileSync('/tmp/runtime-r6.js', 'utf8');
           const required = [
             "const REVISION = 'R6'",
             'record.texture.update(true)',
@@ -81,12 +78,33 @@ jobs:
             'state.infoTexture.update(true)',
             '__UCAN_VISUAL_INTERACTION_V304_R6__'
           ];
-          const missing = required.filter(value => !r6.includes(value));
+          const missing = required.filter(value => !source.includes(value));
           if (missing.length) throw new Error(`Marcadores R6 ausentes: ${missing.join(', ')}`);
-          if (!r5.includes("window.__UCAN_VISUAL_INTERACTION_V304_R6__?.installed === true")) throw new Error('R5 servido no cede los carteles a R6.');
-          if (!seasonal.includes('board.texture.update(true);')) throw new Error('El calendario V304 servido no invierte correctamente la textura.');
-          if (!universal.includes('state.texture.update(true);')) throw new Error('La ventana universal servida no corrige su textura.');
-          if (!sky.includes('state.infoTexture.update(true);')) throw new Error('El panel celeste servido no corrige su textura.');
+          console.log({ markers:required.length });
+          NODE
+
+      - name: Validar que R5 cede los carteles a R6
+        run: |
+          grep -F "window.__UCAN_VISUAL_INTERACTION_V304_R6__?.installed === true" /tmp/runtime-r5-served.js
+          grep -F "face.setEnabled?.(!r6OwnsBoards)" /tmp/runtime-r5-served.js
+
+      - name: Validar textura vertical del calendario V304
+        run: |
+          grep -F "board.texture.update(true);" /tmp/seasonal-v304-served.js
+
+      - name: Validar textura vertical de la ventana universal
+        run: |
+          grep -F "state.texture.update(true);" /tmp/universal-v292-served.js
+
+      - name: Validar textura vertical del panel celeste
+        run: |
+          grep -F "state.infoTexture.update(true);" /tmp/sky-v287-served.js
+
+      - name: Validar cadena de carga R4 R5 R6
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const loader = fs.readFileSync('/tmp/loader-v266.js', 'utf8');
           const scriptsPresent = [
             'ucan_v304_quest_glass_rails_holiday_r4.js',
             'ucan_v304_r4_geometry_protection.js',
@@ -96,11 +114,11 @@ jobs:
           const executionChain = loader.includes("runtime.addEventListener('load', loadProtectionAndR5)") &&
             loader.includes("protection.addEventListener('load', loadGlobalVisualR5)") &&
             loader.includes("runtime.addEventListener('load', loadInteractionR6)");
-          if (!scriptsPresent || !executionChain) throw new Error('La cadena de carga R4 → protección → R5 → R6 no está completa.');
-          console.log({ markers:required.length, scriptsPresent, executionChain, transformed:true });
+          if (!scriptsPresent || !executionChain) throw new Error(JSON.stringify({ scriptsPresent, executionChain }));
+          console.log({ scriptsPresent, executionChain });
           NODE
 
-      - name: Validar campus, encabezados y versión
+      - name: Validar campus encabezados y versión
         run: |
           grep -Fi "X-UCAN-Visual-Interaction-Revision: R6" /tmp/campus-v304-r6.headers
           grep -Fi "X-UCAN-Seasonal-Signs: R6" /tmp/campus-v304-r6.headers
