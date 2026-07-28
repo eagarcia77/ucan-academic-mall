@@ -6,6 +6,7 @@ const runtime = fs.readFileSync('public/js/ucan_v304_global_glass_signs_r5.js', 
 const loader = fs.readFileSync('public/js/ucan_v266_keyboard_jump.js', 'utf8');
 const preloader = fs.readFileSync('auth-compat-v304-r5.js', 'utf8');
 const r4Preloader = fs.readFileSync('auth-compat-v304-r4.js', 'utf8');
+const r6Preloader = fs.readFileSync('auth-compat-v304-r6.js', 'utf8');
 const docker = fs.readFileSync('Dockerfile', 'utf8');
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
@@ -19,6 +20,11 @@ try {
 } catch (error) {
   syntaxError = error.message;
 }
+
+const startsR5 = pkg.scripts?.start === 'node -r ./auth-compat-v304-r5.js server.js';
+const startsR6 = pkg.scripts?.start === 'node -r ./auth-compat-v304-r6.js server.js' && r6Preloader.includes("require('./auth-compat-v304-r5.js')");
+const dockerR5 = docker.includes('"./auth-compat-v304-r5.js"');
+const dockerR6 = docker.includes('"./auth-compat-v304-r6.js"') && r6Preloader.includes("require('./auth-compat-v304-r5.js')");
 
 const checks = {
   syntaxValid,
@@ -38,16 +44,18 @@ const checks = {
   noPerFrameScan:!runtime.includes('scene.onBeforeRenderObservable.add'),
   loaderOrderByEvents:loader.includes("runtime.addEventListener('load', loadProtectionAndR5)") && loader.includes("protection.addEventListener('load', loadGlobalVisualR5)"),
   loaderR5:loader.includes('/js/ucan_v304_global_glass_signs_r5.js?build=V304-20260725-GLOBAL-GLASS-UPRIGHT-SIGNS-R5'),
+  loaderR6AfterR5:loader.includes("runtime.addEventListener('load', loadInteractionR6)"),
   preloaderChain:preloader.includes("require('./auth-compat-v304-r4.js')") && r4Preloader.includes("require('./auth-compat-v293.js')"),
+  r6PreservesR5:!startsR6 || r6Preloader.includes("require('./auth-compat-v304-r5.js')"),
   preloaderCacheBust:preloader.includes('V304-20260725-GLOBAL-R5-LOADER'),
   versionFlags:preloader.includes('browserGlassCorrected') && preloader.includes('seasonalBoardsTwoFrontFaces'),
-  packageStart:pkg.scripts?.start === 'node -r ./auth-compat-v304-r5.js server.js',
+  packageStart:startsR5 || startsR6,
   packageCheck:pkg.scripts?.check?.includes('public/js/ucan_v304_global_glass_signs_r5.js') === true,
   packageAudit:pkg.scripts?.['audit:global-v304-r5'] === 'node verify_global_visual_v304_r5.js',
   packageTest:pkg.scripts?.test?.includes('audit:global-v304-r5') === true,
-  dockerPreloader:docker.includes('"./auth-compat-v304-r5.js"')
+  dockerPreloader:dockerR5 || dockerR6
 };
 
 const ok = Object.values(checks).every(Boolean);
-console.log(JSON.stringify({ ok, checks, syntaxError }, null, 2));
+console.log(JSON.stringify({ ok, checks, syntaxError, chain:{ startsR5, startsR6, dockerR5, dockerR6 } }, null, 2));
 if (!ok) process.exit(1);
