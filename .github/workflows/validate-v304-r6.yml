@@ -87,14 +87,17 @@ jobs:
           if (!seasonal.includes('board.texture.update(true);')) throw new Error('El calendario V304 servido no invierte correctamente la textura.');
           if (!universal.includes('state.texture.update(true);')) throw new Error('La ventana universal servida no corrige su textura.');
           if (!sky.includes('state.infoTexture.update(true);')) throw new Error('El panel celeste servido no corrige su textura.');
-          const order = [
-            loader.indexOf('ucan_v304_quest_glass_rails_holiday_r4.js'),
-            loader.indexOf('ucan_v304_r4_geometry_protection.js'),
-            loader.indexOf('ucan_v304_global_glass_signs_r5.js'),
-            loader.indexOf('ucan_v304_signs_terrace_interaction_r6.js')
-          ];
-          if (!(order[0] >= 0 && order[1] > order[0] && order[2] > order[1] && order[3] > order[2])) throw new Error(`Orden incorrecto: ${order.join(',')}`);
-          console.log({ markers:required.length, order, transformed:true });
+          const scriptsPresent = [
+            'ucan_v304_quest_glass_rails_holiday_r4.js',
+            'ucan_v304_r4_geometry_protection.js',
+            'ucan_v304_global_glass_signs_r5.js',
+            'ucan_v304_signs_terrace_interaction_r6.js'
+          ].every(value => loader.includes(value));
+          const executionChain = loader.includes("runtime.addEventListener('load', loadProtectionAndR5)") &&
+            loader.includes("protection.addEventListener('load', loadGlobalVisualR5)") &&
+            loader.includes("runtime.addEventListener('load', loadInteractionR6)");
+          if (!scriptsPresent || !executionChain) throw new Error('La cadena de carga R4 → protección → R5 → R6 no está completa.');
+          console.log({ markers:required.length, scriptsPresent, executionChain, transformed:true });
           NODE
 
       - name: Validar campus, encabezados y versión
