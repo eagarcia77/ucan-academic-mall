@@ -9,14 +9,17 @@ const previousWriteHead = http.ServerResponse.prototype.writeHead;
 const previousWrite = http.ServerResponse.prototype.write;
 const previousEnd = http.ServerResponse.prototype.end;
 
-const VERSION = 'V306';
-const REVISION = 'R10';
-const BUILD = 'V306-20260728-FLOOR1-BRAND-UPRIGHT-VR-R10';
-const LOADER_BUILD = 'V306-20260728-R10-NO-CACHE-LOADER';
+const VERSION = 'V307';
+const REVISION = 'R11';
+const BUILD = 'V307-20260728-BROWSER-XR-DEVICE-PRESENCE-R11';
+const LOADER_BUILD = 'V307-20260728-R11-NO-CACHE-LOADER';
 const RUNTIME_PATH = '/js/ucan_v305_floor1_terrace_vr_r9.js';
 const RUNTIME_SCRIPT = `${RUNTIME_PATH}?build=V305-20260728-FLOOR1-ADS-TERRACE-XR-R9`;
+const BRAND_BUILD = 'V306-20260728-FLOOR1-BRAND-UPRIGHT-VR-R10';
 const BRAND_RUNTIME_PATH = '/js/ucan_v306_floor1_brand_orientation_r10.js';
-const BRAND_RUNTIME_SCRIPT = `${BRAND_RUNTIME_PATH}?build=${BUILD}`;
+const BRAND_RUNTIME_SCRIPT = `${BRAND_RUNTIME_PATH}?build=${BRAND_BUILD}`;
+const PRESENCE_RUNTIME_PATH = '/js/ucan_v307_presence_xr_bridge.js';
+const PRESENCE_RUNTIME_SCRIPT = `${PRESENCE_RUNTIME_PATH}?build=V307-20260728-BROWSER-XR-DEVICE-PRESENCE`;
 const BUFFERABLE_CONTENT = /(?:text\/html|application\/javascript|text\/javascript)/i;
 
 function updateVersionData(data) {
@@ -28,8 +31,18 @@ function updateVersionData(data) {
   if (!versionPayload) return data;
 
   data.releaseVersion = VERSION;
-  data.floor1BrandVrRevision = REVISION;
-  data.floor1BrandVrBuild = BUILD;
+  data.presenceRevision = REVISION;
+  data.presenceBuild = BUILD;
+  data.presenceRuntime = PRESENCE_RUNTIME_SCRIPT;
+  data.presenceApi = '/api/presence-v2';
+  data.presenceByDeviceSession = true;
+  data.sameAccountMultipleDevicesVisible = true;
+  data.browserUsersVisibleInVr = true;
+  data.vrUsersVisibleInBrowser = true;
+  data.realXrCameraPresence = true;
+  data.legacyUserIdPresenceDisabledV307 = true;
+  data.floor1BrandVrRevision = 'R10';
+  data.floor1BrandVrBuild = BRAND_BUILD;
   data.floor1BrandVrRuntime = BRAND_RUNTIME_SCRIPT;
   data.floor1BrandExactMetadataTarget = 'brandLogo';
   data.floor1BrandOriginalDoubleSideCauseConfirmed = true;
@@ -38,7 +51,7 @@ function updateVersionData(data) {
   data.floor1BrandMirroredBackfaceSuppressedR10 = true;
   data.floor1BrandR8R9FacesSuppressedR10 = true;
   data.floor1TerraceVrRuntime = RUNTIME_SCRIPT;
-  data.questHtmlJsNoCacheR10 = true;
+  data.questHtmlJsNoCacheR11 = true;
   data.loaderBuild = LOADER_BUILD;
   return data;
 }
@@ -75,7 +88,7 @@ function normalizeTextureOrientation(value) {
   return patched;
 }
 
-function upgradeLoaderToR10(value) {
+function upgradeLoaderToR11(value) {
   let patched = value;
   patched = patched.replace(
     /\/js\/ucan_v266_keyboard_jump\.js(?:\?build=[^"']+)?/g,
@@ -93,7 +106,7 @@ function upgradeLoaderToR10(value) {
 
 function transformText(text) {
   let value = String(text);
-  value = upgradeLoaderToR10(value);
+  value = upgradeLoaderToR11(value);
   value = patchR5Runtime(value);
   value = normalizeTextureOrientation(value);
 
@@ -117,6 +130,7 @@ function applyDiagnosticHeaders(response, headers, contentType) {
     response.removeHeader?.('Content-Length');
     response.setHeader?.('X-UCAN-VR-Revision', REVISION);
     response.setHeader?.('X-UCAN-VR-Build', BUILD);
+    response.setHeader?.('X-UCAN-Presence-Version', VERSION);
     response.setHeader?.('X-UCAN-Quest-Cache', noCache ? 'no-store' : 'default');
     if (noCache) {
       response.setHeader?.('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
@@ -135,6 +149,7 @@ function applyDiagnosticHeaders(response, headers, contentType) {
   }
   next['X-UCAN-VR-Revision'] = REVISION;
   next['X-UCAN-VR-Build'] = BUILD;
+  next['X-UCAN-Presence-Version'] = VERSION;
   next['X-UCAN-Quest-Cache'] = noCache ? 'no-store' : 'default';
   if (noCache) {
     next['Cache-Control'] = 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0';
@@ -145,7 +160,7 @@ function applyDiagnosticHeaders(response, headers, contentType) {
   return next;
 }
 
-http.ServerResponse.prototype.writeHead = function writeHeadV306R10(statusCode, statusMessage, headers) {
+http.ServerResponse.prototype.writeHead = function writeHeadV307R11(statusCode, statusMessage, headers) {
   let message = statusMessage;
   let nextHeaders = headers;
   if (statusMessage && typeof statusMessage === 'object') {
@@ -154,16 +169,16 @@ http.ServerResponse.prototype.writeHead = function writeHeadV306R10(statusCode, 
   }
 
   const contentType = headerValue(nextHeaders, 'content-type') || String(this.getHeader?.('Content-Type') || '');
-  if (BUFFERABLE_CONTENT.test(contentType)) this.__ucanR10TextChunks = [];
+  if (BUFFERABLE_CONTENT.test(contentType)) this.__ucanR11TextChunks = [];
   nextHeaders = applyDiagnosticHeaders(this, nextHeaders, contentType);
 
   if (message === undefined) return previousWriteHead.call(this, statusCode, nextHeaders);
   return previousWriteHead.call(this, statusCode, message, nextHeaders);
 };
 
-http.ServerResponse.prototype.write = function writeV306R10(chunk, encoding, callback) {
-  if (Array.isArray(this.__ucanR10TextChunks)) {
-    if (chunk != null) this.__ucanR10TextChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk), typeof encoding === 'string' ? encoding : 'utf8'));
+http.ServerResponse.prototype.write = function writeV307R11(chunk, encoding, callback) {
+  if (Array.isArray(this.__ucanR11TextChunks)) {
+    if (chunk != null) this.__ucanR11TextChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk), typeof encoding === 'string' ? encoding : 'utf8'));
     if (typeof encoding === 'function') process.nextTick(encoding);
     else if (typeof callback === 'function') process.nextTick(callback);
     return true;
@@ -171,13 +186,13 @@ http.ServerResponse.prototype.write = function writeV306R10(chunk, encoding, cal
   return previousWrite.call(this, chunk, encoding, callback);
 };
 
-http.ServerResponse.prototype.end = function endV306R10(chunk, encoding, callback) {
+http.ServerResponse.prototype.end = function endV307R11(chunk, encoding, callback) {
   let body = chunk;
   try {
-    if (Array.isArray(this.__ucanR10TextChunks)) {
-      if (body != null) this.__ucanR10TextChunks.push(Buffer.isBuffer(body) ? body : Buffer.from(String(body), typeof encoding === 'string' ? encoding : 'utf8'));
-      const combined = Buffer.concat(this.__ucanR10TextChunks).toString('utf8');
-      delete this.__ucanR10TextChunks;
+    if (Array.isArray(this.__ucanR11TextChunks)) {
+      if (body != null) this.__ucanR11TextChunks.push(Buffer.isBuffer(body) ? body : Buffer.from(String(body), typeof encoding === 'string' ? encoding : 'utf8'));
+      const combined = Buffer.concat(this.__ucanR11TextChunks).toString('utf8');
+      delete this.__ucanR11TextChunks;
       body = Buffer.from(transformText(combined), 'utf8');
     } else if (typeof body === 'string' || Buffer.isBuffer(body)) {
       const isBuffer = Buffer.isBuffer(body);
@@ -186,9 +201,9 @@ http.ServerResponse.prototype.end = function endV306R10(chunk, encoding, callbac
       body = isBuffer ? Buffer.from(transformed, 'utf8') : transformed;
     }
   } catch (error) {
-    console.error('[UCAN V306 R10 response compatibility]', error);
+    console.error('[UCAN V307 R11 response compatibility]', error);
   }
   return previousEnd.call(this, body, encoding, callback);
 };
 
-console.info(`[UCAN ${VERSION} ${REVISION}] Preloader sin caché de Quest y anuncios institucionales corregidos.`);
+console.info(`[UCAN ${VERSION} ${REVISION}] Cargador sin caché y presencia browser/WebXR activos.`);
