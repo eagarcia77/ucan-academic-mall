@@ -6,6 +6,7 @@ const path = require('path');
 const root = __dirname;
 const files = {
   runtime:path.join(root, 'public/js/ucan_v310_visual_validation.js'),
+  guard:path.join(root, 'public/js/ucan_v310_visual_validation_guard.js'),
   backend:path.join(root, 'lib/visual-validation-v310.js'),
   preloader:path.join(root, 'auth-compat-v309-parity.js'),
   parity:path.join(root, 'public/js/ucan_v309_strict_visual_parity.js'),
@@ -15,6 +16,7 @@ const files = {
 const source = Object.fromEntries(Object.entries(files).map(([key, file]) => [key, fs.readFileSync(file, 'utf8')]));
 const checks = {
   runtimeSyntax:true,
+  guardSyntax:true,
   backendSyntax:true,
   preloaderSyntax:true,
   versionV310:source.runtime.includes("const VERSION = 'V310'") && source.backend.includes("const VERSION = 'V310'"),
@@ -22,6 +24,8 @@ const checks = {
   eighteenCanonicalAreas:(source.runtime.match(/\{ id:'/g) || []).length >= 18,
   canonicalCamera:source.runtime.includes('Cámara canónica de validación visual V310') && source.runtime.includes('sameCameraForBrowserAndVr:true'),
   renderTargetCapture:source.runtime.includes('new B.RenderTargetTexture') && source.runtime.includes('target.readPixels()'),
+  manualRenderGuard:source.guard.includes('manualRenderOnly:true') && source.guard.includes('targets.splice(index, 1)'),
+  keyboardProtectedDuringReview:source.guard.includes('ucanVisualValidationV310') && source.guard.includes('stopImmediatePropagation'),
   browserBaseline:source.runtime.includes('async function captureBrowserBaseline()') && source.runtime.includes('browserBaselineReady'),
   webxrComparison:source.runtime.includes('async function captureVrComparison()') && source.runtime.includes('onStateChangedObservable'),
   pixelFingerprint:source.runtime.includes('function pixelFingerprint') && source.runtime.includes('function differenceBetween'),
@@ -32,6 +36,7 @@ const checks = {
   reportImagesProtected:source.backend.includes('/image/') && source.backend.includes('No tiene autorización para abrir esta captura'),
   versionEndpointV310:source.backend.includes("if (pathname === '/version')") && source.backend.includes('visualValidationRevision'),
   runtimeInjected:source.preloader.includes('/js/ucan_v310_visual_validation.js') && source.preloader.includes('injectRuntime'),
+  guardInjected:source.preloader.includes('/js/ucan_v310_visual_validation_guard.js'),
   htmlNoCache:source.preloader.includes('no-store, no-cache, must-revalidate'),
   backendInstalledBeforeServer:source.preloader.includes('installVisualValidationSystem'),
   v309Required:source.runtime.includes('__UCAN_STRICT_VISUAL_PARITY_V309__') && source.parity.includes('browserSceneIsAuthoritative:true'),
@@ -41,7 +46,7 @@ const checks = {
   dockerStillStartsTopPreloader:source.docker.includes('auth-compat-v309-parity.js')
 };
 
-for (const name of ['runtime','backend','preloader']) {
+for (const name of ['runtime','guard','backend','preloader']) {
   try { new Function(source[name]); }
   catch (error) {
     checks[`${name}Syntax`] = false;
