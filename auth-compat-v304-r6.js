@@ -31,6 +31,8 @@ function updateVersionData(data) {
   data.seasonalSignsBacksideDisabledR6 = true;
   data.seasonalSignsBillboardDisabledR6 = true;
   data.seasonalSignsUprightBrowserQuestMR = true;
+  data.seasonalSourceTextureInvertYPatched = true;
+  data.r5LegacySignMaintenanceSuppressedByR6 = true;
   data.terraceTriggerSelectionR6 = true;
   data.terracePrimarySelectionR6 = true;
   data.terraceJoystickSelectionR6 = true;
@@ -38,9 +40,44 @@ function updateVersionData(data) {
   data.terraceHeadGazeFallbackR6 = true;
   data.terraceOwnXRInfoPanelR6 = true;
   data.terraceInfoTextureInvertYR6 = true;
+  data.universalInfoTextureInvertYPatched = true;
+  data.skyInfoTextureInvertYPatched = true;
   data.r5GlobalGlassPreserved = true;
   data.r4QuestRailsPreserved = true;
   return data;
+}
+
+function patchR5Runtime(value) {
+  if (!value.includes('V304-20260725-GLOBAL-GLASS-UPRIGHT-SIGNS-R5')) return value;
+  let patched = value;
+  patched = patched.replace(
+    "function normalizeBoards() {\n    if (!state.scene) return;",
+    "function normalizeBoards() {\n    if (window.__UCAN_VISUAL_INTERACTION_V304_R6__?.installed === true) return;\n    if (!state.scene) return;"
+  );
+  patched = patched.replace(
+    "function maintainBoards() {\n    for (const [source, faces] of state.boardFaces) {",
+    "function maintainBoards() {\n    const r6OwnsBoards = window.__UCAN_VISUAL_INTERACTION_V304_R6__?.installed === true;\n    for (const [source, faces] of state.boardFaces) {"
+  );
+  patched = patched.replace(
+    "for (const face of faces) {\n        try {\n          face.setEnabled?.(true);\n          face.isVisible = true;\n          face.visibility = 1;",
+    "for (const face of faces) {\n        try {\n          face.setEnabled?.(!r6OwnsBoards);\n          face.isVisible = !r6OwnsBoards;\n          face.visibility = r6OwnsBoards ? 0 : 1;"
+  );
+  return patched;
+}
+
+function patchSeasonalRuntime(value) {
+  if (!value.includes('V304-20260723-SEASONAL-NATURAL-ECOSYSTEM-PR')) return value;
+  return value.replace('board.texture.update(false);', 'board.texture.update(true);');
+}
+
+function patchUniversalRuntime(value) {
+  if (!value.includes('V292-20260721-UNIVERSAL-SIGN-WINDOW-CLOCK')) return value;
+  return value.replace('state.texture.update(false);', 'state.texture.update(true);');
+}
+
+function patchSkyRuntime(value) {
+  if (!value.includes('V287-20260720-FLOOR-STATE-SKY-OPT')) return value;
+  return value.replace('state.infoTexture.update(false);', 'state.infoTexture.update(true);');
 }
 
 function transformText(text) {
@@ -51,6 +88,11 @@ function transformText(text) {
       `/js/ucan_v266_keyboard_jump.js?build=${LOADER_BUILD}`
     );
   }
+  value = patchR5Runtime(value);
+  value = patchSeasonalRuntime(value);
+  value = patchUniversalRuntime(value);
+  value = patchSkyRuntime(value);
+
   const trimmed = value.trim();
   if (/^[\[{]/.test(trimmed)) {
     try { return JSON.stringify(updateVersionData(JSON.parse(value))); }
