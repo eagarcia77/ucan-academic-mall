@@ -19,6 +19,7 @@ const previousWrite = http.ServerResponse.prototype.write;
 const previousEnd = http.ServerResponse.prototype.end;
 const HTML_CONTENT = /text\/html/i;
 const RUNTIME_SCRIPT = `/js/ucan_v310_visual_validation.js?build=${BUILD}`;
+const GUARD_SCRIPT = `/js/ucan_v310_visual_validation_guard.js?build=${BUILD}-MANUAL-RENDER-GUARD`;
 
 function headerValue(headers, name) {
   if (!headers || typeof headers !== 'object') return '';
@@ -27,12 +28,15 @@ function headerValue(headers, name) {
 }
 
 function injectRuntime(text) {
-  let html = String(text || '');
+  const html = String(text || '');
   if (!/<canvas[^>]+id=["']renderCanvas["']/i.test(html)) return html;
-  if (html.includes('/js/ucan_v310_visual_validation.js')) return html;
-  const tag = `  <script src="${RUNTIME_SCRIPT}"></script>\n`;
-  if (/<\/body>/i.test(html)) return html.replace(/<\/body>/i, `${tag}</body>`);
-  return `${html}\n${tag}`;
+  const tags = [];
+  if (!html.includes('/js/ucan_v310_visual_validation.js')) tags.push(`  <script src="${RUNTIME_SCRIPT}"></script>`);
+  if (!html.includes('/js/ucan_v310_visual_validation_guard.js')) tags.push(`  <script src="${GUARD_SCRIPT}"></script>`);
+  if (!tags.length) return html;
+  const block = `${tags.join('\n')}\n`;
+  if (/<\/body>/i.test(html)) return html.replace(/<\/body>/i, `${block}</body>`);
+  return `${html}\n${block}`;
 }
 
 http.ServerResponse.prototype.writeHead = function writeHeadV310(statusCode, statusMessage, headers) {
