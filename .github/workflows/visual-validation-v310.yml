@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'public/js/ucan_v310_visual_validation.js'
+      - 'public/js/ucan_v310_visual_validation_guard.js'
       - 'lib/visual-validation-v310.js'
       - 'auth-compat-v309-parity.js'
       - 'verify_visual_validation_v310.js'
@@ -12,6 +13,7 @@ on:
   pull_request:
     paths:
       - 'public/js/ucan_v310_visual_validation.js'
+      - 'public/js/ucan_v310_visual_validation_guard.js'
       - 'lib/visual-validation-v310.js'
       - 'auth-compat-v309-parity.js'
       - 'verify_visual_validation_v310.js'
@@ -34,6 +36,7 @@ jobs:
       - name: Syntax checks
         run: |
           node --check public/js/ucan_v310_visual_validation.js
+          node --check public/js/ucan_v310_visual_validation_guard.js
           node --check lib/visual-validation-v310.js
           node --check auth-compat-v309-parity.js
           node --check verify_visual_validation_v310.js
