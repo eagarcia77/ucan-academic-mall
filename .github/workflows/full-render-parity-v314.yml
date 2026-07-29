@@ -1,0 +1,66 @@
+name: Full Render Parity V314
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/campus.html'
+      - 'public/js/ucan_v314_render_parity.js'
+      - 'verify_v314_full_render_parity.js'
+      - 'package.json'
+      - '.github/workflows/full-render-parity-v314.yml'
+  pull_request:
+    paths:
+      - 'public/campus.html'
+      - 'public/js/ucan_v314_render_parity.js'
+      - 'verify_v314_full_render_parity.js'
+      - 'package.json'
+      - '.github/workflows/full-render-parity-v314.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate complete visual parity
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run repository tests
+        run: npm test
+      - name: Start application
+        env:
+          PORT: '3100'
+          DATA_DIR: ${{ runner.temp }}/ucan-v314-data
+          ADMIN_INITIAL_USERNAME: admin
+          ADMIN_INITIAL_PASSWORD: Render-Parity-V314-A7!
+          ADMIN_INITIAL_EMAIL: admin-v314@example.test
+        run: |
+          mkdir -p "$DATA_DIR"
+          node -r ./auth-compat-v313-parallel.js server.js > "$RUNNER_TEMP/ucan-v314-server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/ucan-v314-server.pid"
+          for attempt in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:3100/health > "$RUNNER_TEMP/health.json"; then exit 0; fi
+            sleep 0.3
+          done
+          cat "$RUNNER_TEMP/ucan-v314-server.log"
+          exit 1
+      - name: Login and inspect campus HTML
+        run: |
+          curl -fsS -c "$RUNNER_TEMP/cookies.txt" -H 'Content-Type: application/json' -d '{"login":"admin","password":"Render-Parity-V314-A7!"}' http://127.0.0.1:3100/api/auth/login > "$RUNNER_TEMP/login.json"
+          curl -fsS -b "$RUNNER_TEMP/cookies.txt" http://127.0.0.1:3100/campus > "$RUNNER_TEMP/campus.html"
+          grep -q 'ucan_v314_render_parity.js?build=V314-20260729-FULL-RENDER-PARITY-R18' "$RUNNER_TEMP/campus.html"
+          grep -q 'ucan_v313_parallel_scene.js' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v309_strict_visual_parity.js' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v310_visual_validation' "$RUNNER_TEMP/campus.html"
+      - name: Stop application
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/ucan-v314-server.pid" ]; then kill "$(cat "$RUNNER_TEMP/ucan-v314-server.pid")" 2>/dev/null || true; fi
+          if [ -f "$RUNNER_TEMP/ucan-v314-server.log" ]; then tail -n 120 "$RUNNER_TEMP/ucan-v314-server.log"; fi
