@@ -5,15 +5,16 @@ const baseWriteHead = http.ServerResponse.prototype.writeHead;
 const baseWrite = http.ServerResponse.prototype.write;
 const baseEnd = http.ServerResponse.prototype.end;
 
-// Conserva autenticación, persistencia, voz y mundo social. V316 reemplaza solamente
-// la locomoción, la entrada XR y la entrega del panel.
+// Conserva autenticación, persistencia, voz y mundo social. V317 mantiene el rig único
+// de V316 y añade el despeje físico y visual de las escaleras eléctricas.
 require('./auth-compat-v313-parallel.js');
 
-const VERSION = 'V316';
-const REVISION = 'R20';
-const BUILD = 'V316-20260729-COMPLETE-BROWSER-VR-AUDIT-R20';
-const RUNTIME_SRC = `/js/ucan_v316_complete_browser_vr_audit.js?build=${BUILD}`;
-const LOADER_SRC = '/js/ucan_v316_social_loader.js?build=V316-20260729-SOCIAL-LOADER-NO-DUPLICATE-XR-R20';
+const VERSION = 'V317';
+const REVISION = 'R21';
+const BUILD = 'V317-20260729-ESCALATOR-CLEARANCE-R21';
+const RUNTIME_SRC = '/js/ucan_v316_complete_browser_vr_audit.js?build=V317-20260729-ONE-RIG-R21';
+const LOADER_SRC = '/js/ucan_v316_social_loader.js?build=V317-20260729-SOCIAL-LOADER-ESCALATOR-CLEARANCE-R21';
+const CLEARANCE_SRC = '/js/ucan_v317_escalator_clearance.js?build=V317-20260729-ESCALATOR-CLEARANCE-R21';
 
 function requestPath(response) {
   try { return new URL(response?.req?.url || '/', 'http://localhost').pathname; }
@@ -34,11 +35,10 @@ function transformHtml(value) {
     'ucan_v313_xr_entry.js',
     'ucan_v315_unified_floors_joystick.js',
     'ucan_v316_complete_browser_vr_audit.js',
-    'ucan_v316_social_loader.js'
+    'ucan_v316_social_loader.js',
+    'ucan_v317_escalator_clearance.js'
   ]) html = removeScript(html, script);
 
-  // El antiguo cargador incluía salto y una segunda entrada XR. Se sustituye por un
-  // cargador que solo instala escena, presencia, voz e interacción.
   html = removeScript(html, 'ucan_v266_keyboard_jump.js');
 
   const mainPattern = /(<script[^>]+src=["']\/js\/ucan_babylon_mall_v265_accounts_avatars\.js[^>]*><\/script>)/i;
@@ -47,15 +47,15 @@ function transformHtml(value) {
   else html = html.replace('</head>', `  ${runtimeTag}\n</head>`);
 
   const renderParityPattern = /(<script[^>]+src=["']\/js\/ucan_v314_render_parity\.js[^>]*><\/script>)/i;
-  const loaderTag = `<script src="${LOADER_SRC}" data-ucan-v316-social-loader="true"></script>`;
+  const loaderTag = `<script src="${LOADER_SRC}" data-ucan-v317-social-loader="true"></script>`;
   if (renderParityPattern.test(html)) html = html.replace(renderParityPattern, `${loaderTag}\n  $1`);
   else html = html.replace('</body>', `  ${loaderTag}\n</body>`);
 
-  html = html.replace(/UCAN Academic Mall V(?:272|283|313|314|315)/g, 'UCAN Academic Mall V316');
-  html = html.replace(/COMPILACIÓN V(?:272|283|313|314|315)(?: · [^<]+)?(?: ACTIVA)?/g, 'COMPILACIÓN V316 · AUDITORÍA COMPLETA BROWSER/VR');
-  html = html.replace(/V(?:272|283|313|314|315):[^<]*/g, 'V316: browser y VR comparten escena, rig de locomoción, escaleras continuas, panel e interacción.');
+  html = html.replace(/UCAN Academic Mall V(?:272|283|313|314|315|316)/g, 'UCAN Academic Mall V317');
+  html = html.replace(/COMPILACIÓN V(?:272|283|313|314|315|316)(?: · [^<]+)?(?: ACTIVA)?/g, 'COMPILACIÓN V317 · ESCALERAS ELÉCTRICAS DESPEJADAS');
+  html = html.replace(/V(?:272|283|313|314|315|316):[^<]*/g, 'V317: escaleras eléctricas sin cristales frontales, descansos superiores despejados y locomoción común para browser y VR.');
   html = html.replace('Use W/A/S/D o las flechas para caminar, la barra espaciadora para saltar y R para reubicarse.', 'Use W/A/S/D o el joystick izquierdo para caminar; joystick derecho para girar o teletransportarse; R para reubicarse.');
-  html = html.replace('</head>', `  <meta name="ucan-runtime-v316" content="${BUILD}" />\n</head>`);
+  html = html.replace('</head>', `  <meta name="ucan-runtime-v317" content="${BUILD}" />\n</head>`);
   return html;
 }
 
@@ -72,7 +72,7 @@ function transformJson(value) {
       releaseVersion:VERSION,
       revision:REVISION,
       build:BUILD,
-      architecture:'one-scene-one-rig-one-panel',
+      architecture:'one-scene-one-rig-clear-escalator-landings',
       completeBrowserVrAudit:true,
       sameFloor1BrowserVr:true,
       sameFloor2BrowserVr:true,
@@ -82,6 +82,9 @@ function transformJson(value) {
       continuousStairMovement:true,
       scriptedStairTransitions:false,
       avatarCameraPresenceSynchronized:true,
+      escalatorTopLandingClearance:true,
+      frontEscalatorGlassRemoved:true,
+      escalatorAntiStuckRelease:true,
       naturalSpeedMetersPerSecond:6.4,
       fastSpeedMetersPerSecond:9.0,
       joystickDeadZone:0.12,
@@ -105,6 +108,7 @@ function transformJson(value) {
       legacyV315LocomotionLoaded:false,
       runtime:RUNTIME_SRC,
       socialLoader:LOADER_SRC,
+      escalatorClearanceRuntime:CLEARANCE_SRC,
       persistentAccounts:true,
       persistentAvatars:true,
       persistentDataWritable:persistence.writable === true,
@@ -116,7 +120,7 @@ function transformJson(value) {
   }
 }
 
-http.ServerResponse.prototype.writeHead = function writeHeadV316(statusCode, statusMessage, headers) {
+http.ServerResponse.prototype.writeHead = function writeHeadV317(statusCode, statusMessage, headers) {
   let message = statusMessage;
   let nextHeaders = headers;
   if (statusMessage && typeof statusMessage === 'object') {
@@ -130,13 +134,14 @@ http.ServerResponse.prototype.writeHead = function writeHeadV316(statusCode, sta
   );
   const transformable = /text\/html/i.test(contentType) ||
     ((pathname === '/version' || pathname === '/health' || pathname === '/healthz') && /application\/json/i.test(contentType));
-  if (transformable) this.__ucanV316Chunks = [];
+  if (transformable) this.__ucanV317Chunks = [];
 
   try {
     this.removeHeader?.('Content-Length');
     this.setHeader?.('X-UCAN-Version', VERSION);
     this.setHeader?.('X-UCAN-Revision', REVISION);
-    this.setHeader?.('X-UCAN-Locomotion', 'one-rig');
+    this.setHeader?.('X-UCAN-Locomotion', 'one-rig-clear-landings');
+    this.setHeader?.('X-UCAN-Escalator-Clearance', 'enabled');
     this.setHeader?.('X-UCAN-Panel', 'single-controller');
     this.setHeader?.('Permissions-Policy', 'microphone=(self), xr-spatial-tracking=(self)');
     if (transformable) {
@@ -155,7 +160,8 @@ http.ServerResponse.prototype.writeHead = function writeHeadV316(statusCode, sta
     }
     nextHeaders['X-UCAN-Version'] = VERSION;
     nextHeaders['X-UCAN-Revision'] = REVISION;
-    nextHeaders['X-UCAN-Locomotion'] = 'one-rig';
+    nextHeaders['X-UCAN-Locomotion'] = 'one-rig-clear-landings';
+    nextHeaders['X-UCAN-Escalator-Clearance'] = 'enabled';
     nextHeaders['X-UCAN-Panel'] = 'single-controller';
     nextHeaders['Permissions-Policy'] = 'microphone=(self), xr-spatial-tracking=(self)';
     if (transformable) {
@@ -168,9 +174,9 @@ http.ServerResponse.prototype.writeHead = function writeHeadV316(statusCode, sta
   return baseWriteHead.call(this, statusCode, message, nextHeaders);
 };
 
-http.ServerResponse.prototype.write = function writeV316(chunk, encoding, callback) {
-  if (Array.isArray(this.__ucanV316Chunks)) {
-    if (chunk != null) this.__ucanV316Chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk), typeof encoding === 'string' ? encoding : 'utf8'));
+http.ServerResponse.prototype.write = function writeV317(chunk, encoding, callback) {
+  if (Array.isArray(this.__ucanV317Chunks)) {
+    if (chunk != null) this.__ucanV317Chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk), typeof encoding === 'string' ? encoding : 'utf8'));
     if (typeof encoding === 'function') process.nextTick(encoding);
     else if (typeof callback === 'function') process.nextTick(callback);
     return true;
@@ -178,13 +184,13 @@ http.ServerResponse.prototype.write = function writeV316(chunk, encoding, callba
   return baseWrite.call(this, chunk, encoding, callback);
 };
 
-http.ServerResponse.prototype.end = function endV316(chunk, encoding, callback) {
+http.ServerResponse.prototype.end = function endV317(chunk, encoding, callback) {
   let body = chunk;
   try {
-    if (Array.isArray(this.__ucanV316Chunks)) {
-      if (body != null) this.__ucanV316Chunks.push(Buffer.isBuffer(body) ? body : Buffer.from(String(body), typeof encoding === 'string' ? encoding : 'utf8'));
-      const combined = Buffer.concat(this.__ucanV316Chunks).toString('utf8');
-      delete this.__ucanV316Chunks;
+    if (Array.isArray(this.__ucanV317Chunks)) {
+      if (body != null) this.__ucanV317Chunks.push(Buffer.isBuffer(body) ? body : Buffer.from(String(body), typeof encoding === 'string' ? encoding : 'utf8'));
+      const combined = Buffer.concat(this.__ucanV317Chunks).toString('utf8');
+      delete this.__ucanV317Chunks;
       const pathname = requestPath(this);
       body = Buffer.from(
         pathname === '/version' || pathname === '/health' || pathname === '/healthz'
@@ -194,9 +200,9 @@ http.ServerResponse.prototype.end = function endV316(chunk, encoding, callback) 
       );
     }
   } catch (error) {
-    console.error('[UCAN V316 response]', error);
+    console.error('[UCAN V317 response]', error);
   }
   return baseEnd.call(this, body, encoding, callback);
 };
 
-console.info(`[UCAN ${VERSION} ${REVISION}] Auditoría completa y rig único activados (${BUILD}).`);
+console.info(`[UCAN ${VERSION} ${REVISION}] Despeje de escaleras eléctricas activado (${BUILD}).`);
