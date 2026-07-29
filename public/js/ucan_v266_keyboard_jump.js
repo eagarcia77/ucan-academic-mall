@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = 'V311';
-  const BUILD = 'V311-20260729-CANONICAL-ONE-SCENE-LOADER-R15';
+  const VERSION = 'V312';
+  const BUILD = 'V312-20260729-VR-CANONICAL-REALTIME-LOADER-R16';
   const MOVEMENT_CODES = new Set([
     'KeyW', 'KeyA', 'KeyS', 'KeyD',
     'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
@@ -33,12 +33,12 @@
   }
 
   function modalIsOpen() {
-    return Boolean(document.querySelector('#ucanProfileModal.open, #boardPanel.open, #livePanelViewer.open, #ucanVisualValidationV310.open, #ucanUnifiedWorldV311.open'));
+    return Boolean(document.querySelector('#ucanProfileModal.open, #boardPanel.open, #livePanelViewer.open, #ucanVisualValidationV310.open, #ucanRealtimeWorldV312.open'));
   }
 
   function releaseMovementKeys() {
     for (const code of MOVEMENT_CODES) {
-      window.dispatchEvent(new KeyboardEvent('keyup', { code, key: code === 'Space' ? ' ' : '', bubbles:false }));
+      window.dispatchEvent(new KeyboardEvent('keyup', { code, key:code === 'Space' ? ' ' : '', bubbles:false }));
     }
   }
 
@@ -121,7 +121,7 @@
     const canvas = document.getElementById('renderCanvas');
     if (canvas) canvas.tabIndex = 0;
     const status = document.getElementById('status');
-    if (status) status.textContent = 'Browser y VR utilizan una sola escena. Use W/A/S/D o las flechas para caminar y la barra espaciadora para saltar.';
+    if (status) status.textContent = 'El browser utiliza el entorno visual de VR. Use W/A/S/D o las flechas para caminar y la barra espaciadora para saltar.';
     window.__UCAN_KEYBOARD_JUMP_AUDIT__ = {
       version:VERSION,
       build:BUILD,
@@ -155,33 +155,25 @@
     } else next();
   }
 
-  function loadCompatibilityAliasesV311() {
-    appendScript(
-      '/js/ucan_v311_compat_aliases.js?build=V311-20260729-DIAGNOSTIC-COMPATIBILITY',
-      'data-ucan-v311-compat-aliases',
-      '[UCAN V311] No se pudo cargar la compatibilidad de diagnóstico.'
-    );
-  }
-
-  function loadUnifiedWorldV311() {
+  function loadRealtimeWorldV312() {
     const runtime = appendScript(
-      '/js/ucan_v311_unified_world.js?build=V311-20260729-ONE-SCENE-ONE-WORLD-R15',
-      'data-ucan-v311-unified-world',
-      '[UCAN V311] No se pudo cargar el mundo unificado.'
+      '/js/ucan_v312_realtime_world.js?build=V312-20260729-VR-CANONICAL-REALTIME-WORLD-R16',
+      'data-ucan-v312-realtime-world',
+      '[UCAN V312] No se pudo cargar la presencia e interacción en tiempo real.'
     );
-    if (runtime) {
-      runtime.addEventListener('load', loadCompatibilityAliasesV311, { once:true });
-      runtime.addEventListener('error', loadCompatibilityAliasesV311, { once:true });
-    } else loadCompatibilityAliasesV311();
-    window.__UCAN_CANONICAL_LOADER_V311__ = {
+    window.__UCAN_CANONICAL_LOADER_V312__ = {
       version:VERSION,
       build:BUILD,
       installed:true,
+      authoritativeEnvironment:'VR',
+      browserUsesVrEnvironment:true,
       oneScene:true,
+      sameFloor3Stairs:true,
       oldQuestVisualLayersLoaded:false,
       oldPresenceV307Loaded:false,
       oldInteractionV308Loaded:false,
-      unifiedWorldLoaded:Boolean(runtime || document.querySelector('script[data-ucan-v311-unified-world="true"]')),
+      oldUnifiedV311Loaded:false,
+      realtimeWorldLoaded:Boolean(runtime || document.querySelector('script[data-ucan-v312-realtime-world="true"]')),
       environmentSpecificGeometryDisabled:true,
       cameraAndControlsOnlyDifference:true
     };
@@ -200,6 +192,14 @@
       '/js/ucan_v309_strict_visual_parity.js?build=V309-20260728-STRICT-BROWSER-VR-VISUAL-PARITY-R13',
       'data-ucan-v309-strict-visual-parity',
       '[UCAN V309] No se pudo cargar la paridad visual estricta.'
+    );
+  }
+
+  function loadVrCanonicalSceneV312() {
+    return appendScript(
+      '/js/ucan_v312_vr_canonical_scene.js?build=V312-20260729-VR-CANONICAL-SCENE-R16',
+      'data-ucan-v312-vr-canonical-scene',
+      '[UCAN V312] No se pudo aplicar el entorno VR como escena canónica.'
     );
   }
 
@@ -222,8 +222,10 @@
   function loadCanonicalRuntime() {
     chain(loadExternalPatioV305, () =>
       chain(loadFloor1BrandR10, () =>
-        chain(loadStrictParityV309, () =>
-          chain(loadVoiceBridgeV306, loadUnifiedWorldV311)
+        chain(loadVrCanonicalSceneV312, () =>
+          chain(loadStrictParityV309, () =>
+            chain(loadVoiceBridgeV306, loadRealtimeWorldV312)
+          )
         )
       )
     );
