@@ -4,26 +4,20 @@ const fs = require('fs');
 const path = require('path');
 
 const root = __dirname;
-const frontendPath = path.join(root, 'public/js/ucan_v240_voice.js');
-const bridgePath = path.join(root, 'public/js/ucan_v306_voice_xr_bridge.js');
-const loaderPath = path.join(root, 'public/js/ucan_v266_keyboard_jump.js');
-const backendPath = path.join(root, 'lib/voice-signaling.js');
-const preloaderPath = path.join(root, 'auth-compat-v313-parallel.js');
-const upperPreloaderPath = path.join(root, 'auth-compat-v315-floors-joystick.js');
-const campusPath = path.join(root, 'public/campus.html');
-const dockerPath = path.join(root, 'Dockerfile');
-const packagePath = path.join(root, 'package.json');
+const files = {
+  frontend:path.join(root, 'public/js/ucan_v240_voice.js'),
+  bridge:path.join(root, 'public/js/ucan_v306_voice_xr_bridge.js'),
+  loader:path.join(root, 'public/js/ucan_v316_social_loader.js'),
+  backend:path.join(root, 'lib/voice-signaling.js'),
+  parallelPreloader:path.join(root, 'auth-compat-v313-parallel.js'),
+  upperPreloader:path.join(root, 'auth-compat-v316-complete-audit.js'),
+  campus:path.join(root, 'public/campus.html'),
+  docker:path.join(root, 'Dockerfile'),
+  package:path.join(root, 'package.json')
+};
 
-const frontend = fs.readFileSync(frontendPath, 'utf8');
-const bridge = fs.readFileSync(bridgePath, 'utf8');
-const loader = fs.readFileSync(loaderPath, 'utf8');
-const backend = fs.readFileSync(backendPath, 'utf8');
-const preloader = fs.readFileSync(preloaderPath, 'utf8');
-const upperPreloader = fs.readFileSync(upperPreloaderPath, 'utf8');
-const campus = fs.readFileSync(campusPath, 'utf8');
-const docker = fs.readFileSync(dockerPath, 'utf8');
-const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
-
+const text = Object.fromEntries(Object.entries(files).map(([key, file]) => [key, fs.readFileSync(file, 'utf8')]));
+const pkg = JSON.parse(text.package);
 const rooms = ['SV-201', 'SV-202', 'SV-203', 'SV-204', 'SV-205', 'ANF-301'];
 const forbiddenVisualChain = [
   "require('./auth-compat-v304-r6.js')",
@@ -34,58 +28,58 @@ const forbiddenVisualChain = [
   "require('./auth-compat-v311-unified.js')",
   "require('./auth-compat-v312-vr-canonical.js')"
 ];
-const startsThroughParallelVoice = upperPreloader.includes("require('./auth-compat-v313-parallel.js')");
+const startsThroughParallelVoice = text.upperPreloader.includes("require('./auth-compat-v313-parallel.js')");
 
 const checks = {
   frontendSyntax:true,
   bridgeSyntax:true,
   loaderSyntax:true,
   backendSyntax:true,
-  preloaderSyntax:true,
+  parallelPreloaderSyntax:true,
   upperPreloaderSyntax:true,
-  voiceScriptLoaded:campus.includes('/js/ucan_v240_voice.js'),
-  voiceBridgeLoaded:loader.includes('/js/ucan_v306_voice_xr_bridge.js?build=V313-20260729-PARALLEL-VOICE-R17'),
-  allRoomsInFrontend:rooms.every(room => frontend.includes(`'${room}'`)),
-  allRoomsInBridge:rooms.every(room => bridge.includes(`'${room}'`)),
-  allRoomsInBackend:rooms.every(room => backend.includes(`'${room}'`)),
-  allRoomsInParallelPreloader:rooms.every(room => preloader.includes(`'${room}'`)),
-  microphoneCapture:/navigator\.mediaDevices\.getUserMedia/.test(frontend),
-  microphoneDiagnostic:/async function testMicrophone/.test(bridge),
-  echoCancellation:/echoCancellation:true/.test(frontend),
-  noiseSuppression:/noiseSuppression:true/.test(frontend),
-  autoGainControl:/autoGainControl:true/.test(frontend),
-  webRtcPeerConnection:/new RTCPeerConnection/.test(frontend),
-  outgoingTracks:/pc\.addTrack/.test(frontend),
-  incomingTracks:/pc\.ontrack/.test(frontend),
-  remoteAudioPlayback:/audio\.srcObject\s*=\s*stream/.test(frontend) && /audio\.play\(\)/.test(frontend),
-  perParticipantVolume:/personalVolumes/.test(frontend),
-  roomIsolationFrontend:/currentRoom/.test(frontend) && /ROOM_BOUNDS/.test(frontend),
-  roomIsolationBackend:/target\.room !== source\.room/.test(backend),
-  xrUsesRealCameraPosition:/xr\?\.globalPosition/.test(bridge) && /scene\?\.activeCamera\?\.globalPosition/.test(bridge),
-  xrAutomaticRoomSwitch:/joinRoom\?\./.test(bridge) && /selectRoom\?\./.test(bridge),
-  sseSignaling:/text\/event-stream/.test(backend) && /peer-joined/.test(backend),
-  queuedSignals:/client\.queue\.push/.test(backend),
-  heartbeat:/api\/voice\/heartbeat/.test(frontend) && /handleHeartbeat/.test(backend),
-  roomLimit:/VOICE_ROOM_LIMIT/.test(preloader) && /roomLimit/.test(backend),
-  stunConfigured:/stun:stun\.l\.google\.com:19302/.test(backend),
-  turnEnvironmentSupported:/VOICE_TURN_URLS/.test(backend) && /VOICE_TURN_USERNAME/.test(backend) && /VOICE_TURN_CREDENTIAL/.test(backend),
-  authenticationRequired:/Inicie sesión para usar el audio/.test(backend),
-  voiceCreatedDirectly:/createVoiceSystem/.test(preloader) && /loadIceServersFromEnvironment/.test(preloader),
-  cleanParallelPreloader:preloader.includes("require('./auth-compat-v271.js')") && forbiddenVisualChain.every(item => !preloader.includes(item)),
-  v315PreservesParallelVoice:startsThroughParallelVoice,
-  packageStartsVoiceStack:String(pkg.scripts?.start || '').includes('auth-compat-v315-floors-joystick.js') && startsThroughParallelVoice,
-  dockerUsesVoiceStack:docker.includes('auth-compat-v315-floors-joystick.js') && startsThroughParallelVoice,
+  voiceScriptLoaded:text.campus.includes('/js/ucan_v240_voice.js'),
+  voiceBridgeLoaded:text.loader.includes('/js/ucan_v306_voice_xr_bridge.js?build=V316-20260729-SHARED-VOICE-R20'),
+  allRoomsInFrontend:rooms.every(room => text.frontend.includes(`'${room}'`)),
+  allRoomsInBridge:rooms.every(room => text.bridge.includes(`'${room}'`)),
+  allRoomsInBackend:rooms.every(room => text.backend.includes(`'${room}'`)),
+  allRoomsInParallelPreloader:rooms.every(room => text.parallelPreloader.includes(`'${room}'`)),
+  microphoneCapture:/navigator\.mediaDevices\.getUserMedia/.test(text.frontend),
+  microphoneDiagnostic:/async function testMicrophone/.test(text.bridge),
+  echoCancellation:/echoCancellation:true/.test(text.frontend),
+  noiseSuppression:/noiseSuppression:true/.test(text.frontend),
+  autoGainControl:/autoGainControl:true/.test(text.frontend),
+  webRtcPeerConnection:/new RTCPeerConnection/.test(text.frontend),
+  outgoingTracks:/pc\.addTrack/.test(text.frontend),
+  incomingTracks:/pc\.ontrack/.test(text.frontend),
+  remoteAudioPlayback:/audio\.srcObject\s*=\s*stream/.test(text.frontend) && /audio\.play\(\)/.test(text.frontend),
+  perParticipantVolume:/personalVolumes/.test(text.frontend),
+  roomIsolationFrontend:/currentRoom/.test(text.frontend) && /ROOM_BOUNDS/.test(text.frontend),
+  roomIsolationBackend:/target\.room !== source\.room/.test(text.backend),
+  xrUsesRealCameraPosition:/xr\?\.globalPosition/.test(text.bridge) && /scene\?\.activeCamera\?\.globalPosition/.test(text.bridge),
+  xrAutomaticRoomSwitch:/joinRoom\?\./.test(text.bridge) && /selectRoom\?\./.test(text.bridge),
+  sseSignaling:/text\/event-stream/.test(text.backend) && /peer-joined/.test(text.backend),
+  queuedSignals:/client\.queue\.push/.test(text.backend),
+  heartbeat:/api\/voice\/heartbeat/.test(text.frontend) && /handleHeartbeat/.test(text.backend),
+  roomLimit:/VOICE_ROOM_LIMIT/.test(text.parallelPreloader) && /roomLimit/.test(text.backend),
+  stunConfigured:/stun:stun\.l\.google\.com:19302/.test(text.backend),
+  turnEnvironmentSupported:/VOICE_TURN_URLS/.test(text.backend) && /VOICE_TURN_USERNAME/.test(text.backend) && /VOICE_TURN_CREDENTIAL/.test(text.backend),
+  authenticationRequired:/Inicie sesión para usar el audio/.test(text.backend),
+  voiceCreatedDirectly:/createVoiceSystem/.test(text.parallelPreloader) && /loadIceServersFromEnvironment/.test(text.parallelPreloader),
+  cleanParallelPreloader:text.parallelPreloader.includes("require('./auth-compat-v271.js')") && forbiddenVisualChain.every(item => !text.parallelPreloader.includes(item)),
+  v316PreservesParallelVoice:startsThroughParallelVoice,
+  packageStartsVoiceStack:String(pkg.scripts?.start || '').includes('auth-compat-v316-complete-audit.js') && startsThroughParallelVoice,
+  dockerUsesVoiceStack:text.docker.includes('auth-compat-v316-complete-audit.js') && startsThroughParallelVoice,
   packageChecksVoiceFiles:String(pkg.scripts?.check || '').includes('lib/voice-signaling.js') && String(pkg.scripts?.check || '').includes('auth-compat-v313-parallel.js') && String(pkg.scripts?.check || '').includes('ucan_v306_voice_xr_bridge.js'),
   packageRunsVoiceAudit:String(pkg.scripts?.test || '').includes('audit:voice-v306')
 };
 
 for (const [name, code] of [
-  ['frontendSyntax', frontend],
-  ['bridgeSyntax', bridge],
-  ['loaderSyntax', loader],
-  ['backendSyntax', backend],
-  ['preloaderSyntax', preloader],
-  ['upperPreloaderSyntax', upperPreloader]
+  ['frontendSyntax', text.frontend],
+  ['bridgeSyntax', text.bridge],
+  ['loaderSyntax', text.loader],
+  ['backendSyntax', text.backend],
+  ['parallelPreloaderSyntax', text.parallelPreloader],
+  ['upperPreloaderSyntax', text.upperPreloader]
 ]) {
   try { new Function(code); }
   catch (error) {
@@ -96,10 +90,10 @@ for (const [name, code] of [
 
 const failures = Object.entries(checks).filter(([, value]) => value !== true);
 const report = {
-  version:'V315',
+  version:'V316',
   voiceLayer:'V313/V306',
   feature:'Audio WebRTC compartido en browser, móvil, VR y MR',
-  architecture:'V315 locomotion over clean parallel voice preloader',
+  architecture:'V316 one-rig over clean parallel voice preloader',
   ok:failures.length === 0,
   rooms,
   checks,
