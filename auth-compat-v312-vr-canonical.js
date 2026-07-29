@@ -1,6 +1,9 @@
 'use strict';
 
 const http = require('http');
+const baseWriteHead = http.ServerResponse.prototype.writeHead;
+const baseWrite = http.ServerResponse.prototype.write;
+const baseEnd = http.ServerResponse.prototype.end;
 const { VERSION, REVISION, BUILD, API_PREFIX, createRealtimeWorld } = require('./lib/realtime-world-v312');
 
 const LOADER_BUILD = 'V312-20260729-VR-CANONICAL-REALTIME-LOADER-R16';
@@ -64,9 +67,9 @@ function transformHtml(value) {
     /\/js\/ucan_v266_keyboard_jump\.js(?:\?build=[^"']+)?/g,
     `/js/ucan_v266_keyboard_jump.js?build=${LOADER_BUILD}`
   );
-  html = html.replace(/UCAN Academic Mall V(?:272|311)/g, 'UCAN Academic Mall V312');
-  html = html.replace(/COMPILACIÓN V(?:272|311)(?: · UN SOLO MUNDO)?(?: ACTIVA)?/g, 'COMPILACIÓN V312 · ENTORNO VR CANÓNICO');
-  html = html.replace(/V272: el entorno VR utiliza la misma escena de computadora[^<]*/g, 'V312: el browser utiliza el entorno visual de VR; usuarios, avatares e interacción operan en un solo mundo.');
+  html = html.replace(/UCAN Academic Mall V(?:272|283|311)/g, 'UCAN Academic Mall V312');
+  html = html.replace(/COMPILACIÓN V(?:272|283|311)(?: · UN SOLO MUNDO)?(?: ACTIVA)?/g, 'COMPILACIÓN V312 · ENTORNO VR CANÓNICO');
+  html = html.replace(/V(?:272|283):[^<]*/g, 'V312: el browser utiliza el entorno visual de VR; usuarios, avatares e interacción operan en un solo mundo.');
   return html;
 }
 
@@ -117,10 +120,6 @@ function transformVersion(value) {
   }
 }
 
-const previousWriteHead = http.ServerResponse.prototype.writeHead;
-const previousWrite = http.ServerResponse.prototype.write;
-const previousEnd = http.ServerResponse.prototype.end;
-
 http.ServerResponse.prototype.writeHead = function writeHeadV312(statusCode, statusMessage, headers) {
   let message = statusMessage;
   let nextHeaders = headers;
@@ -160,8 +159,8 @@ http.ServerResponse.prototype.writeHead = function writeHeadV312(statusCode, sta
       nextHeaders.Expires = '0';
     }
   }
-  if (message === undefined) return previousWriteHead.call(this, statusCode, nextHeaders);
-  return previousWriteHead.call(this, statusCode, message, nextHeaders);
+  if (message === undefined) return baseWriteHead.call(this, statusCode, nextHeaders);
+  return baseWriteHead.call(this, statusCode, message, nextHeaders);
 };
 
 http.ServerResponse.prototype.write = function writeV312(chunk, encoding, callback) {
@@ -171,7 +170,7 @@ http.ServerResponse.prototype.write = function writeV312(chunk, encoding, callba
     else if (typeof callback === 'function') process.nextTick(callback);
     return true;
   }
-  return previousWrite.call(this, chunk, encoding, callback);
+  return baseWrite.call(this, chunk, encoding, callback);
 };
 
 http.ServerResponse.prototype.end = function endV312(chunk, encoding, callback) {
@@ -186,7 +185,7 @@ http.ServerResponse.prototype.end = function endV312(chunk, encoding, callback) 
   } catch (error) {
     console.error('[UCAN V312 response]', error);
   }
-  return previousEnd.call(this, body, encoding, callback);
+  return baseEnd.call(this, body, encoding, callback);
 };
 
 const previousCreateServer = http.createServer;
