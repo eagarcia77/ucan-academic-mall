@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = 'V312';
-  const BUILD = 'V312-20260729-VR-CANONICAL-REALTIME-LOADER-R16';
+  const VERSION = 'V313';
+  const BUILD = 'V313-20260729-PARALLEL-LOADER-R17';
   const MOVEMENT_CODES = new Set([
     'KeyW', 'KeyA', 'KeyS', 'KeyD',
     'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
@@ -33,7 +33,7 @@
   }
 
   function modalIsOpen() {
-    return Boolean(document.querySelector('#ucanProfileModal.open, #boardPanel.open, #livePanelViewer.open, #ucanVisualValidationV310.open, #ucanRealtimeWorldV312.open'));
+    return Boolean(document.querySelector('#ucanProfileModal.open, #boardPanel.open, #livePanelViewer.open, #ucanRealtimeWorldV312.open'));
   }
 
   function releaseMovementKeys() {
@@ -121,7 +121,7 @@
     const canvas = document.getElementById('renderCanvas');
     if (canvas) canvas.tabIndex = 0;
     const status = document.getElementById('status');
-    if (status) status.textContent = 'El browser utiliza el entorno visual de VR. Use W/A/S/D o las flechas para caminar y la barra espaciadora para saltar.';
+    if (status) status.textContent = 'Browser, móvil, VR y MR utilizan una sola escena. Use W/A/S/D o las flechas para caminar y la barra espaciadora para saltar.';
     window.__UCAN_KEYBOARD_JUMP_AUDIT__ = {
       version:VERSION,
       build:BUILD,
@@ -155,76 +155,90 @@
     } else next();
   }
 
-  function loadRealtimeWorldV312() {
+  function loadXrEntryV313() {
     const runtime = appendScript(
-      '/js/ucan_v312_realtime_world.js?build=V312-20260729-VR-CANONICAL-REALTIME-WORLD-R16',
-      'data-ucan-v312-realtime-world',
-      '[UCAN V312] No se pudo cargar la presencia e interacción en tiempo real.'
+      '/js/ucan_v313_xr_entry.js?build=V313-20260729-PARALLEL-XR-ENTRY-R17',
+      'data-ucan-v313-xr-entry',
+      '[UCAN V313] No se pudo cargar la entrada XR paralela.'
     );
-    window.__UCAN_CANONICAL_LOADER_V312__ = {
+    window.__UCAN_PARALLEL_LOADER_V313__ = {
       version:VERSION,
       build:BUILD,
       installed:true,
-      authoritativeEnvironment:'VR',
-      browserUsesVrEnvironment:true,
       oneScene:true,
-      sameFloor3Stairs:true,
+      allEnvironmentsParallel:true,
+      sceneRuntimeLoaded:Boolean(document.querySelector('script[data-ucan-v313-parallel-scene="true"]')),
+      interactionRuntimeLoaded:Boolean(document.querySelector('script[data-ucan-v313-parallel-interaction="true"]')),
+      xrEntryLoaded:Boolean(runtime || document.querySelector('script[data-ucan-v313-xr-entry="true"]')),
+      realtimeWorldLoaded:Boolean(document.querySelector('script[data-ucan-v312-realtime-world="true"]')),
       oldQuestVisualLayersLoaded:false,
+      strictParityV309Loaded:false,
+      oldXrEntryV304Loaded:false,
       oldPresenceV307Loaded:false,
       oldInteractionV308Loaded:false,
       oldUnifiedV311Loaded:false,
-      realtimeWorldLoaded:Boolean(runtime || document.querySelector('script[data-ucan-v312-realtime-world="true"]')),
-      environmentSpecificGeometryDisabled:true,
-      cameraAndControlsOnlyDifference:true
+      oldVrCanonicalV312Loaded:false,
+      modeSpecificGeometryDisabled:true,
+      cameraAndInputAdapterOnlyDifference:true
     };
+  }
+
+  function loadParallelInteractionV313() {
+    return appendScript(
+      '/js/ucan_v313_parallel_interaction.js?build=V313-20260729-PARALLEL-INTERACTION-R17',
+      'data-ucan-v313-parallel-interaction',
+      '[UCAN V313] No se pudo cargar la interacción paralela.'
+    );
+  }
+
+  function loadRealtimeWorldV312() {
+    return appendScript(
+      '/js/ucan_v312_realtime_world.js?build=V313-20260729-PARALLEL-REALTIME-TRANSPORT-R17',
+      'data-ucan-v312-realtime-world',
+      '[UCAN V313] No se pudo cargar la presencia en tiempo real.'
+    );
   }
 
   function loadVoiceBridgeV306() {
     return appendScript(
-      '/js/ucan_v306_voice_xr_bridge.js?build=V306-20260728-VOICE-XR-ROOM-BRIDGE',
+      '/js/ucan_v306_voice_xr_bridge.js?build=V313-20260729-PARALLEL-VOICE-R17',
       'data-ucan-v306-voice-xr-bridge',
-      '[UCAN Voice V306] No se pudo cargar el audio compartido.'
+      '[UCAN V313] No se pudo cargar el audio compartido.'
     );
   }
 
-  function loadStrictParityV309() {
+  function loadParallelSceneV313() {
     return appendScript(
-      '/js/ucan_v309_strict_visual_parity.js?build=V309-20260728-STRICT-BROWSER-VR-VISUAL-PARITY-R13',
-      'data-ucan-v309-strict-visual-parity',
-      '[UCAN V309] No se pudo cargar la paridad visual estricta.'
-    );
-  }
-
-  function loadVrCanonicalSceneV312() {
-    return appendScript(
-      '/js/ucan_v312_vr_canonical_scene.js?build=V312-20260729-VR-CANONICAL-SCENE-R16',
-      'data-ucan-v312-vr-canonical-scene',
-      '[UCAN V312] No se pudo aplicar el entorno VR como escena canónica.'
+      '/js/ucan_v313_parallel_scene.js?build=V313-20260729-PARALLEL-CANONICAL-SCENE-R17',
+      'data-ucan-v313-parallel-scene',
+      '[UCAN V313] No se pudo cargar la escena canónica paralela.'
     );
   }
 
   function loadFloor1BrandR10() {
     return appendScript(
-      '/js/ucan_v306_floor1_brand_orientation_r10.js?build=V306-20260728-FLOOR1-BRAND-UPRIGHT-VR-R10',
+      '/js/ucan_v306_floor1_brand_orientation_r10.js?build=V313-20260729-PARALLEL-BRAND-R17',
       'data-ucan-v306-floor1-brand-r10',
-      '[UCAN R10] No se pudo cargar la orientación canónica de anuncios.'
+      '[UCAN V313] No se pudo cargar la orientación canónica de anuncios.'
     );
   }
 
   function loadExternalPatioV305() {
     return appendScript(
-      '/js/ucan_v305_external_tropical_patio_fix.js?build=V305-20260728-EXTERNAL-TROPICAL-PATIO-PERIMETER-R1',
+      '/js/ucan_v305_external_tropical_patio_fix.js?build=V313-20260729-PARALLEL-PATIO-R17',
       'data-ucan-v305-external-tropical-patio',
-      '[UCAN V305] No se pudo cargar el patio exterior canónico.'
+      '[UCAN V313] No se pudo cargar el patio exterior común.'
     );
   }
 
-  function loadCanonicalRuntime() {
+  function loadParallelRuntime() {
     chain(loadExternalPatioV305, () =>
       chain(loadFloor1BrandR10, () =>
-        chain(loadVrCanonicalSceneV312, () =>
-          chain(loadStrictParityV309, () =>
-            chain(loadVoiceBridgeV306, loadRealtimeWorldV312)
+        chain(loadParallelSceneV313, () =>
+          chain(loadVoiceBridgeV306, () =>
+            chain(loadRealtimeWorldV312, () =>
+              chain(loadParallelInteractionV313, loadXrEntryV313)
+            )
           )
         )
       )
@@ -237,5 +251,5 @@
     if (connectToScene() || attempts >= 300) window.clearInterval(timer);
   }, 100);
 
-  loadCanonicalRuntime();
+  loadParallelRuntime();
 })();
