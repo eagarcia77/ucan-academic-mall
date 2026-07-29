@@ -9,5 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --chown=node:node . .
 USER node
 ENV HOME=/tmp/ucan-home
+ENV DATA_DIR=/app/data
+VOLUME ["/app/data"]
 EXPOSE 3000
-CMD ["node", "-r", "./auth-compat-v309-parity.js", "server.js"]
+CMD ["node", "-r", "./auth-compat-v311-unified.js", "server.js"]
