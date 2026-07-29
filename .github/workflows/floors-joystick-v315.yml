@@ -1,0 +1,90 @@
+name: Floors and Joystick V315
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'auth-compat-v315-floors-joystick.js'
+      - 'public/js/ucan_v315_unified_floors_joystick.js'
+      - 'verify_v315_floors_joystick.js'
+      - 'Dockerfile'
+      - 'package.json'
+      - '.github/workflows/floors-joystick-v315.yml'
+  pull_request:
+    paths:
+      - 'auth-compat-v315-floors-joystick.js'
+      - 'public/js/ucan_v315_unified_floors_joystick.js'
+      - 'verify_v315_floors_joystick.js'
+      - 'Dockerfile'
+      - 'package.json'
+      - '.github/workflows/floors-joystick-v315.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate floor parity and complete joystick
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Repository tests
+        run: npm test
+      - name: Start V315 server
+        env:
+          PORT: '3100'
+          DATA_DIR: ${{ runner.temp }}/ucan-v315-data
+          ADMIN_INITIAL_USERNAME: admin
+          ADMIN_INITIAL_PASSWORD: Floors-Joystick-V315!
+          ADMIN_INITIAL_EMAIL: admin-v315@example.test
+        run: |
+          mkdir -p "$DATA_DIR"
+          node -r ./auth-compat-v315-floors-joystick.js server.js > "$RUNNER_TEMP/ucan-v315-server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/ucan-v315-server.pid"
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3100/health > "$RUNNER_TEMP/health.json"; then
+              exit 0
+            fi
+            sleep 0.3
+          done
+          cat "$RUNNER_TEMP/ucan-v315-server.log"
+          exit 1
+      - name: Verify version
+        run: |
+          curl -fsS http://127.0.0.1:3100/version > "$RUNNER_TEMP/version.json"
+          node - <<'NODE'
+          const fs=require('fs');
+          for(const name of ['health','version']){
+            const value=JSON.parse(fs.readFileSync(`${process.env.RUNNER_TEMP}/${name}.json`,'utf8'));
+            if(value.version!=='V315')throw new Error(`${name}: versión ${value.version}`);
+            if(value.architecture!=='one-scene-one-locomotion-floor-parity')throw new Error(`${name}: arquitectura incorrecta`);
+            for(const key of ['sameFloor1BrowserVr','sameFloor2BrowserVr','sameFloor3BrowserVr','sameMovementBrowserVr','oneLocomotionEngine','leftJoystickMove','rightJoystickTurn','rightJoystickForwardTeleport'])if(value[key]!==true)throw new Error(`${name}: ${key} no está activo`);
+            if(value.legacyV272LocomotionLoaded!==false||value.legacyV304XrEntryLoaded!==false)throw new Error(`${name}: controlador heredado activo`);
+          }
+          NODE
+      - name: Login and inspect campus HTML
+        run: |
+          curl -fsS -c "$RUNNER_TEMP/cookies.txt" -H 'Content-Type: application/json' -d '{"login":"admin","password":"Floors-Joystick-V315!"}' http://127.0.0.1:3100/api/auth/login > "$RUNNER_TEMP/login.json"
+          curl -fsS -b "$RUNNER_TEMP/cookies.txt" http://127.0.0.1:3100/campus > "$RUNNER_TEMP/campus.html"
+          grep -q 'UCAN Academic Mall V315' "$RUNNER_TEMP/campus.html"
+          grep -q 'ucan_v315_unified_floors_joystick.js' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v272_xr_desktop_parity.js' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v304_xr_entry_mr_fix.js' "$RUNNER_TEMP/campus.html"
+          node - <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync(`${process.env.RUNNER_TEMP}/campus.html`,'utf8');
+          const v315=html.indexOf('ucan_v315_unified_floors_joystick.js');
+          const scene=html.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');
+          if(v315<0||scene<0||v315>=scene)throw new Error('V315 no carga antes de crear la escena');
+          NODE
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/ucan-v315-server.pid" ]; then kill "$(cat "$RUNNER_TEMP/ucan-v315-server.pid")" 2>/dev/null || true; fi
+          if [ -f "$RUNNER_TEMP/ucan-v315-server.log" ]; then tail -n 120 "$RUNNER_TEMP/ucan-v315-server.log"; fi
