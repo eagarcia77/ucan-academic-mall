@@ -128,3 +128,5 @@ jobs:
           if [ -f "$RUNNER_TEMP/ucan-v316-server.log" ]; then
             tail -n 160 "$RUNNER_TEMP/ucan-v316-server.log"
           fi
+
+# Validation trigger for V316 R20.
