@@ -7,7 +7,7 @@ const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
 const checks={
   runtimeSyntax:true,
   version:/VERSION='V314'/.test(runtime)&&/REVISION='R18'/.test(runtime),
-  fullTransformAudit:/fullMeshTransformAudit:true/.test(runtime)&&/position:r\.dynamic\?null/.test(runtime)&&/rotation:r\.dynamic\?null/.test(runtime),
+  fullTransformAudit:/fullMeshTransformAudit:true/.test(runtime)&&/position:d\?null/.test(runtime)&&/rotation:d\?null/.test(runtime)&&/scaling:d\?null/.test(runtime),
   fullMaterialAudit:/fullMaterialPropertyAudit:true/.test(runtime)&&/needDepthPrePass:true/.test(runtime)&&/forceDepthWrite:true/.test(runtime),
   fullLightAudit:/fullLightAudit:true/.test(runtime)&&/function rl\(/.test(runtime),
   fullSceneAudit:/fullSceneEnvironmentAudit:true/.test(runtime)&&/function rs\(/.test(runtime),
