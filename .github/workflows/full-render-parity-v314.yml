@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'public/campus.html'
+      - 'public/js/ucan_v266_keyboard_jump.js'
       - 'public/js/ucan_v314_render_parity.js'
       - 'verify_v314_full_render_parity.js'
       - 'package.json'
@@ -12,6 +13,7 @@ on:
   pull_request:
     paths:
       - 'public/campus.html'
+      - 'public/js/ucan_v266_keyboard_jump.js'
       - 'public/js/ucan_v314_render_parity.js'
       - 'verify_v314_full_render_parity.js'
       - 'package.json'
@@ -55,8 +57,10 @@ jobs:
         run: |
           curl -fsS -c "$RUNNER_TEMP/cookies.txt" -H 'Content-Type: application/json' -d '{"login":"admin","password":"Render-Parity-V314-A7!"}' http://127.0.0.1:3100/api/auth/login > "$RUNNER_TEMP/login.json"
           curl -fsS -b "$RUNNER_TEMP/cookies.txt" http://127.0.0.1:3100/campus > "$RUNNER_TEMP/campus.html"
+          curl -fsS http://127.0.0.1:3100/js/ucan_v266_keyboard_jump.js > "$RUNNER_TEMP/loader.js"
           grep -q 'ucan_v314_render_parity.js?build=V314-20260729-FULL-RENDER-PARITY-R18' "$RUNNER_TEMP/campus.html"
-          grep -q 'ucan_v313_parallel_scene.js' "$RUNNER_TEMP/campus.html"
+          grep -q 'V313-20260729-PARALLEL-LOADER-R17' "$RUNNER_TEMP/campus.html"
+          grep -q 'ucan_v313_parallel_scene.js?build=V313-20260729-PARALLEL-CANONICAL-SCENE-R17' "$RUNNER_TEMP/loader.js"
           ! grep -q 'ucan_v309_strict_visual_parity.js' "$RUNNER_TEMP/campus.html"
           ! grep -q 'ucan_v310_visual_validation' "$RUNNER_TEMP/campus.html"
       - name: Stop application
