@@ -1,9 +1,9 @@
 (() => {
   'use strict';
 
-  const VERSION = 'V316';
-  const REVISION = 'R20';
-  const BUILD = 'V316-20260729-SOCIAL-LOADER-NO-DUPLICATE-XR-R20';
+  const VERSION = 'V317';
+  const REVISION = 'R21';
+  const BUILD = 'V317-20260729-SOCIAL-LOADER-ESCALATOR-CLEARANCE-R21';
 
   function appendScript(src, marker, errorMessage) {
     if (document.querySelector(`script[${marker}="true"]`)) return null;
@@ -28,49 +28,57 @@
 
   function loadExternalPatio() {
     return appendScript(
-      '/js/ucan_v305_external_tropical_patio_fix.js?build=V316-20260729-COMMON-PATIO-R20',
-      'data-ucan-v316-external-patio',
-      '[UCAN V316] No se pudo cargar el patio común.'
+      '/js/ucan_v305_external_tropical_patio_fix.js?build=V317-20260729-COMMON-PATIO-R21',
+      'data-ucan-v317-external-patio',
+      '[UCAN V317] No se pudo cargar el patio común.'
     );
   }
 
   function loadFloorOneBranding() {
     return appendScript(
-      '/js/ucan_v306_floor1_brand_orientation_r10.js?build=V316-20260729-COMMON-BRANDING-R20',
-      'data-ucan-v316-floor1-branding',
-      '[UCAN V316] No se pudo cargar la orientación de anuncios.'
+      '/js/ucan_v306_floor1_brand_orientation_r10.js?build=V317-20260729-COMMON-BRANDING-R21',
+      'data-ucan-v317-floor1-branding',
+      '[UCAN V317] No se pudo cargar la orientación de anuncios.'
     );
   }
 
   function loadParallelScene() {
     return appendScript(
-      '/js/ucan_v313_parallel_scene.js?build=V316-20260729-CANONICAL-SCENE-R20',
-      'data-ucan-v316-parallel-scene',
-      '[UCAN V316] No se pudo cargar la escena canónica.'
+      '/js/ucan_v313_parallel_scene.js?build=V317-20260729-CANONICAL-SCENE-R21',
+      'data-ucan-v317-parallel-scene',
+      '[UCAN V317] No se pudo cargar la escena canónica.'
+    );
+  }
+
+  function loadEscalatorClearance() {
+    return appendScript(
+      '/js/ucan_v317_escalator_clearance.js?build=V317-20260729-ESCALATOR-CLEARANCE-R21',
+      'data-ucan-v317-escalator-clearance',
+      '[UCAN V317] No se pudo cargar el despeje de escaleras eléctricas.'
     );
   }
 
   function loadVoiceBridge() {
     return appendScript(
-      '/js/ucan_v306_voice_xr_bridge.js?build=V316-20260729-SHARED-VOICE-R20',
-      'data-ucan-v316-voice-bridge',
-      '[UCAN V316] No se pudo cargar el puente de audio.'
+      '/js/ucan_v306_voice_xr_bridge.js?build=V317-20260729-SHARED-VOICE-R21',
+      'data-ucan-v317-voice-bridge',
+      '[UCAN V317] No se pudo cargar el puente de audio.'
     );
   }
 
   function loadRealtimeWorld() {
     return appendScript(
-      '/js/ucan_v312_realtime_world.js?build=V316-20260729-REALTIME-WORLD-R20',
-      'data-ucan-v316-realtime-world',
-      '[UCAN V316] No se pudo cargar la presencia en tiempo real.'
+      '/js/ucan_v312_realtime_world.js?build=V317-20260729-REALTIME-WORLD-R21',
+      'data-ucan-v317-realtime-world',
+      '[UCAN V317] No se pudo cargar la presencia en tiempo real.'
     );
   }
 
   function loadSharedInteraction() {
     return appendScript(
-      '/js/ucan_v313_parallel_interaction.js?build=V316-20260729-SHARED-INTERACTION-R20',
-      'data-ucan-v316-shared-interaction',
-      '[UCAN V316] No se pudo cargar la interacción compartida.'
+      '/js/ucan_v313_parallel_interaction.js?build=V317-20260729-SHARED-INTERACTION-R21',
+      'data-ucan-v317-shared-interaction',
+      '[UCAN V317] No se pudo cargar la interacción compartida.'
     );
   }
 
@@ -82,21 +90,25 @@
       installed:true,
       xrEntryOwnedByV316:true,
       duplicateXrEntryLoaded:false,
-      parallelSceneLoaded:Boolean(document.querySelector('script[data-ucan-v316-parallel-scene="true"]')),
-      realtimeWorldLoaded:Boolean(document.querySelector('script[data-ucan-v316-realtime-world="true"]')),
-      interactionLoaded:Boolean(document.querySelector('script[data-ucan-v316-shared-interaction="true"]')),
-      voiceLoaded:Boolean(document.querySelector('script[data-ucan-v316-voice-bridge="true"]')),
+      parallelSceneLoaded:Boolean(document.querySelector('script[data-ucan-v317-parallel-scene="true"]')),
+      escalatorClearanceLoaded:Boolean(document.querySelector('script[data-ucan-v317-escalator-clearance="true"]')),
+      realtimeWorldLoaded:Boolean(document.querySelector('script[data-ucan-v317-realtime-world="true"]')),
+      interactionLoaded:Boolean(document.querySelector('script[data-ucan-v317-shared-interaction="true"]')),
+      voiceLoaded:Boolean(document.querySelector('script[data-ucan-v317-voice-bridge="true"]')),
       legacyV313XrEntryLoaded:Boolean(document.querySelector('script[src*="ucan_v313_xr_entry.js"]'))
     };
-    console.info('[UCAN V316 R20] Cargador social instalado sin una segunda entrada XR.');
+    window.__UCAN_SOCIAL_LOADER_V317__ = window.__UCAN_SOCIAL_LOADER_V316__;
+    console.info('[UCAN V317 R21] Cargador social y despeje de escaleras instalados.');
   }
 
   chain(loadExternalPatio, () =>
     chain(loadFloorOneBranding, () =>
       chain(loadParallelScene, () =>
-        chain(loadVoiceBridge, () =>
-          chain(loadRealtimeWorld, () =>
-            chain(loadSharedInteraction, finish)
+        chain(loadEscalatorClearance, () =>
+          chain(loadVoiceBridge, () =>
+            chain(loadRealtimeWorld, () =>
+              chain(loadSharedInteraction, finish)
+            )
           )
         )
       )
