@@ -12,6 +12,7 @@ on:
       - 'auth-compat-v311-unified.js'
       - 'Dockerfile'
       - 'package.json'
+      - 'test_persistent_identity_v311.js'
       - 'verify_v311_unified_world.js'
       - '.github/workflows/unified-world-v311.yml'
   pull_request:
@@ -24,6 +25,7 @@ on:
       - 'auth-compat-v311-unified.js'
       - 'Dockerfile'
       - 'package.json'
+      - 'test_persistent_identity_v311.js'
       - 'verify_v311_unified_world.js'
 
 permissions:
@@ -49,6 +51,9 @@ jobs:
           node --check public/js/ucan_v311_compat_aliases.js
           node --check public/js/ucan_v266_keyboard_jump.js
           node --check auth-compat-v311-unified.js
+          node --check test_persistent_identity_v311.js
           node --check verify_v311_unified_world.js
+      - name: Persistent identity recovery test
+        run: node test_persistent_identity_v311.js
       - name: Unified architecture audit
         run: node verify_v311_unified_world.js
