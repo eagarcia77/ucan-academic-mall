@@ -1,6 +1,5 @@
 'use strict';
 
-// Ejecución CI de confirmación para V312 R16.
 const fs = require('fs');
 const path = require('path');
 
@@ -18,6 +17,7 @@ const files = {
 
 const text = Object.fromEntries(Object.entries(files).map(([key,file]) => [key, fs.readFileSync(file, 'utf8')]));
 const pkg = JSON.parse(text.package);
+const runtimeChain = text.loader.match(/function loadCanonicalRuntime\(\)\s*\{([\s\S]*?)\n\s*\}/)?.[1] || '';
 
 const checks = {
   filesExist:Object.values(files).every(fs.existsSync),
@@ -38,7 +38,7 @@ const checks = {
   loaderUsesV312Scene:text.loader.includes('/js/ucan_v312_vr_canonical_scene.js?build=V312-20260729-VR-CANONICAL-SCENE-R16'),
   loaderUsesV312Realtime:text.loader.includes('/js/ucan_v312_realtime_world.js?build=V312-20260729-VR-CANONICAL-REALTIME-WORLD-R16'),
   loaderDoesNotUseV311Client:!text.loader.includes('ucan_v311_unified_world.js'),
-  v312SceneLoadsBeforeParity:text.loader.indexOf('loadVrCanonicalSceneV312') < text.loader.indexOf('loadStrictParityV309') && text.loader.indexOf('chain(loadVrCanonicalSceneV312') < text.loader.indexOf('chain(loadStrictParityV309'),
+  v312SceneLoadsBeforeParity:runtimeChain.indexOf('chain(loadVrCanonicalSceneV312') >= 0 && runtimeChain.indexOf('chain(loadStrictParityV309') > runtimeChain.indexOf('chain(loadVrCanonicalSceneV312'),
   preloaderExposesV312:text.preloader.includes("architecture:'vr-canonical-one-scene-realtime'") && text.preloader.includes('sameFloor3StairsBrowserVr:true'),
   persistencePreserved:text.preloader.includes("require('./auth-compat-v311-unified.js')") && /MAX_BACKUPS = 60/.test(text.persistence),
   dockerStartsV312:text.docker.includes('./auth-compat-v312-vr-canonical.js'),
