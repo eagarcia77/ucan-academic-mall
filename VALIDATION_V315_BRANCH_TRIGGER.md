@@ -1,1 +1,0 @@
-Marca temporal adicional para completar la validación V315.
