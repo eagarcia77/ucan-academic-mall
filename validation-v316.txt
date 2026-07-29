@@ -1,0 +1,1 @@
+Validación temporal de V316 R20: escena, rig, escaleras, panel, interacción, voz y persistencia.
