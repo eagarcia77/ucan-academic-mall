@@ -1,1 +1,0 @@
-Última marca temporal antes de ejecutar la validación V315.
