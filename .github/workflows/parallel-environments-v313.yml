@@ -15,6 +15,7 @@ on:
       - 'Dockerfile'
       - 'package.json'
       - 'verify_v313_parallel_environments.js'
+      - 'verify_voice_rooms_v306.js'
       - '.github/workflows/parallel-environments-v313.yml'
   pull_request:
     paths:
@@ -29,6 +30,7 @@ on:
       - 'Dockerfile'
       - 'package.json'
       - 'verify_v313_parallel_environments.js'
+      - 'verify_voice_rooms_v306.js'
       - '.github/workflows/parallel-environments-v313.yml'
 
 permissions:
@@ -120,4 +122,4 @@ jobs:
             tail -n 120 "$RUNNER_TEMP/ucan-v313-server.log"
           fi
 
-# CI trigger: V313 R17 integral validation.
+# CI retry: V313 R17 with clean voice audit.
