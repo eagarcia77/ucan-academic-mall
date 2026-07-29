@@ -1,1 +1,0 @@
-Activación final temporal de la validación V315.
