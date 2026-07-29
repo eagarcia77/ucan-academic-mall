@@ -6,6 +6,7 @@ const path = require('path');
 const root = __dirname;
 const files = {
   preloader:path.join(root, 'auth-compat-v313-parallel.js'),
+  v315Preloader:path.join(root, 'auth-compat-v315-floors-joystick.js'),
   loader:path.join(root, 'public/js/ucan_v266_keyboard_jump.js'),
   scene:path.join(root, 'public/js/ucan_v313_parallel_scene.js'),
   interaction:path.join(root, 'public/js/ucan_v313_parallel_interaction.js'),
@@ -31,14 +32,17 @@ const forbiddenServerRequires = [
   "require('./auth-compat-v312-vr-canonical.js')"
 ];
 
+const startsThroughV313 = text.v315Preloader.includes("require('./auth-compat-v313-parallel.js')");
 const checks = {
   filesExist:Object.values(files).every(fs.existsSync),
   preloaderSyntax:true,
+  v315PreloaderSyntax:true,
   loaderSyntax:true,
   sceneSyntax:true,
   interactionSyntax:true,
   xrEntrySyntax:true,
   cleanServerBase:text.preloader.includes("require('./auth-compat-v271.js')") && forbiddenServerRequires.every(item => !text.preloader.includes(item)),
+  v315PreservesV313Server:startsThroughV313,
   onePresenceServer:(text.preloader.match(/createRealtimeWorld\(\)/g) || []).length === 1,
   oldVisualScriptsRemovedFromHtml:text.preloader.includes('ucan_v304_xr_entry_mr_fix') && text.preloader.includes('ucan_v309_strict_visual_parity') && text.preloader.includes('ucan_v310_visual_validation'),
   loaderUsesParallelScene:text.loader.includes('/js/ucan_v313_parallel_scene.js?build=V313-20260729-PARALLEL-CANONICAL-SCENE-R17'),
@@ -60,13 +64,13 @@ const checks = {
   xrEntryHasNoLegacyMrHiding:!text.xrEntry.includes('hiddenForMR') && !text.xrEntry.includes('isSkyOrBackground') && !text.xrEntry.includes('clearColor = new B.Color4'),
   realtimeBidirectional:/browserToVr:true/.test(text.realtime) && /vrToBrowser:true/.test(text.realtime) && /new EventSource/.test(text.realtime),
   persistencePreserved:/MAX_BACKUPS = 60/.test(text.persistence) && text.preloader.includes('installPersistentIdentity'),
-  dockerStartsV313:text.docker.includes('./auth-compat-v313-parallel.js'),
-  packageStartsV313:String(pkg.scripts?.start || '').includes('auth-compat-v313-parallel.js'),
+  dockerStartsParallelStack:text.docker.includes('./auth-compat-v315-floors-joystick.js') && startsThroughV313,
+  packageStartsParallelStack:String(pkg.scripts?.start || '').includes('auth-compat-v315-floors-joystick.js') && startsThroughV313,
   packageChecksV313:String(pkg.scripts?.check || '').includes('ucan_v313_parallel_scene.js') && String(pkg.scripts?.check || '').includes('ucan_v313_parallel_interaction.js') && String(pkg.scripts?.check || '').includes('ucan_v313_xr_entry.js'),
   packageTestsV313:String(pkg.scripts?.test || '').includes('audit:v313')
 };
 
-for (const key of ['preloader','loader','scene','interaction','xrEntry']) {
+for (const key of ['preloader','v315Preloader','loader','scene','interaction','xrEntry']) {
   try { new Function(text[key]); }
   catch (error) {
     checks[`${key}Syntax`] = false;
@@ -78,6 +82,7 @@ const failed = Object.entries(checks).filter(([,value]) => value !== true);
 const report = {
   version:'V313',
   revision:'R17',
+  activeUpperLayer:'V315 R19',
   build:'V313-20260729-PARALLEL-ENVIRONMENTS-R17',
   ok:failed.length === 0,
   checks,
