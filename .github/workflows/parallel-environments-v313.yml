@@ -29,6 +29,7 @@ on:
       - 'Dockerfile'
       - 'package.json'
       - 'verify_v313_parallel_environments.js'
+      - '.github/workflows/parallel-environments-v313.yml'
 
 permissions:
   contents: read
@@ -118,3 +119,5 @@ jobs:
           if [ -f "$RUNNER_TEMP/ucan-v313-server.log" ]; then
             tail -n 120 "$RUNNER_TEMP/ucan-v313-server.log"
           fi
+
+# CI trigger: V313 R17 integral validation.
