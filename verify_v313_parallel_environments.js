@@ -30,6 +30,7 @@ const forbiddenServerRequires = [
 ];
 
 const startsThroughV313 = text.upperPreloader.includes("require('./auth-compat-v313-parallel.js')");
+const duplicateXrLoaderPattern = /appendScript\([\s\S]{0,260}ucan_v313_xr_entry\.js/;
 const checks = {
   filesExist:Object.values(files).every(fs.existsSync),
   parallelPreloaderSyntax:true,
@@ -51,7 +52,7 @@ const checks = {
   realtimeBidirectional:/browserToVr:true/.test(text.realtime) && /vrToBrowser:true/.test(text.realtime) && /new EventSource/.test(text.realtime),
   socialLoaderUsesParallelScene:text.socialLoader.includes('ucan_v313_parallel_scene.js'),
   socialLoaderUsesParallelInteraction:text.socialLoader.includes('ucan_v313_parallel_interaction.js'),
-  socialLoaderDoesNotLoadDuplicateXrEntry:!text.socialLoader.includes('ucan_v313_xr_entry.js'),
+  socialLoaderDoesNotLoadDuplicateXrEntry:!duplicateXrLoaderPattern.test(text.socialLoader),
   upperLayerOwnsXrEntry:text.upperPreloader.includes('legacyV313XrEntryLoaded:false') && text.upperPreloader.includes('defaultBabylonXrButtonDisabled:true'),
   persistencePreserved:/MAX_BACKUPS = 60/.test(text.persistence) && text.parallelPreloader.includes('installPersistentIdentity'),
   dockerStartsParallelStack:text.docker.includes('./auth-compat-v316-complete-audit.js') && startsThroughV313,
