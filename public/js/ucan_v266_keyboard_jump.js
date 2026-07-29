@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = 'V313';
-  const BUILD = 'V313-20260729-PARALLEL-LOADER-R17';
+  const VERSION = 'V315';
+  const BUILD = 'V315-20260729-FLOORS-JOYSTICK-LOADER-R19';
   const MOVEMENT_CODES = new Set([
     'KeyW', 'KeyA', 'KeyS', 'KeyD',
     'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
@@ -36,6 +36,10 @@
     return Boolean(document.querySelector('#ucanProfileModal.open, #boardPanel.open, #livePanelViewer.open, #ucanRealtimeWorldV312.open'));
   }
 
+  function v315ControlsMovement() {
+    return window.__UCAN_V315_LOCOMOTION_ACTIVE__ === true || window.__UCAN_V315_PRELOAD__?.oneLocomotionEngine === true;
+  }
+
   function releaseMovementKeys() {
     for (const code of MOVEMENT_CODES) {
       window.dispatchEvent(new KeyboardEvent('keyup', { code, key:code === 'Space' ? ' ' : '', bubbles:false }));
@@ -55,7 +59,7 @@
     if (event.code === 'Space') {
       event.preventDefault();
       event.stopPropagation();
-      if (!event.repeat) jumpRequested = true;
+      if (!event.repeat && !v315ControlsMovement()) jumpRequested = true;
     }
   }, false);
 
@@ -80,6 +84,7 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden) releaseMovementKeys(); });
 
   function canJump() {
+    if (v315ControlsMovement()) return false;
     if (!scene || !camera || modalIsOpen()) return false;
     if (window.__ucanV254IsRiding?.()) return false;
     return true;
@@ -95,6 +100,11 @@
   }
 
   function updateJump() {
+    if (v315ControlsMovement()) {
+      jumpRequested = false;
+      jumpActive = false;
+      return;
+    }
     if (jumpRequested && !jumpActive) beginJump();
     if (!jumpActive) return;
     if (!canJump()) {
@@ -121,13 +131,14 @@
     const canvas = document.getElementById('renderCanvas');
     if (canvas) canvas.tabIndex = 0;
     const status = document.getElementById('status');
-    if (status) status.textContent = 'Browser, móvil, VR y MR utilizan una sola escena. Use W/A/S/D o las flechas para caminar y la barra espaciadora para saltar.';
+    if (status) status.textContent = 'Pisos 1, 2 y 3 y la locomoción del joystick utilizan un solo controlador V315.';
     window.__UCAN_KEYBOARD_JUMP_AUDIT__ = {
       version:VERSION,
       build:BUILD,
       formTypingProtected:true,
       protectedKeys:[...MOVEMENT_CODES],
-      jumpEnabled:true,
+      jumpEnabled:!v315ControlsMovement(),
+      jumpDisabledByV315:v315ControlsMovement(),
       jumpKey:'Space',
       durationMs:JUMP_DURATION_MS,
       height:JUMP_HEIGHT,
@@ -167,6 +178,7 @@
       installed:true,
       oneScene:true,
       allEnvironmentsParallel:true,
+      v315LocomotionActive:v315ControlsMovement(),
       sceneRuntimeLoaded:Boolean(document.querySelector('script[data-ucan-v313-parallel-scene="true"]')),
       interactionRuntimeLoaded:Boolean(document.querySelector('script[data-ucan-v313-parallel-interaction="true"]')),
       xrEntryLoaded:Boolean(runtime || document.querySelector('script[data-ucan-v313-xr-entry="true"]')),
