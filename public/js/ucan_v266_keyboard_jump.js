@@ -155,12 +155,24 @@
     } else next();
   }
 
+  function loadCompatibilityAliasesV311() {
+    appendScript(
+      '/js/ucan_v311_compat_aliases.js?build=V311-20260729-DIAGNOSTIC-COMPATIBILITY',
+      'data-ucan-v311-compat-aliases',
+      '[UCAN V311] No se pudo cargar la compatibilidad de diagnóstico.'
+    );
+  }
+
   function loadUnifiedWorldV311() {
     const runtime = appendScript(
       '/js/ucan_v311_unified_world.js?build=V311-20260729-ONE-SCENE-ONE-WORLD-R15',
       'data-ucan-v311-unified-world',
       '[UCAN V311] No se pudo cargar el mundo unificado.'
     );
+    if (runtime) {
+      runtime.addEventListener('load', loadCompatibilityAliasesV311, { once:true });
+      runtime.addEventListener('error', loadCompatibilityAliasesV311, { once:true });
+    } else loadCompatibilityAliasesV311();
     window.__UCAN_CANONICAL_LOADER_V311__ = {
       version:VERSION,
       build:BUILD,
