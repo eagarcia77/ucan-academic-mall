@@ -1,0 +1,120 @@
+name: Parallel Environments V313
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'auth-compat-v313-parallel.js'
+      - 'public/js/ucan_v266_keyboard_jump.js'
+      - 'public/js/ucan_v313_parallel_scene.js'
+      - 'public/js/ucan_v313_parallel_interaction.js'
+      - 'public/js/ucan_v313_xr_entry.js'
+      - 'public/js/ucan_v312_realtime_world.js'
+      - 'lib/realtime-world-v312.js'
+      - 'lib/persistent-identity-v311.js'
+      - 'Dockerfile'
+      - 'package.json'
+      - 'verify_v313_parallel_environments.js'
+      - '.github/workflows/parallel-environments-v313.yml'
+  pull_request:
+    paths:
+      - 'auth-compat-v313-parallel.js'
+      - 'public/js/ucan_v266_keyboard_jump.js'
+      - 'public/js/ucan_v313_parallel_scene.js'
+      - 'public/js/ucan_v313_parallel_interaction.js'
+      - 'public/js/ucan_v313_xr_entry.js'
+      - 'public/js/ucan_v312_realtime_world.js'
+      - 'lib/realtime-world-v312.js'
+      - 'lib/persistent-identity-v311.js'
+      - 'Dockerfile'
+      - 'package.json'
+      - 'verify_v313_parallel_environments.js'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate one scene and parallel operation
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Static and persistence tests
+        run: npm test
+
+      - name: Start clean V313 server
+        env:
+          PORT: '3100'
+          DATA_DIR: ${{ runner.temp }}/ucan-v313-data
+          ADMIN_INITIAL_USERNAME: admin
+          ADMIN_INITIAL_PASSWORD: Parallel-V313-Admin7!
+          ADMIN_INITIAL_EMAIL: admin-v313@example.test
+        run: |
+          mkdir -p "$DATA_DIR"
+          node -r ./auth-compat-v313-parallel.js server.js > "$RUNNER_TEMP/ucan-v313-server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/ucan-v313-server.pid"
+          for attempt in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:3100/health > "$RUNNER_TEMP/health.json"; then
+              exit 0
+            fi
+            sleep 0.3
+          done
+          cat "$RUNNER_TEMP/ucan-v313-server.log"
+          exit 1
+
+      - name: Verify health and version
+        run: |
+          curl -fsS http://127.0.0.1:3100/version > "$RUNNER_TEMP/version.json"
+          node - <<'NODE'
+          const fs=require('fs');
+          for (const name of ['health','version']) {
+            const value=JSON.parse(fs.readFileSync(`${process.env.RUNNER_TEMP}/${name}.json`,'utf8'));
+            if (value.version !== 'V313') throw new Error(`${name}: versión ${value.version}`);
+            if (value.architecture !== 'single-canonical-scene-parallel-environments') throw new Error(`${name}: arquitectura incorrecta`);
+            if (value.sameGeometryEveryEnvironment !== true) throw new Error(`${name}: geometría no declarada en paralelo`);
+            if (value.sameInteractionPipelineEveryEnvironment !== true) throw new Error(`${name}: interacción no declarada en paralelo`);
+            if (value.strictParityV309Loaded !== false) throw new Error(`${name}: V309 continúa activa`);
+            if (value.sceneModifiedOnXrEntry !== false) throw new Error(`${name}: la escena cambia al entrar en XR`);
+          }
+          NODE
+
+      - name: Verify patched identity
+        run: |
+          curl -fsS http://127.0.0.1:3100/js/ucan_v265_identity.js > "$RUNNER_TEMP/identity.js"
+          grep -q "version:'V313'" "$RUNNER_TEMP/identity.js"
+          grep -q 'LEGACY_PRESENCE_DISABLED_V313' "$RUNNER_TEMP/identity.js"
+          ! grep -q 'presenceLoop();setInterval(presenceLoop,2200);' "$RUNNER_TEMP/identity.js"
+
+      - name: Login and inspect final campus HTML
+        run: |
+          curl -fsS -c "$RUNNER_TEMP/cookies.txt" \
+            -H 'Content-Type: application/json' \
+            -d '{"login":"admin","password":"Parallel-V313-Admin7!"}' \
+            http://127.0.0.1:3100/api/auth/login > "$RUNNER_TEMP/login.json"
+          curl -fsS -b "$RUNNER_TEMP/cookies.txt" http://127.0.0.1:3100/campus > "$RUNNER_TEMP/campus.html"
+          grep -q 'UCAN Academic Mall V313' "$RUNNER_TEMP/campus.html"
+          grep -q 'V313-20260729-PARALLEL-LOADER-R17' "$RUNNER_TEMP/campus.html"
+          grep -q 'ucan_v283_unified_xr_runtime.js' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v304_xr_entry_mr_fix.js' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v309_strict_visual_parity.js' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v310_visual_validation' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v311_unified_world.js' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v312_vr_canonical_scene.js' "$RUNNER_TEMP/campus.html"
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/ucan-v313-server.pid" ]; then
+            kill "$(cat "$RUNNER_TEMP/ucan-v313-server.pid")" 2>/dev/null || true
+          fi
+          if [ -f "$RUNNER_TEMP/ucan-v313-server.log" ]; then
+            tail -n 120 "$RUNNER_TEMP/ucan-v313-server.log"
+          fi
