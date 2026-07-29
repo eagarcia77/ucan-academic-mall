@@ -1,0 +1,1 @@
+Validación temporal de V315 mediante GitHub Actions.
