@@ -25,3 +25,4 @@ const failed=Object.entries(checks).filter(([,value])=>value!==true);
 const report={version:'V314',revision:'R18',build:'V314-20260729-FULL-RENDER-PARITY-R18',ok:failed.length===0,checks,failed:failed.map(([name,value])=>({name,value})),physicalValidationRequired:['Desplegar el commit actual en Render.','Abrir el mismo punto de observación en browser y Meta Quest.','Confirmar hashesMatch=true en ambos dispositivos.','Comparar geometría, iluminación, cristales y objetos visibles.']};
 console.log(JSON.stringify(report,null,2));
 if(!report.ok)process.exitCode=1;
+// CI trigger for temporary V314 validation branch.
