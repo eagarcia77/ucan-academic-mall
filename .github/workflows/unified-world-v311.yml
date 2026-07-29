@@ -1,0 +1,54 @@
+name: Unified World V311
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'lib/persistent-identity-v311.js'
+      - 'lib/unified-world-v311.js'
+      - 'public/js/ucan_v311_unified_world.js'
+      - 'public/js/ucan_v311_compat_aliases.js'
+      - 'public/js/ucan_v266_keyboard_jump.js'
+      - 'auth-compat-v311-unified.js'
+      - 'Dockerfile'
+      - 'package.json'
+      - 'verify_v311_unified_world.js'
+      - '.github/workflows/unified-world-v311.yml'
+  pull_request:
+    paths:
+      - 'lib/persistent-identity-v311.js'
+      - 'lib/unified-world-v311.js'
+      - 'public/js/ucan_v311_unified_world.js'
+      - 'public/js/ucan_v311_compat_aliases.js'
+      - 'public/js/ucan_v266_keyboard_jump.js'
+      - 'auth-compat-v311-unified.js'
+      - 'Dockerfile'
+      - 'package.json'
+      - 'verify_v311_unified_world.js'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Audit one-scene one-world architecture
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Syntax checks
+        run: |
+          node --check lib/persistent-identity-v311.js
+          node --check lib/unified-world-v311.js
+          node --check public/js/ucan_v311_unified_world.js
+          node --check public/js/ucan_v311_compat_aliases.js
+          node --check public/js/ucan_v266_keyboard_jump.js
+          node --check auth-compat-v311-unified.js
+          node --check verify_v311_unified_world.js
+      - name: Unified architecture audit
+        run: node verify_v311_unified_world.js
