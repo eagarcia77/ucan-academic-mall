@@ -12,4 +12,4 @@ ENV HOME=/tmp/ucan-home
 ENV DATA_DIR=/app/data
 VOLUME ["/app/data"]
 EXPOSE 3000
-CMD ["node", "-r", "./auth-compat-v313-parallel.js", "server.js"]
+CMD ["node", "-r", "./auth-compat-v315-floors-joystick.js", "server.js"]
