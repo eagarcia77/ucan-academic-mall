@@ -1,0 +1,130 @@
+name: Complete Browser VR Audit V316
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'auth-compat-v316-complete-audit.js'
+      - 'public/js/ucan_v316_complete_browser_vr_audit.js'
+      - 'public/js/ucan_v316_social_loader.js'
+      - 'auth-compat-v313-parallel.js'
+      - 'public/js/ucan_v313_parallel_scene.js'
+      - 'public/js/ucan_v313_parallel_interaction.js'
+      - 'public/js/ucan_v312_realtime_world.js'
+      - 'public/js/ucan_v314_render_parity.js'
+      - 'lib/persistent-identity-v311.js'
+      - 'Dockerfile'
+      - 'package.json'
+      - 'verify_v316_complete_browser_vr_audit.js'
+      - 'verify_v313_parallel_environments.js'
+      - 'verify_voice_rooms_v306.js'
+      - '.github/workflows/complete-audit-v316.yml'
+  pull_request:
+    paths:
+      - 'auth-compat-v316-complete-audit.js'
+      - 'public/js/ucan_v316_complete_browser_vr_audit.js'
+      - 'public/js/ucan_v316_social_loader.js'
+      - 'auth-compat-v313-parallel.js'
+      - 'public/js/ucan_v313_parallel_scene.js'
+      - 'public/js/ucan_v313_parallel_interaction.js'
+      - 'public/js/ucan_v312_realtime_world.js'
+      - 'public/js/ucan_v314_render_parity.js'
+      - 'lib/persistent-identity-v311.js'
+      - 'Dockerfile'
+      - 'package.json'
+      - 'verify_v316_complete_browser_vr_audit.js'
+      - 'verify_v313_parallel_environments.js'
+      - 'verify_voice_rooms_v306.js'
+      - '.github/workflows/complete-audit-v316.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate full browser and VR stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run repository tests
+        run: npm test
+
+      - name: Start V316 application
+        env:
+          PORT: '3100'
+          DATA_DIR: ${{ runner.temp }}/ucan-v316-data
+          ADMIN_INITIAL_USERNAME: admin
+          ADMIN_INITIAL_PASSWORD: Complete-V316-Admin7!
+          ADMIN_INITIAL_EMAIL: admin-v316@example.test
+        run: |
+          mkdir -p "$DATA_DIR"
+          node -r ./auth-compat-v316-complete-audit.js server.js > "$RUNNER_TEMP/ucan-v316-server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/ucan-v316-server.pid"
+          for attempt in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:3100/health > "$RUNNER_TEMP/health.json"; then
+              exit 0
+            fi
+            sleep 0.3
+          done
+          cat "$RUNNER_TEMP/ucan-v316-server.log"
+          exit 1
+
+      - name: Verify health and version
+        run: |
+          curl -fsS http://127.0.0.1:3100/version > "$RUNNER_TEMP/version.json"
+          node - <<'NODE'
+          const fs=require('fs');
+          for (const name of ['health','version']) {
+            const value=JSON.parse(fs.readFileSync(`${process.env.RUNNER_TEMP}/${name}.json`,'utf8'));
+            if (value.version !== 'V316') throw new Error(`${name}: versión ${value.version}`);
+            if (value.architecture !== 'one-scene-one-rig-one-panel') throw new Error(`${name}: arquitectura incorrecta`);
+            if (value.oneLocomotionRig !== true) throw new Error(`${name}: falta rig único`);
+            if (value.continuousStairMovement !== true) throw new Error(`${name}: escaleras no continuas`);
+            if (value.scriptedStairTransitions !== false) throw new Error(`${name}: transición programada todavía activa`);
+            if (value.defaultBabylonXrButtonDisabled !== true) throw new Error(`${name}: UI XR automática activa`);
+            if (value.leftPanelSingleController !== true) throw new Error(`${name}: panel no unificado`);
+          }
+          NODE
+
+      - name: Login and inspect final campus HTML
+        run: |
+          curl -fsS -c "$RUNNER_TEMP/cookies.txt" \
+            -H 'Content-Type: application/json' \
+            -d '{"login":"admin","password":"Complete-V316-Admin7!"}' \
+            http://127.0.0.1:3100/api/auth/login > "$RUNNER_TEMP/login.json"
+          curl -fsS -b "$RUNNER_TEMP/cookies.txt" http://127.0.0.1:3100/campus > "$RUNNER_TEMP/campus.html"
+          grep -q 'UCAN Academic Mall V316' "$RUNNER_TEMP/campus.html"
+          grep -q 'ucan_v316_complete_browser_vr_audit.js' "$RUNNER_TEMP/campus.html"
+          grep -q 'data-ucan-v316-complete-audit="true"' "$RUNNER_TEMP/campus.html"
+          grep -q 'ucan_v316_social_loader.js' "$RUNNER_TEMP/campus.html"
+          grep -q 'ucan_v314_render_parity.js' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v272_xr_desktop_parity.js' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v304_xr_entry_mr_fix.js' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v313_xr_entry.js' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v315_unified_floors_joystick.js' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v266_keyboard_jump.js' "$RUNNER_TEMP/campus.html"
+          node - <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync(`${process.env.RUNNER_TEMP}/campus.html`,'utf8');
+          const runtime=html.indexOf('ucan_v316_complete_browser_vr_audit.js');
+          const scene=html.indexOf('ucan_babylon_mall_v265_accounts_avatars.js');
+          if (runtime < 0 || scene < 0 || runtime > scene) throw new Error('V316 no se entrega antes de crear la escena.');
+          NODE
+
+      - name: Stop application
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/ucan-v316-server.pid" ]; then
+            kill "$(cat "$RUNNER_TEMP/ucan-v316-server.pid")" 2>/dev/null || true
+          fi
+          if [ -f "$RUNNER_TEMP/ucan-v316-server.log" ]; then
+            tail -n 160 "$RUNNER_TEMP/ucan-v316-server.log"
+          fi
