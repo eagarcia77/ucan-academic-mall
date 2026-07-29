@@ -1,17 +1,17 @@
 {
-  "name": "ucan-academic-v315",
-  "version": "3.1.5",
-  "description": "UCAN Academic V315 con pisos 1–3 y locomoción completa de joystick unificados entre browser y VR",
+  "name": "ucan-academic-v316",
+  "version": "3.1.6",
+  "description": "UCAN Academic V316 con auditoría completa, rig único, escaleras continuas y panel unificado entre browser y VR",
   "main": "server.js",
   "scripts": {
-    "start": "node -r ./auth-compat-v315-floors-joystick.js server.js",
-    "check": "node --check server.js && node --check lib/auth.js && node --check lib/persistent-identity-v311.js && node --check lib/realtime-world-v312.js && node --check lib/voice-signaling.js && node --check auth-compat-v271.js && node --check auth-compat-v313-parallel.js && node --check auth-compat-v315-floors-joystick.js && node --check public/js/ucan_avatar_shared.js && node --check public/js/ucan_babylon_mall_v265_accounts_avatars.js && node --check public/js/ucan_v265_identity.js && node --check public/js/ucan_v266_keyboard_jump.js && node --check public/js/ucan_v283_unified_xr_runtime.js && node --check public/js/ucan_v305_external_tropical_patio_fix.js && node --check public/js/ucan_v306_floor1_brand_orientation_r10.js && node --check public/js/ucan_v306_voice_xr_bridge.js && node --check public/js/ucan_v312_realtime_world.js && node --check public/js/ucan_v313_parallel_scene.js && node --check public/js/ucan_v313_parallel_interaction.js && node --check public/js/ucan_v313_xr_entry.js && node --check public/js/ucan_v314_render_parity.js && node --check public/js/ucan_v315_unified_floors_joystick.js && node --check test_persistent_identity_v311.js && node --check verify_v313_parallel_environments.js && node --check verify_v314_full_render_parity.js && node --check verify_v315_floors_joystick.js",
+    "start": "node -r ./auth-compat-v316-complete-audit.js server.js",
+    "check": "node --check server.js && node --check lib/auth.js && node --check lib/persistent-identity-v311.js && node --check lib/realtime-world-v312.js && node --check lib/voice-signaling.js && node --check auth-compat-v271.js && node --check auth-compat-v313-parallel.js && node --check auth-compat-v316-complete-audit.js && node --check public/js/ucan_avatar_shared.js && node --check public/js/ucan_babylon_mall_v265_accounts_avatars.js && node --check public/js/ucan_v265_identity.js && node --check public/js/ucan_v283_unified_xr_runtime.js && node --check public/js/ucan_v305_external_tropical_patio_fix.js && node --check public/js/ucan_v306_floor1_brand_orientation_r10.js && node --check public/js/ucan_v306_voice_xr_bridge.js && node --check public/js/ucan_v312_realtime_world.js && node --check public/js/ucan_v313_parallel_scene.js && node --check public/js/ucan_v313_parallel_interaction.js && node --check public/js/ucan_v314_render_parity.js && node --check public/js/ucan_v316_complete_browser_vr_audit.js && node --check public/js/ucan_v316_social_loader.js && node --check test_persistent_identity_v311.js && node --check verify_v313_parallel_environments.js && node --check verify_v314_full_render_parity.js && node --check verify_v316_complete_browser_vr_audit.js && node --check verify_voice_rooms_v306.js",
     "test:persistence-v311": "node test_persistent_identity_v311.js",
     "audit:v313": "node verify_v313_parallel_environments.js",
     "audit:v314": "node verify_v314_full_render_parity.js",
-    "audit:v315": "node verify_v315_floors_joystick.js",
+    "audit:v316": "node verify_v316_complete_browser_vr_audit.js",
     "audit:voice-v306": "node verify_voice_rooms_v306.js",
-    "test": "npm run check && npm run test:persistence-v311 && npm run audit:v313 && npm run audit:v314 && npm run audit:v315 && npm run audit:voice-v306"
+    "test": "npm run check && npm run test:persistence-v311 && npm run audit:v313 && npm run audit:v314 && npm run audit:v316 && npm run audit:voice-v306"
   },
   "dependencies": {}
 }
