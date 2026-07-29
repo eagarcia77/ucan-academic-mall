@@ -1,0 +1,55 @@
+name: VR Canonical World V312
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'lib/realtime-world-v312.js'
+      - 'public/js/ucan_v312_vr_canonical_scene.js'
+      - 'public/js/ucan_v312_realtime_world.js'
+      - 'public/js/ucan_v266_keyboard_jump.js'
+      - 'auth-compat-v312-vr-canonical.js'
+      - 'lib/persistent-identity-v311.js'
+      - 'Dockerfile'
+      - 'package.json'
+      - 'verify_v312_vr_canonical_realtime.js'
+      - '.github/workflows/vr-canonical-v312.yml'
+  pull_request:
+    paths:
+      - 'lib/realtime-world-v312.js'
+      - 'public/js/ucan_v312_vr_canonical_scene.js'
+      - 'public/js/ucan_v312_realtime_world.js'
+      - 'public/js/ucan_v266_keyboard_jump.js'
+      - 'auth-compat-v312-vr-canonical.js'
+      - 'lib/persistent-identity-v311.js'
+      - 'Dockerfile'
+      - 'package.json'
+      - 'verify_v312_vr_canonical_realtime.js'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Validate VR canonical scene and realtime interaction
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Syntax checks
+        run: |
+          node --check lib/realtime-world-v312.js
+          node --check public/js/ucan_v312_vr_canonical_scene.js
+          node --check public/js/ucan_v312_realtime_world.js
+          node --check public/js/ucan_v266_keyboard_jump.js
+          node --check auth-compat-v312-vr-canonical.js
+          node --check verify_v312_vr_canonical_realtime.js
+      - name: V312 architecture audit
+        run: node verify_v312_vr_canonical_realtime.js
+      - name: Persistence recovery test
+        run: node test_persistent_identity_v311.js
