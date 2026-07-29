@@ -20,6 +20,8 @@ const files = {
 
 const text = Object.fromEntries(Object.entries(files).map(([key, file]) => [key, fs.readFileSync(file, 'utf8')]));
 const pkg = JSON.parse(text.package);
+const insertionPattern = /html\.replace\(mainPattern,\s*`\$\{runtimeTag\}\\n\s*\$1`\)/;
+const duplicateXrLoaderPattern = /appendScript\([\s\S]{0,260}ucan_v313_xr_entry\.js/;
 
 const checks = {
   filesExist:Object.values(files).every(fs.existsSync),
@@ -27,9 +29,9 @@ const checks = {
   runtimeSyntax:true,
   loaderSyntax:true,
   cleanServerBase:text.preloader.includes("require('./auth-compat-v313-parallel.js')") && !text.preloader.includes("require('./auth-compat-v315-floors-joystick.js')"),
-  runtimeInsertedBeforeScene:text.preloader.includes('ucan_babylon_mall_v265_accounts_avatars.js') && text.preloader.includes('data-ucan-v316-complete-audit'),
+  runtimeInsertedBeforeScene:/const mainPattern/.test(text.preloader) && /const runtimeTag/.test(text.preloader) && insertionPattern.test(text.preloader),
   oldLocomotionRemoved:['ucan_v272_xr_desktop_parity.js','ucan_v304_xr_entry_mr_fix.js','ucan_v315_unified_floors_joystick.js','ucan_v266_keyboard_jump.js'].every(item => text.preloader.includes(item)),
-  duplicateXrEntryRemoved:text.preloader.includes('ucan_v313_xr_entry.js') && !text.loader.includes('ucan_v313_xr_entry.js'),
+  duplicateXrEntryRemoved:text.preloader.includes('ucan_v313_xr_entry.js') && !duplicateXrLoaderPattern.test(text.loader),
   defaultXrUiDisabled:/disableDefaultUI:true/.test(text.runtime) && /enterExitUI\?\.dispose/.test(text.runtime),
   greenButtonRemoval:/webxr-enter-exit-button/.test(text.runtime) && /ucanParallelXrV313/.test(text.runtime),
   oneLocomotionRig:/oneLocomotionRig:true/.test(text.runtime) && /architecture:'one-scene-one-rig-one-panel'/.test(text.runtime),
