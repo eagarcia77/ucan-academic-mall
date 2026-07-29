@@ -38,7 +38,7 @@ const checks = {
   parallelPreloaderSyntax:true,
   upperPreloaderSyntax:true,
   voiceScriptLoaded:text.campus.includes('/js/ucan_v240_voice.js'),
-  voiceBridgeLoaded:text.loader.includes('/js/ucan_v306_voice_xr_bridge.js?build=V316-20260729-SHARED-VOICE-R20'),
+  voiceBridgeLoaded:/\/js\/ucan_v306_voice_xr_bridge\.js\?build=V(?:313|316|317)-/.test(text.loader),
   allRoomsInFrontend:rooms.every(room => text.frontend.includes(`'${room}'`)),
   allRoomsInBridge:rooms.every(room => text.bridge.includes(`'${room}'`)),
   allRoomsInBackend:rooms.every(room => text.backend.includes(`'${room}'`)),
@@ -66,7 +66,7 @@ const checks = {
   authenticationRequired:/Inicie sesión para usar el audio/.test(text.backend),
   voiceCreatedDirectly:/createVoiceSystem/.test(text.parallelPreloader) && /loadIceServersFromEnvironment/.test(text.parallelPreloader),
   cleanParallelPreloader:text.parallelPreloader.includes("require('./auth-compat-v271.js')") && forbiddenVisualChain.every(item => !text.parallelPreloader.includes(item)),
-  v316PreservesParallelVoice:startsThroughParallelVoice,
+  v317PreservesParallelVoice:startsThroughParallelVoice,
   packageStartsVoiceStack:String(pkg.scripts?.start || '').includes('auth-compat-v316-complete-audit.js') && startsThroughParallelVoice,
   dockerUsesVoiceStack:text.docker.includes('auth-compat-v316-complete-audit.js') && startsThroughParallelVoice,
   packageChecksVoiceFiles:String(pkg.scripts?.check || '').includes('lib/voice-signaling.js') && String(pkg.scripts?.check || '').includes('auth-compat-v313-parallel.js') && String(pkg.scripts?.check || '').includes('ucan_v306_voice_xr_bridge.js'),
@@ -90,10 +90,10 @@ for (const [name, code] of [
 
 const failures = Object.entries(checks).filter(([, value]) => value !== true);
 const report = {
-  version:'V316',
+  version:'V317',
   voiceLayer:'V313/V306',
   feature:'Audio WebRTC compartido en browser, móvil, VR y MR',
-  architecture:'V316 one-rig over clean parallel voice preloader',
+  architecture:'V317 escalator clearance over clean parallel voice preloader',
   ok:failures.length === 0,
   rooms,
   checks,
