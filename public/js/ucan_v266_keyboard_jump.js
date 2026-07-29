@@ -1,7 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION = 'V266';
+  const VERSION = 'V311';
+  const BUILD = 'V311-20260729-CANONICAL-ONE-SCENE-LOADER-R15';
   const MOVEMENT_CODES = new Set([
     'KeyW', 'KeyA', 'KeyS', 'KeyD',
     'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
@@ -32,12 +33,12 @@
   }
 
   function modalIsOpen() {
-    return Boolean(document.querySelector('#ucanProfileModal.open, #boardPanel.open, #livePanelViewer.open'));
+    return Boolean(document.querySelector('#ucanProfileModal.open, #boardPanel.open, #livePanelViewer.open, #ucanVisualValidationV310.open, #ucanUnifiedWorldV311.open'));
   }
 
   function releaseMovementKeys() {
     for (const code of MOVEMENT_CODES) {
-      window.dispatchEvent(new KeyboardEvent('keyup', { code, key: code === 'Space' ? ' ' : '', bubbles: false }));
+      window.dispatchEvent(new KeyboardEvent('keyup', { code, key: code === 'Space' ? ' ' : '', bubbles:false }));
     }
   }
 
@@ -71,14 +72,12 @@
     const canvas = event.target?.closest?.('#renderCanvas');
     if (canvas) {
       canvas.tabIndex = 0;
-      canvas.focus({ preventScroll: true });
+      canvas.focus({ preventScroll:true });
     }
   });
 
   window.addEventListener('blur', releaseMovementKeys);
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) releaseMovementKeys();
-  });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) releaseMovementKeys(); });
 
   function canJump() {
     if (!scene || !camera || modalIsOpen()) return false;
@@ -111,8 +110,7 @@
       return;
     }
     const normalized = Math.max(0, Math.min(1, progress));
-    const offset = 4 * JUMP_HEIGHT * normalized * (1 - normalized);
-    camera.position.y = jumpBaseY + offset;
+    camera.position.y = jumpBaseY + 4 * JUMP_HEIGHT * normalized * (1 - normalized);
   }
 
   function connectToScene() {
@@ -123,18 +121,18 @@
     const canvas = document.getElementById('renderCanvas');
     if (canvas) canvas.tabIndex = 0;
     const status = document.getElementById('status');
-    if (status) status.textContent = 'Use W/A/S/D o las flechas para caminar, la barra espaciadora para saltar y R para reubicarse. Los controles se desactivan mientras escribe.';
+    if (status) status.textContent = 'Browser y VR utilizan una sola escena. Use W/A/S/D o las flechas para caminar y la barra espaciadora para saltar.';
     window.__UCAN_KEYBOARD_JUMP_AUDIT__ = {
-      version: VERSION,
-      formTypingProtected: true,
-      protectedKeys: [...MOVEMENT_CODES],
-      jumpEnabled: true,
-      jumpKey: 'Space',
-      durationMs: JUMP_DURATION_MS,
-      height: JUMP_HEIGHT,
-      connected: true
+      version:VERSION,
+      build:BUILD,
+      formTypingProtected:true,
+      protectedKeys:[...MOVEMENT_CODES],
+      jumpEnabled:true,
+      jumpKey:'Space',
+      durationMs:JUMP_DURATION_MS,
+      height:JUMP_HEIGHT,
+      connected:true
     };
-    console.info('[UCAN V266] Teclado y salto:', window.__UCAN_KEYBOARD_JUMP_AUDIT__);
     return true;
   }
 
@@ -149,109 +147,81 @@
     return script;
   }
 
-  function loadStrictParityV309() {
-    const src = '/js/ucan_v309_strict_visual_parity.js?build=V309-20260728-STRICT-BROWSER-VR-VISUAL-PARITY-R13';
-    appendScript(src, 'data-ucan-v309-strict-visual-parity', '[UCAN V309 R13] No se pudo cargar la paridad visual estricta entre browser y VR.');
+  function chain(loader, next) {
+    const runtime = loader();
+    if (runtime) {
+      runtime.addEventListener('load', next, { once:true });
+      runtime.addEventListener('error', next, { once:true });
+    } else next();
   }
 
-  function loadCrossEnvironmentV308() {
-    const src = '/js/ucan_v308_cross_environment_interaction.js?build=V308-20260728-SINGLE-SCENE-CROSS-ENV-INTERACTION';
-    const runtime = appendScript(src, 'data-ucan-v308-cross-environment', '[UCAN V308] No se pudo cargar la interacción compartida entre browser y Meta Quest.');
-    if (runtime) {
-      runtime.addEventListener('load', loadStrictParityV309, { once:true });
-      runtime.addEventListener('error', loadStrictParityV309, { once:true });
-    } else loadStrictParityV309();
+  function loadUnifiedWorldV311() {
+    const runtime = appendScript(
+      '/js/ucan_v311_unified_world.js?build=V311-20260729-ONE-SCENE-ONE-WORLD-R15',
+      'data-ucan-v311-unified-world',
+      '[UCAN V311] No se pudo cargar el mundo unificado.'
+    );
+    window.__UCAN_CANONICAL_LOADER_V311__ = {
+      version:VERSION,
+      build:BUILD,
+      installed:true,
+      oneScene:true,
+      oldQuestVisualLayersLoaded:false,
+      oldPresenceV307Loaded:false,
+      oldInteractionV308Loaded:false,
+      unifiedWorldLoaded:Boolean(runtime || document.querySelector('script[data-ucan-v311-unified-world="true"]')),
+      environmentSpecificGeometryDisabled:true,
+      cameraAndControlsOnlyDifference:true
+    };
   }
 
   function loadVoiceBridgeV306() {
-    const src = '/js/ucan_v306_voice_xr_bridge.js?build=V306-20260728-VOICE-XR-ROOM-BRIDGE';
-    const runtime = appendScript(src, 'data-ucan-v306-voice-xr-bridge', '[UCAN Voice V306] No se pudo cargar el puente de audio para Meta Quest.');
-    if (runtime) {
-      runtime.addEventListener('load', loadCrossEnvironmentV308, { once:true });
-      runtime.addEventListener('error', loadCrossEnvironmentV308, { once:true });
-    } else loadCrossEnvironmentV308();
+    return appendScript(
+      '/js/ucan_v306_voice_xr_bridge.js?build=V306-20260728-VOICE-XR-ROOM-BRIDGE',
+      'data-ucan-v306-voice-xr-bridge',
+      '[UCAN Voice V306] No se pudo cargar el audio compartido.'
+    );
   }
 
-  function loadPresenceBridgeV307() {
-    const src = '/js/ucan_v307_presence_xr_bridge.js?build=V307-20260728-BROWSER-XR-DEVICE-PRESENCE';
-    const runtime = appendScript(src, 'data-ucan-v307-presence-xr-bridge', '[UCAN V307] No se pudo cargar la presencia compartida entre browser y Meta Quest.');
-    if (runtime) {
-      runtime.addEventListener('load', loadVoiceBridgeV306, { once:true });
-      runtime.addEventListener('error', loadVoiceBridgeV306, { once:true });
-    } else loadVoiceBridgeV306();
+  function loadStrictParityV309() {
+    return appendScript(
+      '/js/ucan_v309_strict_visual_parity.js?build=V309-20260728-STRICT-BROWSER-VR-VISUAL-PARITY-R13',
+      'data-ucan-v309-strict-visual-parity',
+      '[UCAN V309] No se pudo cargar la paridad visual estricta.'
+    );
   }
 
   function loadFloor1BrandR10() {
-    const src = '/js/ucan_v306_floor1_brand_orientation_r10.js?build=V306-20260728-FLOOR1-BRAND-UPRIGHT-VR-R10';
-    const runtime = appendScript(src, 'data-ucan-v306-floor1-brand-r10', '[UCAN V306 R10] No se pudo cargar la corrección exacta de anuncios institucionales del piso 1.');
-    if (runtime) {
-      runtime.addEventListener('load', loadPresenceBridgeV307, { once:true });
-      runtime.addEventListener('error', loadPresenceBridgeV307, { once:true });
-    } else loadPresenceBridgeV307();
-  }
-
-  function loadFloor1TerraceR9() {
-    const src = '/js/ucan_v305_floor1_terrace_vr_r9.js?build=V305-20260728-FLOOR1-ADS-TERRACE-XR-R9';
-    const runtime = appendScript(src, 'data-ucan-v305-floor1-terrace-r9', '[UCAN V305 R9] No se pudo cargar la corrección real de anuncios y joystick XR.');
-    if (runtime) {
-      runtime.addEventListener('load', loadFloor1BrandR10, { once:true });
-      runtime.addEventListener('error', loadFloor1BrandR10, { once:true });
-    } else loadFloor1BrandR10();
-  }
-
-  function loadVrSignsR7() {
-    const src = '/js/ucan_v305_vr_signs_interaction_r7.js?build=V305-20260728-VR-UPRIGHT-SIGNS-INTERACTION-R7';
-    const runtime = appendScript(src, 'data-ucan-v305-vr-signs-r7', '[UCAN V305 R7] No se pudo cargar la corrección final de carteles e interacción VR.');
-    if (runtime) runtime.addEventListener('load', loadFloor1TerraceR9);
-    else loadFloor1TerraceR9();
+    return appendScript(
+      '/js/ucan_v306_floor1_brand_orientation_r10.js?build=V306-20260728-FLOOR1-BRAND-UPRIGHT-VR-R10',
+      'data-ucan-v306-floor1-brand-r10',
+      '[UCAN R10] No se pudo cargar la orientación canónica de anuncios.'
+    );
   }
 
   function loadExternalPatioV305() {
-    const src = '/js/ucan_v305_external_tropical_patio_fix.js?build=V305-20260728-EXTERNAL-TROPICAL-PATIO-PERIMETER-R1';
-    const runtime = appendScript(src, 'data-ucan-v305-external-tropical-patio', '[UCAN V305] No se pudo cargar la reubicación exterior del patio tropical.');
-    if (runtime) runtime.addEventListener('load', loadVrSignsR7);
-    else loadVrSignsR7();
+    return appendScript(
+      '/js/ucan_v305_external_tropical_patio_fix.js?build=V305-20260728-EXTERNAL-TROPICAL-PATIO-PERIMETER-R1',
+      'data-ucan-v305-external-tropical-patio',
+      '[UCAN V305] No se pudo cargar el patio exterior canónico.'
+    );
   }
 
-  function loadR6Guard() {
-    const src = '/js/ucan_v304_r6_legacy_sign_guard.js?build=V304-20260728-R6-LEGACY-SIGN-GUARD';
-    const runtime = appendScript(src, 'data-ucan-v304-r6-sign-guard', '[UCAN V304 R6] No se pudo cargar la protección contra carteles antiguos.');
-    if (runtime) runtime.addEventListener('load', loadExternalPatioV305);
-    else loadExternalPatioV305();
-  }
-
-  function loadInteractionR6() {
-    const src = '/js/ucan_v304_signs_terrace_interaction_r6.js?build=V304-20260728-UPRIGHT-SIGNS-TERRACE-XR-INTERACTION-R6';
-    const runtime = appendScript(src, 'data-ucan-v304-interaction-r6', '[UCAN V304 R6] No se pudo cargar la corrección de carteles e interacción de terraza.');
-    if (runtime) runtime.addEventListener('load', loadR6Guard);
-    else loadR6Guard();
-  }
-
-  function loadGlobalVisualR5() {
-    const src = '/js/ucan_v304_global_glass_signs_r5.js?build=V304-20260725-GLOBAL-GLASS-UPRIGHT-SIGNS-R5';
-    const runtime = appendScript(src, 'data-ucan-v304-global-r5', '[UCAN V304 R5] No se pudo cargar la corrección global de cristales y carteles.');
-    if (runtime) runtime.addEventListener('load', loadInteractionR6);
-    else loadInteractionR6();
-  }
-
-  function loadQuestVisualR4() {
-    const runtimeSrc = '/js/ucan_v304_quest_glass_rails_holiday_r4.js?build=V304-20260725-QUEST-GLASS-RAILS-HOLIDAY-R4';
-    const protectionSrc = '/js/ucan_v304_r4_geometry_protection.js?build=V304-20260725-R4-GEOMETRY-PROTECTION';
-    const runtime = appendScript(runtimeSrc, 'data-ucan-v304-quest-r4', '[UCAN V304 R4] No se pudo cargar la corrección de cristales, barandas y feriados.');
-    const loadProtectionAndR5 = () => {
-      const protection = appendScript(protectionSrc, 'data-ucan-v304-r4-protection', '[UCAN V304 R4] No se pudo cargar la protección geométrica.');
-      if (protection) protection.addEventListener('load', loadGlobalVisualR5);
-      else loadGlobalVisualR5();
-    };
-    if (runtime) runtime.addEventListener('load', loadProtectionAndR5);
-    else loadProtectionAndR5();
+  function loadCanonicalRuntime() {
+    chain(loadExternalPatioV305, () =>
+      chain(loadFloor1BrandR10, () =>
+        chain(loadStrictParityV309, () =>
+          chain(loadVoiceBridgeV306, loadUnifiedWorldV311)
+        )
+      )
+    );
   }
 
   let attempts = 0;
   const timer = window.setInterval(() => {
     attempts += 1;
-    if (connectToScene() || attempts >= 200) window.clearInterval(timer);
+    if (connectToScene() || attempts >= 300) window.clearInterval(timer);
   }, 100);
 
-  loadQuestVisualR4();
+  loadCanonicalRuntime();
 })();
