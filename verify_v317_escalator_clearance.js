@@ -1,4 +1,5 @@
 'use strict';
+// Rama temporal de validación V317.
 
 const fs = require('fs');
 const path = require('path');
