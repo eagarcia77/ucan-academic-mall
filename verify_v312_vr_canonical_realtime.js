@@ -1,5 +1,6 @@
 'use strict';
 
+// Ejecución CI de confirmación para V312 R16.
 const fs = require('fs');
 const path = require('path');
 
