@@ -1,5 +1,6 @@
 'use strict';
 
+// Ejecución CI temporal de la revisión V322 R26.
 const fs = require('fs');
 const path = require('path');
 const root = __dirname;
