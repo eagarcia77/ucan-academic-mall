@@ -1,0 +1,116 @@
+name: VR Safe Landing V319
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'auth-compat-v319-vr-comfort.js'
+      - 'public/js/ucan_v319_social_loader.js'
+      - 'public/js/ucan_v319_floor_route_controller.js'
+      - 'public/js/ucan_v319_vr_accessibility.js'
+      - 'verify_v319_vr_safe_landing.js'
+      - 'verify_voice_rooms_v306.js'
+      - 'package.json'
+      - 'Dockerfile'
+      - '.github/workflows/vr-safe-landing-v319.yml'
+  pull_request:
+    paths:
+      - 'auth-compat-v319-vr-comfort.js'
+      - 'public/js/ucan_v319_social_loader.js'
+      - 'public/js/ucan_v319_floor_route_controller.js'
+      - 'public/js/ucan_v319_vr_accessibility.js'
+      - 'verify_v319_vr_safe_landing.js'
+      - 'verify_voice_rooms_v306.js'
+      - 'package.json'
+      - 'Dockerfile'
+      - '.github/workflows/vr-safe-landing-v319.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate safe VR landing and visual comfort
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run repository tests
+        run: npm test
+
+      - name: Start V319 application
+        env:
+          PORT: '3100'
+          DATA_DIR: ${{ runner.temp }}/ucan-v319-data
+          ADMIN_INITIAL_USERNAME: admin
+          ADMIN_INITIAL_PASSWORD: Comfort-V319-Admin7!
+          ADMIN_INITIAL_EMAIL: admin-v319@example.test
+        run: |
+          mkdir -p "$DATA_DIR"
+          node -r ./auth-compat-v319-vr-comfort.js server.js > "$RUNNER_TEMP/ucan-v319-server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/ucan-v319-server.pid"
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3100/health > "$RUNNER_TEMP/health.json"; then
+              exit 0
+            fi
+            sleep 0.3
+          done
+          cat "$RUNNER_TEMP/ucan-v319-server.log"
+          exit 1
+
+      - name: Verify health and version
+        run: |
+          curl -fsS http://127.0.0.1:3100/version > "$RUNNER_TEMP/version.json"
+          node - <<'NODE'
+          const fs=require('fs');
+          for (const name of ['health','version']) {
+            const value=JSON.parse(fs.readFileSync(`${process.env.RUNNER_TEMP}/${name}.json`,'utf8'));
+            if (value.version !== 'V319') throw new Error(`${name}: versión ${value.version}`);
+            if (value.singleGroundAuthority !== true) throw new Error(`${name}: doble controlador de altura`);
+            if (value.safeFloorTwoLanding !== true) throw new Error(`${name}: salida segura inactiva`);
+            if (value.up12ExitCorridorClear !== true) throw new Error(`${name}: corredor superior no despejado`);
+            if (value.visualComfortExposure !== 0.72) throw new Error(`${name}: exposición incorrecta`);
+            if (value.visualComfortSameBrowserVr !== true) throw new Error(`${name}: confort no compartido`);
+          }
+          NODE
+
+      - name: Login and inspect final campus HTML
+        run: |
+          curl -fsS -c "$RUNNER_TEMP/cookies.txt" \
+            -H 'Content-Type: application/json' \
+            -d '{"login":"admin","password":"Comfort-V319-Admin7!"}' \
+            http://127.0.0.1:3100/api/auth/login > "$RUNNER_TEMP/login.json"
+          curl -fsS -b "$RUNNER_TEMP/cookies.txt" http://127.0.0.1:3100/campus > "$RUNNER_TEMP/campus.html"
+          grep -q 'UCAN Academic Mall V319' "$RUNNER_TEMP/campus.html"
+          grep -q 'ucan_v319_social_loader.js' "$RUNNER_TEMP/campus.html"
+          grep -q 'data-ucan-v319-locomotion="true"' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v318_social_loader.js' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v318_floor_route_controller.js' "$RUNNER_TEMP/campus.html"
+
+      - name: Verify transformed locomotion and render profile
+        run: |
+          curl -fsS -b "$RUNNER_TEMP/cookies.txt" http://127.0.0.1:3100/js/ucan_v316_complete_browser_vr_audit.js > "$RUNNER_TEMP/locomotion.js"
+          curl -fsS -b "$RUNNER_TEMP/cookies.txt" http://127.0.0.1:3100/js/ucan_v314_render_parity.js > "$RUNNER_TEMP/render.js"
+          grep -q '__UCAN_FLOOR_ROUTE_CONTROLLER_V319__?.resolveGround' "$RUNNER_TEMP/locomotion.js"
+          grep -q 'function comfortV319' "$RUNNER_TEMP/render.js"
+          grep -q '__UCAN_APPLY_VISUAL_COMFORT_V319__' "$RUNNER_TEMP/render.js"
+          grep -q "exposure:.72" "$RUNNER_TEMP/render.js"
+          grep -q "environment:.65" "$RUNNER_TEMP/render.js"
+          grep -q 'z+=rs();z+=comfortV319();' "$RUNNER_TEMP/render.js"
+
+      - name: Stop application
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/ucan-v319-server.pid" ]; then
+            kill "$(cat "$RUNNER_TEMP/ucan-v319-server.pid")" 2>/dev/null || true
+          fi
+          if [ -f "$RUNNER_TEMP/ucan-v319-server.log" ]; then
+            tail -n 180 "$RUNNER_TEMP/ucan-v319-server.log"
+          fi
