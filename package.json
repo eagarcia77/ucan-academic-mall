@@ -1,7 +1,7 @@
 {
   "name": "ucan-academic-v318",
   "version": "3.1.8",
-  "description": "UCAN Academic V318 con rutas de escaleras aisladas, cristales frontales eliminados y acceso ampliado a la terraza",
+  "description": "UCAN Academic V318 con rutas de escaleras aisladas, cristales frontales eliminados y acceso ampliado a la terraza (validación CI)",
   "main": "server.js",
   "scripts": {
     "start": "node -r ./auth-compat-v318-stairs.js server.js",
