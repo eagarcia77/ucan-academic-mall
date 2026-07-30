@@ -1,0 +1,90 @@
+name: Stair Authority V321
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'auth-compat-v321-stair-authority.js'
+      - 'public/js/ucan_v321_stair_authority.js'
+      - 'public/js/ucan_v321_social_loader.js'
+      - 'public/js/ucan_v316_complete_browser_vr_audit.js'
+      - 'public/js/ucan_babylon_mall_v265_accounts_avatars.js'
+      - 'verify_v321_stair_authority.js'
+      - 'verify_voice_rooms_v306.js'
+      - 'Dockerfile'
+      - 'package.json'
+      - '.github/workflows/stair-authority-v321.yml'
+  pull_request:
+    paths:
+      - 'auth-compat-v321-stair-authority.js'
+      - 'public/js/ucan_v321_stair_authority.js'
+      - 'public/js/ucan_v321_social_loader.js'
+      - 'public/js/ucan_v316_complete_browser_vr_audit.js'
+      - 'public/js/ucan_babylon_mall_v265_accounts_avatars.js'
+      - 'verify_v321_stair_authority.js'
+      - 'verify_voice_rooms_v306.js'
+      - 'Dockerfile'
+      - 'package.json'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Validate one stair authority and transformed runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run repository tests
+        run: npm test
+      - name: Start V321 application
+        run: |
+          DATA_DIR="$RUNNER_TEMP/ucan-v321-data" PORT=3210 node -r ./auth-compat-v321-stair-authority.js server.js > "$RUNNER_TEMP/v321-server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/v321-server.pid"
+          for i in {1..50}; do
+            curl -fsS http://127.0.0.1:3210/health >/dev/null && break
+            sleep 0.25
+          done
+          curl -fsS http://127.0.0.1:3210/health
+      - name: Verify version flags
+        run: |
+          curl -fsS http://127.0.0.1:3210/version > "$RUNNER_TEMP/version.json"
+          node - <<'NODE'
+          const fs=require('fs');const v=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/version.json','utf8'));
+          const required=['singleStairAuthority','legacyEscalatorRideDisabled','legacyReliableMovementDisabled','legacyClampCameraHeightDisabled','allSixStairRoutes'];
+          if(v.version!=='V321'||required.some(key=>v[key]!==true)){console.error(v);process.exit(1)}
+          NODE
+      - name: Login and inspect authenticated campus
+        run: |
+          JAR="$RUNNER_TEMP/cookies.txt"
+          curl -fsS -c "$JAR" -H 'Content-Type: application/json' -d '{"username":"admin","password":"admin123"}' http://127.0.0.1:3210/api/auth/login > "$RUNNER_TEMP/login.json"
+          curl -fsS -b "$JAR" http://127.0.0.1:3210/campus > "$RUNNER_TEMP/campus.html"
+          grep -q 'data-ucan-v321-locomotion="true"' "$RUNNER_TEMP/campus.html"
+          grep -q 'data-ucan-v321-social-loader="true"' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v320_floor_lock_controller.js' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v319_floor_route_controller.js' "$RUNNER_TEMP/campus.html"
+      - name: Verify transformed base scene removes all legacy movement
+        run: |
+          curl -fsS -b "$RUNNER_TEMP/cookies.txt" http://127.0.0.1:3210/js/ucan_babylon_mall_v265_accounts_avatars.js > "$RUNNER_TEMP/base.js"
+          grep -q '__UCAN_LEGACY_ESCALATOR_RIDE_DISABLED_V321__' "$RUNNER_TEMP/base.js"
+          grep -q '__UCAN_LEGACY_RELIABLE_MOVEMENT_DISABLED_V321__' "$RUNNER_TEMP/base.js"
+          grep -q '__UCAN_LEGACY_CLAMP_HEIGHT_DISABLED_V321__' "$RUNNER_TEMP/base.js"
+          ! grep -q '^[[:space:]]*setupEscalatorRide(scene, camera);' "$RUNNER_TEMP/base.js"
+          ! grep -q '^[[:space:]]*setupReliableMovement(scene, camera);' "$RUNNER_TEMP/base.js"
+          ! grep -q 'scene.onBeforeRenderObservable.add(() => clampCameraHeight(camera));' "$RUNNER_TEMP/base.js"
+      - name: Verify transformed locomotion delegates to V321
+        run: |
+          curl -fsS -b "$RUNNER_TEMP/cookies.txt" http://127.0.0.1:3210/js/ucan_v316_complete_browser_vr_audit.js > "$RUNNER_TEMP/locomotion.js"
+          grep -q '__UCAN_STAIR_AUTHORITY_V321__?.resolveGround' "$RUNNER_TEMP/locomotion.js"
+          grep -q "setFloor?.(state.ground, 'panel-navigation')" "$RUNNER_TEMP/locomotion.js"
+          grep -q "setFloor?.(state.floor, 'teleport')" "$RUNNER_TEMP/locomotion.js"
+          grep -q "setFloor?.(floor, 'reset')" "$RUNNER_TEMP/locomotion.js"
+      - name: Stop application
+        if: always()
+        run: |
+          kill "$(cat "$RUNNER_TEMP/v321-server.pid")" 2>/dev/null || true
+          cat "$RUNNER_TEMP/v321-server.log" || true
