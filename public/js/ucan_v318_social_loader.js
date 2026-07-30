@@ -56,6 +56,14 @@
     );
   }
 
+  function loadFloorRouteController() {
+    return appendScript(
+      '/js/ucan_v318_floor_route_controller.js?build=V318-20260730-FLOOR-ROUTE-CONTROLLER-R22',
+      'data-ucan-v318-floor-route-controller',
+      '[UCAN V318] No se pudo cargar el controlador de pisos.'
+    );
+  }
+
   function loadVoiceBridge() {
     return appendScript(
       '/js/ucan_v306_voice_xr_bridge.js?build=V318-20260730-SHARED-VOICE-R22',
@@ -90,22 +98,25 @@
       duplicateXrEntryLoaded:false,
       parallelSceneLoaded:Boolean(document.querySelector('script[data-ucan-v318-parallel-scene="true"]')),
       stairRulesLoaded:Boolean(document.querySelector('script[data-ucan-v318-stair-rules="true"]')),
+      floorRouteControllerLoaded:Boolean(document.querySelector('script[data-ucan-v318-floor-route-controller="true"]')),
       realtimeWorldLoaded:Boolean(document.querySelector('script[data-ucan-v318-realtime-world="true"]')),
       interactionLoaded:Boolean(document.querySelector('script[data-ucan-v318-shared-interaction="true"]')),
       voiceLoaded:Boolean(document.querySelector('script[data-ucan-v318-voice-bridge="true"]')),
       legacyV317Loaded:Boolean(document.querySelector('script[src*="ucan_v317_escalator_clearance.js"]')),
       legacyV313XrEntryLoaded:Boolean(document.querySelector('script[src*="ucan_v313_xr_entry.js"]'))
     };
-    console.info('[UCAN V318 R22] Cargador social y reglas definitivas de escaleras instalados.');
+    console.info('[UCAN V318 R22] Cargador social, reglas y controlador de pisos instalados.');
   }
 
   chain(loadExternalPatio, () =>
     chain(loadFloorOneBranding, () =>
       chain(loadParallelScene, () =>
         chain(loadStairRules, () =>
-          chain(loadVoiceBridge, () =>
-            chain(loadRealtimeWorld, () =>
-              chain(loadSharedInteraction, finish)
+          chain(loadFloorRouteController, () =>
+            chain(loadVoiceBridge, () =>
+              chain(loadRealtimeWorld, () =>
+                chain(loadSharedInteraction, finish)
+              )
             )
           )
         )
