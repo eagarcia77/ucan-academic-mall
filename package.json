@@ -1,7 +1,7 @@
 {
   "name": "ucan-academic-v323",
   "version": "3.2.3",
-  "description": "UCAN Academic V323 con un controlador único y verificable para todas las opciones del panel izquierdo",
+  "description": "UCAN Academic V323 con un controlador único y verificable para todas las opciones del panel izquierdo (validación temporal)",
   "main": "server.js",
   "scripts": {
     "start": "node -r ./auth-compat-v323-browser-panel.js server.js",
