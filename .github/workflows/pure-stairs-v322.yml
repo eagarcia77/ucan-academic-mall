@@ -1,0 +1,112 @@
+name: Pure Stair Authority V322
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'auth-compat-v322-pure-stairs.js'
+      - 'public/js/ucan_v322_stair_authority.js'
+      - 'public/js/ucan_v322_visual_comfort.js'
+      - 'public/js/ucan_v322_social_loader.js'
+      - 'public/js/ucan_v316_complete_browser_vr_audit.js'
+      - 'public/js/ucan_babylon_mall_v265_accounts_avatars.js'
+      - 'verify_v322_pure_stairs.js'
+      - 'verify_voice_rooms_v306.js'
+      - 'Dockerfile'
+      - 'package.json'
+      - '.github/workflows/pure-stairs-v322.yml'
+  pull_request:
+    paths:
+      - 'auth-compat-v322-pure-stairs.js'
+      - 'public/js/ucan_v322_stair_authority.js'
+      - 'public/js/ucan_v322_visual_comfort.js'
+      - 'public/js/ucan_v322_social_loader.js'
+      - 'public/js/ucan_v316_complete_browser_vr_audit.js'
+      - 'public/js/ucan_babylon_mall_v265_accounts_avatars.js'
+      - 'verify_v322_pure_stairs.js'
+      - 'verify_voice_rooms_v306.js'
+      - 'Dockerfile'
+      - 'package.json'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Validate one movement loop and pure stair ground provider
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run repository tests
+        run: npm test
+      - name: Start V322 application
+        env:
+          PORT: '3220'
+          DATA_DIR: ${{ runner.temp }}/ucan-v322-data
+          ADMIN_INITIAL_USERNAME: admin
+          ADMIN_INITIAL_PASSWORD: Pure-V322-Admin7!
+          ADMIN_INITIAL_EMAIL: admin-v322@example.test
+        run: |
+          mkdir -p "$DATA_DIR"
+          node -r ./auth-compat-v322-pure-stairs.js server.js > "$RUNNER_TEMP/v322-server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/v322-server.pid"
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3220/health > "$RUNNER_TEMP/health.json"; then exit 0; fi
+            sleep 0.3
+          done
+          cat "$RUNNER_TEMP/v322-server.log"
+          exit 1
+      - name: Verify version flags
+        run: |
+          curl -fsS http://127.0.0.1:3220/version > "$RUNNER_TEMP/version.json"
+          node - <<'NODE'
+          const fs=require('fs');
+          for(const name of ['health','version']){
+            const v=JSON.parse(fs.readFileSync(`${process.env.RUNNER_TEMP}/${name}.json`,'utf8'));
+            const required=['singleMovementLoop','groundResolvedOncePerMovementFrame','allSixStairRoutes'];
+            const requiredFalse=['stairAuthorityOwnsRenderLoop','stairAuthorityMovesCamera','forcedLandingTeleport','legacyV318CameraGuardLoaded','legacyV319LandingLayerLoaded','legacyV321CameraSynchronizerLoaded'];
+            if(v.version!=='V322'||required.some(key=>v[key]!==true)||requiredFalse.some(key=>v[key]!==false)){console.error(name,v);process.exit(1)}
+          }
+          NODE
+      - name: Login and inspect authenticated campus
+        run: |
+          JAR="$RUNNER_TEMP/cookies.txt"
+          curl -fsS -c "$JAR" -H 'Content-Type: application/json' \
+            -d '{"login":"admin","password":"Pure-V322-Admin7!"}' \
+            http://127.0.0.1:3220/api/auth/login > "$RUNNER_TEMP/login.json"
+          curl -fsS -b "$JAR" http://127.0.0.1:3220/campus > "$RUNNER_TEMP/campus.html"
+          grep -q 'data-ucan-v322-locomotion="true"' "$RUNNER_TEMP/campus.html"
+          grep -q 'data-ucan-v322-stair-authority="true"' "$RUNNER_TEMP/campus.html"
+          grep -q 'data-ucan-v322-social-loader="true"' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v318_stairs_all_environments.js' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v319_vr_accessibility.js' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v321_stair_authority.js' "$RUNNER_TEMP/campus.html"
+      - name: Verify transformed base removes legacy camera movers
+        run: |
+          curl -fsS -b "$RUNNER_TEMP/cookies.txt" http://127.0.0.1:3220/js/ucan_babylon_mall_v265_accounts_avatars.js > "$RUNNER_TEMP/base.js"
+          grep -q '__UCAN_LEGACY_ESCALATOR_RIDE_DISABLED_V322__' "$RUNNER_TEMP/base.js"
+          grep -q '__UCAN_LEGACY_RELIABLE_MOVEMENT_DISABLED_V322__' "$RUNNER_TEMP/base.js"
+          grep -q '__UCAN_LEGACY_CLAMP_HEIGHT_DISABLED_V322__' "$RUNNER_TEMP/base.js"
+          ! grep -q '^[[:space:]]*setupEscalatorRide(scene, camera);' "$RUNNER_TEMP/base.js"
+          ! grep -q '^[[:space:]]*setupReliableMovement(scene, camera);' "$RUNNER_TEMP/base.js"
+          ! grep -q 'scene.onBeforeRenderObservable.add(() => clampCameraHeight(camera));' "$RUNNER_TEMP/base.js"
+      - name: Verify transformed locomotion resolves ground once
+        run: |
+          curl -fsS -b "$RUNNER_TEMP/cookies.txt" http://127.0.0.1:3220/js/ucan_v316_complete_browser_vr_audit.js > "$RUNNER_TEMP/locomotion.js"
+          grep -q '__UCAN_STAIR_AUTHORITY_V322__' "$RUNNER_TEMP/locomotion.js"
+          ! grep -q 'state.ground = groundFor(state.desktop.position);' "$RUNNER_TEMP/locomotion.js"
+          ! grep -q '__UCAN_STAIR_AUTHORITY_V321__' "$RUNNER_TEMP/locomotion.js"
+          node - <<'NODE'
+          const fs=require('fs');const s=fs.readFileSync(process.env.RUNNER_TEMP+'/locomotion.js','utf8');
+          const calls=(s.match(/groundFor\(camera\.position\)/g)||[]).length;
+          if(calls!==1){console.error('groundFor(camera.position) calls:',calls);process.exit(1)}
+          NODE
+      - name: Stop application
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/v322-server.pid" ]; then kill "$(cat "$RUNNER_TEMP/v322-server.pid")" 2>/dev/null || true; fi
+          if [ -f "$RUNNER_TEMP/v322-server.log" ]; then tail -n 180 "$RUNNER_TEMP/v322-server.log"; fi
