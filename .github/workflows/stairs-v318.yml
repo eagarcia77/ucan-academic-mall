@@ -1,0 +1,126 @@
+name: Isolated Stairs V318
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'auth-compat-v318-stairs.js'
+      - 'public/js/ucan_v318_social_loader.js'
+      - 'public/js/ucan_v318_stairs_all_environments.js'
+      - 'public/js/ucan_v316_complete_browser_vr_audit.js'
+      - 'public/js/ucan_v313_parallel_scene.js'
+      - 'public/js/ucan_babylon_mall_v265_accounts_avatars.js'
+      - 'verify_v318_stairs.js'
+      - 'verify_voice_rooms_v306.js'
+      - 'package.json'
+      - 'Dockerfile'
+      - '.github/workflows/stairs-v318.yml'
+  pull_request:
+    paths:
+      - 'auth-compat-v318-stairs.js'
+      - 'public/js/ucan_v318_social_loader.js'
+      - 'public/js/ucan_v318_stairs_all_environments.js'
+      - 'public/js/ucan_v316_complete_browser_vr_audit.js'
+      - 'public/js/ucan_v313_parallel_scene.js'
+      - 'public/js/ucan_babylon_mall_v265_accounts_avatars.js'
+      - 'verify_v318_stairs.js'
+      - 'verify_voice_rooms_v306.js'
+      - 'package.json'
+      - 'Dockerfile'
+      - '.github/workflows/stairs-v318.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate isolated routes and wider rooftop stairs
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run repository tests
+        run: npm test
+
+      - name: Start V318 application
+        env:
+          PORT: '3100'
+          DATA_DIR: ${{ runner.temp }}/ucan-v318-data
+          ADMIN_INITIAL_USERNAME: admin
+          ADMIN_INITIAL_PASSWORD: Stairs-V318-Admin7!
+          ADMIN_INITIAL_EMAIL: admin-v318@example.test
+        run: |
+          mkdir -p "$DATA_DIR"
+          node -r ./auth-compat-v318-stairs.js server.js > "$RUNNER_TEMP/ucan-v318-server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/ucan-v318-server.pid"
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3100/health > "$RUNNER_TEMP/health.json"; then
+              exit 0
+            fi
+            sleep 0.3
+          done
+          cat "$RUNNER_TEMP/ucan-v318-server.log"
+          exit 1
+
+      - name: Verify health and version
+        run: |
+          curl -fsS http://127.0.0.1:3100/version > "$RUNNER_TEMP/version.json"
+          node - <<'NODE'
+          const fs=require('fs');
+          for (const name of ['health','version']) {
+            const value=JSON.parse(fs.readFileSync(`${process.env.RUNNER_TEMP}/${name}.json`,'utf8'));
+            if (value.version !== 'V318') throw new Error(`${name}: versión ${value.version}`);
+            if (value.floor1ToFloor2StopsAtFloor2 !== true) throw new Error(`${name}: up12 no termina en Piso 2`);
+            if (value.floor1ToFloor3AutomaticContinuation !== false) throw new Error(`${name}: encadenamiento P1→P3 activo`);
+            if (value.allFrontEscalatorGlassRemoved !== true) throw new Error(`${name}: cristales frontales activos`);
+            if (value.rooftopStairWidth !== 8.4) throw new Error(`${name}: ancho terraza incorrecto`);
+            if (value.rooftopLandingWidth !== 10.6) throw new Error(`${name}: descanso terraza incorrecto`);
+          }
+          NODE
+
+      - name: Login and inspect final campus HTML
+        run: |
+          curl -fsS -c "$RUNNER_TEMP/cookies.txt" \
+            -H 'Content-Type: application/json' \
+            -d '{"login":"admin","password":"Stairs-V318-Admin7!"}' \
+            http://127.0.0.1:3100/api/auth/login > "$RUNNER_TEMP/login.json"
+          curl -fsS -b "$RUNNER_TEMP/cookies.txt" http://127.0.0.1:3100/campus > "$RUNNER_TEMP/campus.html"
+          grep -q 'UCAN Academic Mall V318' "$RUNNER_TEMP/campus.html"
+          grep -q 'ucan_v318_social_loader.js' "$RUNNER_TEMP/campus.html"
+          grep -q 'data-ucan-v318-locomotion="true"' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v317_escalator_clearance.js' "$RUNNER_TEMP/campus.html"
+          ! grep -q 'ucan_v315_unified_floors_joystick.js' "$RUNNER_TEMP/campus.html"
+
+      - name: Verify transformed scene and locomotion sources
+        run: |
+          curl -fsS -b "$RUNNER_TEMP/cookies.txt" http://127.0.0.1:3100/js/ucan_babylon_mall_v265_accounts_avatars.js > "$RUNNER_TEMP/base.js"
+          curl -fsS -b "$RUNNER_TEMP/cookies.txt" http://127.0.0.1:3100/js/ucan_v316_complete_browser_vr_audit.js > "$RUNNER_TEMP/locomotion.js"
+          curl -fsS -b "$RUNNER_TEMP/cookies.txt" http://127.0.0.1:3100/js/ucan_v313_parallel_scene.js > "$RUNNER_TEMP/scene.js"
+          grep -q 'const width = 8.4;' "$RUNNER_TEMP/base.js"
+          test "$(grep -o 'new BABYLON.Vector3(10.6, 0.12, 5.4)' "$RUNNER_TEMP/base.js" | wc -l)" -ge 2
+          ! grep -q 'baranda cristal hueco norte premium' "$RUNNER_TEMP/base.js"
+          ! grep -q 'baranda cristal hueco sur premium' "$RUNNER_TEMP/base.js"
+          grep -q "minX:-23.4, maxX:-16.6" "$RUNNER_TEMP/locomotion.js"
+          grep -q "minX:-11.4, maxX:-4.6" "$RUNNER_TEMP/locomotion.js"
+          grep -q "minX:-37.4, maxX:-30.6" "$RUNNER_TEMP/locomotion.js"
+          grep -q "minX:-29.4, maxX:-22.6" "$RUNNER_TEMP/locomotion.js"
+          ! grep -q "minX:-25.8, maxX:-14.2" "$RUNNER_TEMP/locomotion.js"
+          ! grep -q "minX:-39.8, maxX:-28.2" "$RUNNER_TEMP/locomotion.js"
+          grep -q 'minX:39.5, maxX:48.5' "$RUNNER_TEMP/scene.js"
+
+      - name: Stop application
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/ucan-v318-server.pid" ]; then
+            kill "$(cat "$RUNNER_TEMP/ucan-v318-server.pid")" 2>/dev/null || true
+          fi
+          if [ -f "$RUNNER_TEMP/ucan-v318-server.log" ]; then
+            tail -n 180 "$RUNNER_TEMP/ucan-v318-server.log"
+          fi
