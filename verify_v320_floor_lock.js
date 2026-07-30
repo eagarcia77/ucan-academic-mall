@@ -1,5 +1,6 @@
 'use strict';
 
+// Validación CI temporal del bloqueo estable del Piso 2.
 const fs = require('fs');
 const path = require('path');
 const root = __dirname;
@@ -15,9 +16,7 @@ const text = Object.fromEntries(Object.entries(files).map(([key,file]) => [key,f
 const pkg = JSON.parse(text.package);
 const checks = {
   filesExist:Object.values(files).every(fs.existsSync),
-  controllerSyntax:true,
-  loaderSyntax:true,
-  preloaderSyntax:true,
+  controllerSyntax:true,loaderSyntax:true,preloaderSyntax:true,
   stickyFloorState:/stableFloorOnlyChangesByRouteOrExplicitNavigation:true/.test(text.controller),
   noAutomaticHeightFloorReset:!text.controller.includes('state.stableFloor = nearestFloor(estimated)'),
   intentionalDirection:/intentionalDirectionRequired:true/.test(text.controller) && /intendedDirection/.test(text.controller),
@@ -38,15 +37,8 @@ const checks = {
   packageChecksV320:String(pkg.scripts?.check || '').includes('ucan_v320_floor_lock_controller.js') && String(pkg.scripts?.check || '').includes('auth-compat-v320-floor-lock.js'),
   packageTestsV320:String(pkg.scripts?.test || '').includes('audit:v320')
 };
-for (const key of ['controller','loader','preloader']) {
-  try { new Function(text[key]); }
-  catch (error) { checks[`${key}Syntax`] = false; checks[`${key}SyntaxError`] = error.message; }
-}
-const failed = Object.entries(checks).filter(([,value]) => value !== true);
-const report = {
-  version:'V320',revision:'R24',build:'V320-20260730-FLOOR-TWO-STICKY-LOCK-R24',
-  ok:failed.length === 0,checks,failed:failed.map(([name,value]) => ({name,value})),
-  physicalValidationRequired:['Subir por up12 en browser.','Confirmar que permanece en Piso 2 por al menos 10 segundos.','Caminar por el descanso sin bajar.','Entrar físicamente en down21 y confirmar que solo entonces baja.','Repetir en Meta Quest.']
-};
+for (const key of ['controller','loader','preloader']) { try { new Function(text[key]); } catch (error) { checks[`${key}Syntax`]=false; checks[`${key}SyntaxError`]=error.message; } }
+const failed=Object.entries(checks).filter(([,value])=>value!==true);
+const report={version:'V320',revision:'R24',build:'V320-20260730-FLOOR-TWO-STICKY-LOCK-R24',ok:failed.length===0,checks,failed:failed.map(([name,value])=>({name,value}))};
 console.log(JSON.stringify(report,null,2));
-if (!report.ok) process.exitCode = 1;
+if(!report.ok)process.exitCode=1;
