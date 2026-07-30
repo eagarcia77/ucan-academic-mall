@@ -8,6 +8,7 @@ const files = {
   preloader:path.join(root, 'auth-compat-v318-stairs.js'),
   loader:path.join(root, 'public/js/ucan_v318_social_loader.js'),
   runtime:path.join(root, 'public/js/ucan_v318_stairs_all_environments.js'),
+  floorController:path.join(root, 'public/js/ucan_v318_floor_route_controller.js'),
   locomotion:path.join(root, 'public/js/ucan_v316_complete_browser_vr_audit.js'),
   baseScene:path.join(root, 'public/js/ucan_babylon_mall_v265_accounts_avatars.js'),
   canonicalScene:path.join(root, 'public/js/ucan_v313_parallel_scene.js'),
@@ -19,10 +20,10 @@ const files = {
 const text = Object.fromEntries(Object.entries(files).map(([key, file]) => [key, fs.readFileSync(file, 'utf8')]));
 const pkg = JSON.parse(text.package);
 const routeRanges = [
-  [-23.4, -16.6],
-  [-11.4, -4.6],
-  [-37.4, -30.6],
-  [-29.4, -22.6]
+  [-22.8, -17.2],
+  [-10.8, -5.2],
+  [-36.8, -31.2],
+  [-28.8, -23.2]
 ];
 const overlap = (a, b) => Math.max(a[0], b[0]) <= Math.min(a[1], b[1]);
 
@@ -31,28 +32,33 @@ const checks = {
   preloaderSyntax:true,
   loaderSyntax:true,
   runtimeSyntax:true,
+  floorControllerSyntax:true,
   version:/const VERSION = 'V318'/.test(text.preloader) && /const REVISION = 'R22'/.test(text.preloader),
   preloaderTransformsThreeSources:/ucan_babylon_mall_v265_accounts_avatars\.js/.test(text.preloader) && /ucan_v316_complete_browser_vr_audit\.js/.test(text.preloader) && /ucan_v313_parallel_scene\.js/.test(text.preloader),
   baseSceneWidthPatched:/const width = 5\.2/.test(text.baseScene) && /const width = 8\.4/.test(text.preloader),
   rooftopLandingsPatched:/10\.6, 0\.12, 5\.4/.test(text.preloader),
   frontVoidGlassRemovedAtSource:/baranda cristal hueco norte premium/.test(text.baseScene) && /baranda cristal hueco norte premium/.test(text.preloader) && /baranda cristal hueco sur premium/.test(text.preloader),
   allEnvironmentGlassRuntime:/allFrontEscalatorGlassRemoved:true/.test(text.runtime) && /frontEscalatorGlassRemovedV318:true/.test(text.runtime),
-  fourExactEscalatorRoutes:(text.runtime.match(/id:'(?:up12|down21|up23|down32)'/g) || []).length === 4,
-  p1p2DoesNotOverlapP2p3:!overlap(routeRanges[0], routeRanges[2]) && !overlap(routeRanges[0], routeRanges[3]) && !overlap(routeRanges[1], routeRanges[2]) && !overlap(routeRanges[1], routeRanges[3]),
-  locomotionRangesPatched:routeRanges.every(([min, max]) => text.preloader.includes(`minX:${min}, maxX:${max}`)),
-  oldBroadRangesRejected:/minX:-25\.8, maxX:-14\.2/.test(text.locomotion) && /minX:-39\.8, maxX:-28\.2/.test(text.locomotion),
-  floorTwoGuard:/FLOOR2_LOCK_MS = 1700/.test(text.runtime) && /protectFloorTwoStop/.test(text.runtime) && /floor1ToFloor2StopsAtFloor2:true/.test(text.runtime),
-  actualUp23Required:/inActualUp23/.test(text.runtime) && /-37\.4/.test(text.runtime) && /-30\.6/.test(text.runtime),
+  exactControllerRoutes:(text.floorController.match(/id:'(?:up12|down21|up23|down32)'/g) || []).length === 4,
+  controllerRoutesDoNotOverlap:!overlap(routeRanges[0], routeRanges[2]) && !overlap(routeRanges[0], routeRanges[3]) && !overlap(routeRanges[1], routeRanges[2]) && !overlap(routeRanges[1], routeRanges[3]),
+  controllerUsesExactRanges:routeRanges.every(([min, max]) => text.floorController.includes(`minX:${min}, maxX:${max}`)),
+  oneRouteAtATime:/oneRouteAtATime:true/.test(text.floorController) && /routeSelectionByCurrentFloor:true/.test(text.floorController),
+  floorOneOnlyUp12:/fromFloor:0, toFloor:8\.2/.test(text.floorController),
+  floorTwoRoutesSeparated:/id:'down21', fromFloor:8\.2, toFloor:0/.test(text.floorController) && /id:'up23', fromFloor:8\.2, toFloor:16\.4/.test(text.floorController),
+  automaticP1P3Forbidden:/automaticFloor1ToFloor3:false/.test(text.floorController) && /floor1ToFloor2StopsAtFloor2:true/.test(text.floorController),
+  postFrameFloorCorrection:/onBeforeRenderObservable\.add/.test(text.floorController) && /synchronizeCameras/.test(text.floorController),
+  oldBroadRoutesPatched:/minX:-25\.8, maxX:-14\.2/.test(text.locomotion) && /minX:-39\.8, maxX:-28\.2/.test(text.locomotion) && /patchLocomotion/.test(text.preloader),
   rooftopCanonicalWidthPatched:/minX:39\.5, maxX:48\.5/.test(text.preloader),
-  socialLoadOrder:text.loader.indexOf('chain(loadParallelScene') >= 0 && text.loader.indexOf('chain(loadStairRules') > text.loader.indexOf('chain(loadParallelScene') && text.loader.indexOf('chain(loadVoiceBridge') > text.loader.indexOf('chain(loadStairRules'),
+  socialLoadsFloorController:text.loader.includes('/js/ucan_v318_floor_route_controller.js?build=V318-20260730-FLOOR-ROUTE-CONTROLLER-R22'),
+  socialLoadOrder:text.loader.indexOf('chain(loadParallelScene') >= 0 && text.loader.indexOf('chain(loadStairRules') > text.loader.indexOf('chain(loadParallelScene') && text.loader.indexOf('chain(loadFloorRouteController') > text.loader.indexOf('chain(loadStairRules') && text.loader.indexOf('chain(loadVoiceBridge') > text.loader.indexOf('chain(loadFloorRouteController'),
   persistencePreserved:/MAX_BACKUPS = 60/.test(text.persistence) && text.preloader.includes("require('./auth-compat-v313-parallel.js')"),
   dockerStartsV318:text.docker.includes('./auth-compat-v318-stairs.js'),
   packageStartsV318:String(pkg.scripts?.start || '').includes('auth-compat-v318-stairs.js'),
-  packageChecksV318:String(pkg.scripts?.check || '').includes('ucan_v318_stairs_all_environments.js') && String(pkg.scripts?.check || '').includes('verify_v318_stairs.js'),
+  packageChecksV318:String(pkg.scripts?.check || '').includes('ucan_v318_stairs_all_environments.js') && String(pkg.scripts?.check || '').includes('ucan_v318_floor_route_controller.js') && String(pkg.scripts?.check || '').includes('verify_v318_stairs.js'),
   packageRunsV318:String(pkg.scripts?.test || '').includes('audit:v318')
 };
 
-for (const key of ['preloader','loader','runtime']) {
+for (const key of ['preloader','loader','runtime','floorController']) {
   try { new Function(text[key]); }
   catch (error) {
     checks[`${key}Syntax`] = false;
