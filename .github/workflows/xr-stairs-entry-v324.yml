@@ -1,5 +1,6 @@
 name: XR Stairs and Entry V324
 
+# Clean validation run after updating the voice verifier.
 on:
   push:
     branches: [main]
