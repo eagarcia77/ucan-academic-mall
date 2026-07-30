@@ -25,6 +25,7 @@ on:
       - 'verify_voice_rooms_v306.js'
       - 'Dockerfile'
       - 'package.json'
+      - '.github/workflows/stair-authority-v321.yml'
 
 permissions:
   contents: read
@@ -42,14 +43,22 @@ jobs:
       - name: Run repository tests
         run: npm test
       - name: Start V321 application
+        env:
+          DATA_DIR: ${{ runner.temp }}/ucan-v321-data
+          PORT: '3210'
+          ADMIN_INITIAL_USERNAME: admin
+          ADMIN_INITIAL_PASSWORD: Stair-V321-Admin7!
+          ADMIN_INITIAL_EMAIL: admin-v321@example.test
         run: |
-          DATA_DIR="$RUNNER_TEMP/ucan-v321-data" PORT=3210 node -r ./auth-compat-v321-stair-authority.js server.js > "$RUNNER_TEMP/v321-server.log" 2>&1 &
+          mkdir -p "$DATA_DIR"
+          node -r ./auth-compat-v321-stair-authority.js server.js > "$RUNNER_TEMP/v321-server.log" 2>&1 &
           echo $! > "$RUNNER_TEMP/v321-server.pid"
-          for i in {1..50}; do
-            curl -fsS http://127.0.0.1:3210/health >/dev/null && break
-            sleep 0.25
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:3210/health > "$RUNNER_TEMP/health.json"; then exit 0; fi
+            sleep 0.3
           done
-          curl -fsS http://127.0.0.1:3210/health
+          cat "$RUNNER_TEMP/v321-server.log"
+          exit 1
       - name: Verify version flags
         run: |
           curl -fsS http://127.0.0.1:3210/version > "$RUNNER_TEMP/version.json"
@@ -61,7 +70,9 @@ jobs:
       - name: Login and inspect authenticated campus
         run: |
           JAR="$RUNNER_TEMP/cookies.txt"
-          curl -fsS -c "$JAR" -H 'Content-Type: application/json' -d '{"username":"admin","password":"admin123"}' http://127.0.0.1:3210/api/auth/login > "$RUNNER_TEMP/login.json"
+          curl -fsS -c "$JAR" -H 'Content-Type: application/json' \
+            -d '{"login":"admin","password":"Stair-V321-Admin7!"}' \
+            http://127.0.0.1:3210/api/auth/login > "$RUNNER_TEMP/login.json"
           curl -fsS -b "$JAR" http://127.0.0.1:3210/campus > "$RUNNER_TEMP/campus.html"
           grep -q 'data-ucan-v321-locomotion="true"' "$RUNNER_TEMP/campus.html"
           grep -q 'data-ucan-v321-social-loader="true"' "$RUNNER_TEMP/campus.html"
@@ -86,5 +97,5 @@ jobs:
       - name: Stop application
         if: always()
         run: |
-          kill "$(cat "$RUNNER_TEMP/v321-server.pid")" 2>/dev/null || true
-          cat "$RUNNER_TEMP/v321-server.log" || true
+          if [ -f "$RUNNER_TEMP/v321-server.pid" ]; then kill "$(cat "$RUNNER_TEMP/v321-server.pid")" 2>/dev/null || true; fi
+          if [ -f "$RUNNER_TEMP/v321-server.log" ]; then tail -n 180 "$RUNNER_TEMP/v321-server.log"; fi
