@@ -2,38 +2,32 @@
 
 const fs = require('fs');
 const path = require('path');
-
 const root = __dirname;
 const files = {
   frontend:path.join(root, 'public/js/ucan_v240_voice.js'),
   bridge:path.join(root, 'public/js/ucan_v306_voice_xr_bridge.js'),
-  loader:path.join(root, 'public/js/ucan_v322_social_loader.js'),
+  loader:path.join(root, 'public/js/ucan_v323_social_loader.js'),
   backend:path.join(root, 'lib/voice-signaling.js'),
   parallelPreloader:path.join(root, 'auth-compat-v313-parallel.js'),
-  upperPreloader:path.join(root, 'auth-compat-v322-pure-stairs.js'),
+  upperPreloader:path.join(root, 'auth-compat-v323-browser-panel.js'),
   campus:path.join(root, 'public/campus.html'),
   docker:path.join(root, 'Dockerfile'),
   package:path.join(root, 'package.json')
 };
-
-const text = Object.fromEntries(Object.entries(files).map(([key, file]) => [key, fs.readFileSync(file, 'utf8')]));
+const text = Object.fromEntries(Object.entries(files).map(([key,file]) => [key, fs.readFileSync(file, 'utf8')]));
 const pkg = JSON.parse(text.package);
-const rooms = ['SV-201', 'SV-202', 'SV-203', 'SV-204', 'SV-205', 'ANF-301'];
+const rooms = ['SV-201','SV-202','SV-203','SV-204','SV-205','ANF-301'];
 const forbiddenVisualChain = [
-  "require('./auth-compat-v304-r6.js')",
-  "require('./auth-compat-v306-voice.js')",
-  "require('./auth-compat-v307-presence.js')",
-  "require('./auth-compat-v308-world.js')",
-  "require('./auth-compat-v309-parity.js')",
-  "require('./auth-compat-v311-unified.js')",
+  "require('./auth-compat-v304-r6.js')","require('./auth-compat-v306-voice.js')",
+  "require('./auth-compat-v307-presence.js')","require('./auth-compat-v308-world.js')",
+  "require('./auth-compat-v309-parity.js')","require('./auth-compat-v311-unified.js')",
   "require('./auth-compat-v312-vr-canonical.js')"
 ];
 const startsThroughParallelVoice = text.upperPreloader.includes("require('./auth-compat-v313-parallel.js')");
-
 const checks = {
   frontendSyntax:true,bridgeSyntax:true,loaderSyntax:true,backendSyntax:true,parallelPreloaderSyntax:true,upperPreloaderSyntax:true,
   voiceScriptLoaded:text.campus.includes('/js/ucan_v240_voice.js'),
-  voiceBridgeLoaded:text.loader.includes('/js/ucan_v306_voice_xr_bridge.js?build=V322-20260730-SHARED-VOICE-R26'),
+  voiceBridgeLoaded:text.loader.includes('/js/ucan_v306_voice_xr_bridge.js?build=V323-20260730-SHARED-VOICE-R27'),
   allRoomsInFrontend:rooms.every(room => text.frontend.includes(`'${room}'`)),
   allRoomsInBridge:rooms.every(room => text.bridge.includes(`'${room}'`)),
   allRoomsInBackend:rooms.every(room => text.backend.includes(`'${room}'`)),
@@ -56,16 +50,17 @@ const checks = {
   authenticationRequired:/Inicie sesión para usar el audio/.test(text.backend),
   voiceCreatedDirectly:/createVoiceSystem/.test(text.parallelPreloader) && /loadIceServersFromEnvironment/.test(text.parallelPreloader),
   cleanParallelPreloader:text.parallelPreloader.includes("require('./auth-compat-v271.js')") && forbiddenVisualChain.every(item => !text.parallelPreloader.includes(item)),
-  v322PreservesParallelVoice:startsThroughParallelVoice,
-  packageStartsVoiceStack:String(pkg.scripts?.start || '').includes('auth-compat-v322-pure-stairs.js') && startsThroughParallelVoice,
-  dockerUsesVoiceStack:text.docker.includes('auth-compat-v322-pure-stairs.js') && startsThroughParallelVoice,
+  v323PreservesParallelVoice:startsThroughParallelVoice,
+  packageStartsVoiceStack:String(pkg.scripts?.start || '').includes('auth-compat-v323-browser-panel.js') && startsThroughParallelVoice,
+  dockerUsesVoiceStack:text.docker.includes('auth-compat-v323-browser-panel.js') && startsThroughParallelVoice,
   packageChecksVoiceFiles:String(pkg.scripts?.check || '').includes('lib/voice-signaling.js') && String(pkg.scripts?.check || '').includes('auth-compat-v313-parallel.js') && String(pkg.scripts?.check || '').includes('ucan_v306_voice_xr_bridge.js'),
   packageRunsVoiceAudit:String(pkg.scripts?.test || '').includes('audit:voice-v306')
 };
-for (const [name, code] of [['frontendSyntax',text.frontend],['bridgeSyntax',text.bridge],['loaderSyntax',text.loader],['backendSyntax',text.backend],['parallelPreloaderSyntax',text.parallelPreloader],['upperPreloaderSyntax',text.upperPreloader]]) {
-  try { new Function(code); } catch (error) { checks[name]=false; checks[`${name}Error`]=error.message; }
+for (const [name,code] of [['frontendSyntax',text.frontend],['bridgeSyntax',text.bridge],['loaderSyntax',text.loader],['backendSyntax',text.backend],['parallelPreloaderSyntax',text.parallelPreloader],['upperPreloaderSyntax',text.upperPreloader]]) {
+  try { new Function(code); }
+  catch (error) { checks[name]=false; checks[`${name}Error`]=error.message; }
 }
-const failures = Object.entries(checks).filter(([, value]) => value !== true);
-const report = {version:'V322',voiceLayer:'V313/V306',feature:'Audio WebRTC compartido en browser, móvil, VR y MR',architecture:'V322 pure stair ground provider over clean parallel voice preloader',ok:failures.length===0,rooms,checks,failures:failures.map(([name,value])=>({name,value}))};
+const failures=Object.entries(checks).filter(([,value])=>value!==true);
+const report={version:'V323',voiceLayer:'V313/V306',feature:'Audio WebRTC compartido en browser, móvil, VR y MR',architecture:'V323 panel controller over clean parallel voice preloader',ok:failures.length===0,rooms,checks,failures:failures.map(([name,value])=>({name,value}))};
 console.log(JSON.stringify(report,null,2));
-if (!report.ok) process.exitCode=1;
+if(!report.ok)process.exitCode=1;
