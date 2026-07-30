@@ -1,5 +1,6 @@
 name: XR Stairs and Entry V324
 
+# Temporary PR validation trigger.
 on:
   push:
     branches: [main]
