@@ -1,0 +1,1 @@
+La validación automatizada debe confirmar la eliminación de los tres motores heredados.
