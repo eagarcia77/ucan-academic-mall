@@ -7,6 +7,7 @@ on:
       - 'auth-compat-v318-stairs.js'
       - 'public/js/ucan_v318_social_loader.js'
       - 'public/js/ucan_v318_stairs_all_environments.js'
+      - 'public/js/ucan_v318_floor_route_controller.js'
       - 'public/js/ucan_v316_complete_browser_vr_audit.js'
       - 'public/js/ucan_v313_parallel_scene.js'
       - 'public/js/ucan_babylon_mall_v265_accounts_avatars.js'
@@ -20,6 +21,7 @@ on:
       - 'auth-compat-v318-stairs.js'
       - 'public/js/ucan_v318_social_loader.js'
       - 'public/js/ucan_v318_stairs_all_environments.js'
+      - 'public/js/ucan_v318_floor_route_controller.js'
       - 'public/js/ucan_v316_complete_browser_vr_audit.js'
       - 'public/js/ucan_v313_parallel_scene.js'
       - 'public/js/ucan_babylon_mall_v265_accounts_avatars.js'
@@ -103,6 +105,8 @@ jobs:
           curl -fsS -b "$RUNNER_TEMP/cookies.txt" http://127.0.0.1:3100/js/ucan_babylon_mall_v265_accounts_avatars.js > "$RUNNER_TEMP/base.js"
           curl -fsS -b "$RUNNER_TEMP/cookies.txt" http://127.0.0.1:3100/js/ucan_v316_complete_browser_vr_audit.js > "$RUNNER_TEMP/locomotion.js"
           curl -fsS -b "$RUNNER_TEMP/cookies.txt" http://127.0.0.1:3100/js/ucan_v313_parallel_scene.js > "$RUNNER_TEMP/scene.js"
+          curl -fsS -b "$RUNNER_TEMP/cookies.txt" http://127.0.0.1:3100/js/ucan_v318_social_loader.js > "$RUNNER_TEMP/loader.js"
+          curl -fsS -b "$RUNNER_TEMP/cookies.txt" http://127.0.0.1:3100/js/ucan_v318_floor_route_controller.js > "$RUNNER_TEMP/floors.js"
           grep -q 'const width = 8.4;' "$RUNNER_TEMP/base.js"
           test "$(grep -o 'new BABYLON.Vector3(10.6, 0.12, 5.4)' "$RUNNER_TEMP/base.js" | wc -l)" -ge 2
           ! grep -q 'baranda cristal hueco norte premium' "$RUNNER_TEMP/base.js"
@@ -114,6 +118,10 @@ jobs:
           ! grep -q "minX:-25.8, maxX:-14.2" "$RUNNER_TEMP/locomotion.js"
           ! grep -q "minX:-39.8, maxX:-28.2" "$RUNNER_TEMP/locomotion.js"
           grep -q 'minX:39.5, maxX:48.5' "$RUNNER_TEMP/scene.js"
+          grep -q 'ucan_v318_floor_route_controller.js' "$RUNNER_TEMP/loader.js"
+          grep -q 'automaticFloor1ToFloor3:false' "$RUNNER_TEMP/floors.js"
+          grep -q "minX:-22.8, maxX:-17.2" "$RUNNER_TEMP/floors.js"
+          grep -q "minX:-36.8, maxX:-31.2" "$RUNNER_TEMP/floors.js"
 
       - name: Stop application
         if: always()
