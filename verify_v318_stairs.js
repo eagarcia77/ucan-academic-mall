@@ -1,5 +1,6 @@
 'use strict';
 
+// Ejecución temporal de validación integral V318.
 const fs = require('fs');
 const path = require('path');
 
