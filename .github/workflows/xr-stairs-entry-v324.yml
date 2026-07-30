@@ -1,0 +1,74 @@
+name: XR Stairs and Entry V324
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/js/ucan_v324_xr_stairs_entry.js'
+      - 'public/js/ucan_v323_social_loader.js'
+      - 'verify_v324_xr_stairs_entry.js'
+      - 'package.json'
+      - '.github/workflows/xr-stairs-entry-v324.yml'
+  pull_request:
+    paths:
+      - 'public/js/ucan_v324_xr_stairs_entry.js'
+      - 'public/js/ucan_v323_social_loader.js'
+      - 'verify_v324_xr_stairs_entry.js'
+      - 'package.json'
+      - '.github/workflows/xr-stairs-entry-v324.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Validate Meta Quest stair rig and right VR entry
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run repository tests
+        run: npm test
+      - name: Start application
+        env:
+          PORT: '3240'
+          DATA_DIR: ${{ runner.temp }}/ucan-v324-data
+          ADMIN_INITIAL_USERNAME: admin
+          ADMIN_INITIAL_PASSWORD: Quest-V324-Admin8!
+          ADMIN_INITIAL_EMAIL: admin-v324@example.test
+        run: |
+          mkdir -p "$DATA_DIR"
+          npm start > "$RUNNER_TEMP/v324-server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/v324-server.pid"
+          for attempt in $(seq 1 70); do
+            if curl -fsS http://127.0.0.1:3240/health > "$RUNNER_TEMP/health.json"; then exit 0; fi
+            sleep 0.3
+          done
+          cat "$RUNNER_TEMP/v324-server.log"
+          exit 1
+      - name: Login and inspect authenticated campus
+        run: |
+          JAR="$RUNNER_TEMP/cookies.txt"
+          curl -fsS -c "$JAR" -H 'Content-Type: application/json' \
+            -d '{"login":"admin","password":"Quest-V324-Admin8!"}' \
+            http://127.0.0.1:3240/api/auth/login > "$RUNNER_TEMP/login.json"
+          curl -fsS -b "$JAR" http://127.0.0.1:3240/campus > "$RUNNER_TEMP/campus.html"
+          grep -q 'data-ucan-v323-social-loader="true"' "$RUNNER_TEMP/campus.html"
+          curl -fsS -b "$JAR" http://127.0.0.1:3240/js/ucan_v323_social_loader.js > "$RUNNER_TEMP/loader.js"
+          curl -fsS -b "$JAR" http://127.0.0.1:3240/js/ucan_v324_xr_stairs_entry.js > "$RUNNER_TEMP/xr.js"
+          grep -q 'ucan_v324_xr_stairs_entry.js' "$RUNNER_TEMP/loader.js"
+          grep -q 'data-ucan-v324-xr-stairs-entry' "$RUNNER_TEMP/loader.js"
+          grep -q 'UCAN XR locomotion root V324' "$RUNNER_TEMP/xr.js"
+          grep -q 'ucanV324VrEntry' "$RUNNER_TEMP/xr.js"
+          grep -q "isSessionSupported('immersive-vr')" "$RUNNER_TEMP/xr.js"
+          grep -q 'if (stair.activeRoute) return false' "$RUNNER_TEMP/xr.js"
+          grep -q 'stopV316Frame' "$RUNNER_TEMP/xr.js"
+          grep -q 'startV316Frame' "$RUNNER_TEMP/xr.js"
+      - name: Stop application
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/v324-server.pid" ]; then kill "$(cat "$RUNNER_TEMP/v324-server.pid")" 2>/dev/null || true; fi
+          if [ -f "$RUNNER_TEMP/v324-server.log" ]; then tail -n 180 "$RUNNER_TEMP/v324-server.log"; fi
