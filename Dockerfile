@@ -12,4 +12,4 @@ ENV HOME=/tmp/ucan-home
 ENV DATA_DIR=/app/data
 VOLUME ["/app/data"]
 EXPOSE 3000
-CMD ["node", "-r", "./auth-compat-v319-vr-comfort.js", "server.js"]
+CMD ["node", "-r", "./auth-compat-v320-floor-lock.js", "server.js"]
