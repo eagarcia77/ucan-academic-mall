@@ -7,10 +7,10 @@ const root = __dirname;
 const files = {
   frontend:path.join(root, 'public/js/ucan_v240_voice.js'),
   bridge:path.join(root, 'public/js/ucan_v306_voice_xr_bridge.js'),
-  loader:path.join(root, 'public/js/ucan_v320_social_loader.js'),
+  loader:path.join(root, 'public/js/ucan_v321_social_loader.js'),
   backend:path.join(root, 'lib/voice-signaling.js'),
   parallelPreloader:path.join(root, 'auth-compat-v313-parallel.js'),
-  upperPreloader:path.join(root, 'auth-compat-v320-floor-lock.js'),
+  upperPreloader:path.join(root, 'auth-compat-v321-stair-authority.js'),
   campus:path.join(root, 'public/campus.html'),
   docker:path.join(root, 'Dockerfile'),
   package:path.join(root, 'package.json')
@@ -33,7 +33,7 @@ const startsThroughParallelVoice = text.upperPreloader.includes("require('./auth
 const checks = {
   frontendSyntax:true,bridgeSyntax:true,loaderSyntax:true,backendSyntax:true,parallelPreloaderSyntax:true,upperPreloaderSyntax:true,
   voiceScriptLoaded:text.campus.includes('/js/ucan_v240_voice.js'),
-  voiceBridgeLoaded:text.loader.includes('/js/ucan_v306_voice_xr_bridge.js?build=V320-20260730-SHARED-VOICE-R24'),
+  voiceBridgeLoaded:text.loader.includes('/js/ucan_v306_voice_xr_bridge.js?build=V321-20260730-SHARED-VOICE-R25'),
   allRoomsInFrontend:rooms.every(room => text.frontend.includes(`'${room}'`)),
   allRoomsInBridge:rooms.every(room => text.bridge.includes(`'${room}'`)),
   allRoomsInBackend:rooms.every(room => text.backend.includes(`'${room}'`)),
@@ -56,9 +56,9 @@ const checks = {
   authenticationRequired:/Inicie sesión para usar el audio/.test(text.backend),
   voiceCreatedDirectly:/createVoiceSystem/.test(text.parallelPreloader) && /loadIceServersFromEnvironment/.test(text.parallelPreloader),
   cleanParallelPreloader:text.parallelPreloader.includes("require('./auth-compat-v271.js')") && forbiddenVisualChain.every(item => !text.parallelPreloader.includes(item)),
-  v320PreservesParallelVoice:startsThroughParallelVoice,
-  packageStartsVoiceStack:String(pkg.scripts?.start || '').includes('auth-compat-v320-floor-lock.js') && startsThroughParallelVoice,
-  dockerUsesVoiceStack:text.docker.includes('auth-compat-v320-floor-lock.js') && startsThroughParallelVoice,
+  v321PreservesParallelVoice:startsThroughParallelVoice,
+  packageStartsVoiceStack:String(pkg.scripts?.start || '').includes('auth-compat-v321-stair-authority.js') && startsThroughParallelVoice,
+  dockerUsesVoiceStack:text.docker.includes('auth-compat-v321-stair-authority.js') && startsThroughParallelVoice,
   packageChecksVoiceFiles:String(pkg.scripts?.check || '').includes('lib/voice-signaling.js') && String(pkg.scripts?.check || '').includes('auth-compat-v313-parallel.js') && String(pkg.scripts?.check || '').includes('ucan_v306_voice_xr_bridge.js'),
   packageRunsVoiceAudit:String(pkg.scripts?.test || '').includes('audit:voice-v306')
 };
@@ -66,6 +66,6 @@ for (const [name, code] of [['frontendSyntax',text.frontend],['bridgeSyntax',tex
   try { new Function(code); } catch (error) { checks[name]=false; checks[`${name}Error`]=error.message; }
 }
 const failures = Object.entries(checks).filter(([, value]) => value !== true);
-const report = {version:'V320',voiceLayer:'V313/V306',feature:'Audio WebRTC compartido en browser, móvil, VR y MR',architecture:'V320 sticky floor lock over clean parallel voice preloader',ok:failures.length===0,rooms,checks,failures:failures.map(([name,value])=>({name,value}))};
+const report = {version:'V321',voiceLayer:'V313/V306',feature:'Audio WebRTC compartido en browser, móvil, VR y MR',architecture:'V321 single stair authority over clean parallel voice preloader',ok:failures.length===0,rooms,checks,failures:failures.map(([name,value])=>({name,value}))};
 console.log(JSON.stringify(report,null,2));
 if (!report.ok) process.exitCode=1;
