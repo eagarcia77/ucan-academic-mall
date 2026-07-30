@@ -1,5 +1,6 @@
 'use strict';
 
+// Ejecución CI de confirmación para la autoridad única V321.
 const fs = require('fs');
 const path = require('path');
 const root = __dirname;
