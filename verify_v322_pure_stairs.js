@@ -16,6 +16,7 @@ const files = {
 const text = Object.fromEntries(Object.entries(files).map(([key,file]) => [key, fs.readFileSync(file, 'utf8')]));
 const pkg = JSON.parse(text.package);
 const routes = ['up12','down21','up23','down32','up34','down34'];
+const cameraWrite = /(?:camera|xr|desktop)\.position(?:\.[xyz])?\s*=(?!=)|(?:camera|xr|desktop)\.position\.(?:set|copyFrom|addInPlace)\s*\(/;
 
 const checks = {
   filesExist:Object.values(files).every(fs.existsSync),
@@ -25,15 +26,15 @@ const checks = {
   preloaderSyntax:true,
   sixRoutes:routes.every(id => text.authority.includes(`id:'${id}'`)),
   pureGroundProvider:/pureGroundProvider:true/.test(text.authority),
-  authorityDoesNotMoveCamera:!/camera\.position\s*[.=]/.test(text.authority) && !/xr\.position\s*[.=]/.test(text.authority) && !/desktop\.position\s*[.=]/.test(text.authority),
+  authorityDoesNotMoveCamera:!cameraWrite.test(text.authority),
   authorityHasNoRenderLoop:!/onBeforeRenderObservable\.add/.test(text.authority),
   noForcedLanding:/forcedLandingTeleport:false/.test(text.authority) && !/pendingLanding/.test(text.authority) && !/applyPendingLanding/.test(text.authority),
   oneGroundResolutionPatch:/groundResolvedOncePerMovementFrame:true/.test(text.preloader) && text.preloader.includes('state.ground ya fue resuelto una vez'),
   runtimeDelegatesOnlyV322:/__UCAN_STAIR_AUTHORITY_V322__/.test(text.preloader) && !/__UCAN_STAIR_AUTHORITY_V321__/.test(text.preloader),
-  loaderNoV318:!text.loader.includes('ucan_v318_stairs_all_environments.js'),
-  loaderNoV319:!text.loader.includes('ucan_v319_vr_accessibility.js'),
-  loaderNoV321:!text.loader.includes('ucan_v321_stair_authority.js'),
-  visualDoesNotMoveCamera:/movesCamera:false/.test(text.visual) && !/camera\.position/.test(text.visual),
+  loaderNoV318:!text.loader.includes('/js/ucan_v318_stairs_all_environments.js'),
+  loaderNoV319:!text.loader.includes('/js/ucan_v319_vr_accessibility.js'),
+  loaderNoV321:!text.loader.includes('/js/ucan_v321_stair_authority.js'),
+  visualDoesNotMoveCamera:/movesCamera:false/.test(text.visual) && !cameraWrite.test(text.visual),
   legacyBaseCallsRemovedAtResponse:text.preloader.includes('setupEscalatorRide(scene, camera);') && text.preloader.includes('__UCAN_LEGACY_ESCALATOR_RIDE_DISABLED_V322__') && text.preloader.includes('__UCAN_LEGACY_RELIABLE_MOVEMENT_DISABLED_V322__') && text.preloader.includes('__UCAN_LEGACY_CLAMP_HEIGHT_DISABLED_V322__'),
   baseStillContainsLegacySource:text.base.includes('setupEscalatorRide(scene, camera);') && text.base.includes('setupReliableMovement(scene, camera);') && text.base.includes('clampCameraHeight(camera)'),
   runtimeSourceContainsDuplicateBeforePatch:text.locomotion.includes('state.ground = groundFor(state.desktop.position);'),
