@@ -1,0 +1,86 @@
+name: Render Stability V325
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'auth-compat-v325-render-stability.js'
+      - 'public/js/ucan_v325_render_stability.js'
+      - 'verify_v325_render_stability.js'
+      - 'package.json'
+      - 'Dockerfile'
+      - '.github/workflows/render-stability-v325.yml'
+  pull_request:
+    paths:
+      - 'auth-compat-v325-render-stability.js'
+      - 'public/js/ucan_v325_render_stability.js'
+      - 'verify_v325_render_stability.js'
+      - 'package.json'
+      - 'Dockerfile'
+      - '.github/workflows/render-stability-v325.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Validate stable browser and WebXR rendering
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run repository tests
+        run: npm test
+      - name: Start application
+        env:
+          PORT: '3250'
+          DATA_DIR: ${{ runner.temp }}/ucan-v325-data
+          ADMIN_INITIAL_USERNAME: admin
+          ADMIN_INITIAL_PASSWORD: Stable-V325-Admin9!
+          ADMIN_INITIAL_EMAIL: admin-v325@example.test
+        run: |
+          mkdir -p "$DATA_DIR"
+          npm start > "$RUNNER_TEMP/v325-server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/v325-server.pid"
+          for attempt in $(seq 1 70); do
+            if curl -fsS http://127.0.0.1:3250/health > "$RUNNER_TEMP/health.json"; then exit 0; fi
+            sleep 0.3
+          done
+          cat "$RUNNER_TEMP/v325-server.log"
+          exit 1
+      - name: Login and inspect authenticated campus
+        run: |
+          JAR="$RUNNER_TEMP/cookies.txt"
+          curl -fsS -c "$JAR" -H 'Content-Type: application/json' \
+            -d '{"login":"admin","password":"Stable-V325-Admin9!"}' \
+            http://127.0.0.1:3250/api/auth/login > "$RUNNER_TEMP/login.json"
+          curl -fsS -D "$RUNNER_TEMP/campus.headers" -b "$JAR" \
+            http://127.0.0.1:3250/campus > "$RUNNER_TEMP/campus.html"
+          grep -qi '^X-UCAN-Stability: V325' "$RUNNER_TEMP/campus.headers"
+          grep -q 'data-ucan-v325-render-stability="true"' "$RUNNER_TEMP/campus.html"
+          grep -q 'data-ucan-v323-locomotion="true"' "$RUNNER_TEMP/campus.html"
+          STABLE_LINE=$(grep -n 'data-ucan-v325-render-stability="true"' "$RUNNER_TEMP/campus.html" | head -1 | cut -d: -f1)
+          MOVE_LINE=$(grep -n 'data-ucan-v323-locomotion="true"' "$RUNNER_TEMP/campus.html" | head -1 | cut -d: -f1)
+          if [ "$STABLE_LINE" -ge "$MOVE_LINE" ]; then
+            echo "V325 must load before locomotion and stair authority"
+            exit 1
+          fi
+      - name: Verify stability runtime delivery
+        run: |
+          JAR="$RUNNER_TEMP/cookies.txt"
+          curl -fsS -b "$JAR" http://127.0.0.1:3250/js/ucan_v325_render_stability.js > "$RUNNER_TEMP/stability.js"
+          grep -q 'singleStableVisualAuthority:true' "$RUNNER_TEMP/stability.js"
+          grep -q 'periodicCanonicalRepairsDisabled:true' "$RUNNER_TEMP/stability.js"
+          grep -q 'periodicGlassToggleDisabled:true' "$RUNNER_TEMP/stability.js"
+          grep -q 'periodicLightReapplicationDisabled:true' "$RUNNER_TEMP/stability.js"
+          grep -q 'B.Observable.prototype.add' "$RUNNER_TEMP/stability.js"
+          grep -q 'hiddenByV322' "$RUNNER_TEMP/stability.js"
+          ! grep -q 'camera.position.addInPlace' "$RUNNER_TEMP/stability.js"
+      - name: Stop application
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/v325-server.pid" ]; then kill "$(cat "$RUNNER_TEMP/v325-server.pid")" 2>/dev/null || true; fi
+          if [ -f "$RUNNER_TEMP/v325-server.log" ]; then tail -n 180 "$RUNNER_TEMP/v325-server.log"; fi
