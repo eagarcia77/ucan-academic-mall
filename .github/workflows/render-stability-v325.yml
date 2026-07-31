@@ -1,5 +1,6 @@
 name: Render Stability V325
 
+# Temporary validation run for the current V325 implementation.
 on:
   push:
     branches: [main]
