@@ -1,0 +1,72 @@
+name: XR Landing Release V326
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/js/ucan_v326_xr_landing_release.js'
+      - 'auth-compat-v325-render-stability.js'
+      - 'verify_v326_xr_landing_release.js'
+      - 'package.json'
+      - '.github/workflows/xr-landing-release-v326.yml'
+  pull_request:
+    paths:
+      - 'public/js/ucan_v326_xr_landing_release.js'
+      - 'auth-compat-v325-render-stability.js'
+      - 'verify_v326_xr_landing_release.js'
+      - 'package.json'
+      - '.github/workflows/xr-landing-release-v326.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Validate Meta Quest upper landing release
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run repository tests
+        run: npm test
+      - name: Start application
+        env:
+          PORT: '3260'
+          DATA_DIR: ${{ runner.temp }}/ucan-v326-data
+          ADMIN_INITIAL_USERNAME: admin
+          ADMIN_INITIAL_PASSWORD: Landing-V326-Admin9!
+          ADMIN_INITIAL_EMAIL: admin-v326@example.test
+        run: |
+          mkdir -p "$DATA_DIR"
+          npm start > "$RUNNER_TEMP/v326-server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/v326-server.pid"
+          for attempt in $(seq 1 70); do
+            if curl -fsS http://127.0.0.1:3260/health > "$RUNNER_TEMP/health.json"; then exit 0; fi
+            sleep 0.3
+          done
+          cat "$RUNNER_TEMP/v326-server.log"
+          exit 1
+      - name: Login and inspect authenticated campus
+        run: |
+          JAR="$RUNNER_TEMP/cookies.txt"
+          curl -fsS -c "$JAR" -H 'Content-Type: application/json' \
+            -d '{"login":"admin","password":"Landing-V326-Admin9!"}' \
+            http://127.0.0.1:3260/api/auth/login > "$RUNNER_TEMP/login.json"
+          curl -fsS -D "$RUNNER_TEMP/campus.headers" -b "$JAR" \
+            http://127.0.0.1:3260/campus > "$RUNNER_TEMP/campus.html"
+          grep -qi '^X-UCAN-XR-Landing: V326' "$RUNNER_TEMP/campus.headers"
+          grep -q 'data-ucan-v326-xr-landing-release="true"' "$RUNNER_TEMP/campus.html"
+          curl -fsS -b "$JAR" http://127.0.0.1:3260/js/ucan_v326_xr_landing_release.js > "$RUNNER_TEMP/landing.js"
+          grep -q '__UCAN_XR_LANDING_RELEASE_V326__' "$RUNNER_TEMP/landing.js"
+          grep -q 'landingReleaseAfterRoute:true' "$RUNNER_TEMP/landing.js"
+          grep -q 'collisionFreeExitCorridor:true' "$RUNNER_TEMP/landing.js"
+          grep -q 'smoothCarryOff:true' "$RUNNER_TEMP/landing.js"
+          grep -q 'completed > state.previousCompleted' "$RUNNER_TEMP/landing.js"
+      - name: Stop application
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/v326-server.pid" ]; then kill "$(cat "$RUNNER_TEMP/v326-server.pid")" 2>/dev/null || true; fi
+          if [ -f "$RUNNER_TEMP/v326-server.log" ]; then tail -n 180 "$RUNNER_TEMP/v326-server.log"; fi
