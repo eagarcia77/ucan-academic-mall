@@ -8,6 +8,7 @@ on:
       - 'auth-compat-v325-render-stability.js'
       - 'verify_v326_xr_landing_release.js'
       - 'package.json'
+      - '.validation-v326-trigger'
       - '.github/workflows/xr-landing-release-v326.yml'
   pull_request:
     paths:
@@ -15,6 +16,7 @@ on:
       - 'auth-compat-v325-render-stability.js'
       - 'verify_v326_xr_landing_release.js'
       - 'package.json'
+      - '.validation-v326-trigger'
       - '.github/workflows/xr-landing-release-v326.yml'
 
 permissions:
