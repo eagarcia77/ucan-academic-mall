@@ -1,7 +1,7 @@
 {
   "name": "ucan-academic-v326",
   "version": "3.2.6",
-  "description": "UCAN Academic V326 con salida superior WebXR libre de colisiones y desembarque continuo en Meta Quest",
+  "description": "UCAN Academic V326 con salida superior WebXR libre de colisiones y desembarque continuo en Meta Quest (validación temporal)",
   "main": "server.js",
   "scripts": {
     "start": "node -r ./auth-compat-v323-browser-panel.js -r ./auth-compat-v325-render-stability.js server.js",
