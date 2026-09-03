@@ -1,32 +1,7 @@
-name: Unified World V311
+name: Legacy Unified World V311 (archived)
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'lib/persistent-identity-v311.js'
-      - 'lib/unified-world-v311.js'
-      - 'public/js/ucan_v311_unified_world.js'
-      - 'public/js/ucan_v311_compat_aliases.js'
-      - 'public/js/ucan_v266_keyboard_jump.js'
-      - 'auth-compat-v311-unified.js'
-      - 'Dockerfile'
-      - 'package.json'
-      - 'test_persistent_identity_v311.js'
-      - 'verify_v311_unified_world.js'
-      - '.github/workflows/unified-world-v311.yml'
-  pull_request:
-    paths:
-      - 'lib/persistent-identity-v311.js'
-      - 'lib/unified-world-v311.js'
-      - 'public/js/ucan_v311_unified_world.js'
-      - 'public/js/ucan_v311_compat_aliases.js'
-      - 'public/js/ucan_v266_keyboard_jump.js'
-      - 'auth-compat-v311-unified.js'
-      - 'Dockerfile'
-      - 'package.json'
-      - 'test_persistent_identity_v311.js'
-      - 'verify_v311_unified_world.js'
+  workflow_dispatch:
 
 permissions:
   contents: read
