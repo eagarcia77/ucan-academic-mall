@@ -1,0 +1,90 @@
+name: XR Final Authority V328
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/js/ucan_v328_xr_final_authority.js'
+      - 'auth-compat-v323-browser-panel.js'
+      - 'auth-compat-v325-render-stability.js'
+      - 'verify_v328_xr_final_authority.js'
+      - 'package.json'
+      - '.github/workflows/xr-final-authority-v328.yml'
+  pull_request:
+    paths:
+      - 'public/js/ucan_v328_xr_final_authority.js'
+      - 'auth-compat-v323-browser-panel.js'
+      - 'auth-compat-v325-render-stability.js'
+      - 'verify_v328_xr_final_authority.js'
+      - 'package.json'
+      - '.github/workflows/xr-final-authority-v328.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Validate single XR height and stair authority
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run repository tests
+        run: npm test
+      - name: Start application
+        env:
+          PORT: '3280'
+          DATA_DIR: ${{ runner.temp }}/ucan-v328-data
+          ADMIN_INITIAL_USERNAME: admin
+          ADMIN_INITIAL_PASSWORD: Final-V328-Admin9!
+          ADMIN_INITIAL_EMAIL: admin-v328@example.test
+        run: |
+          mkdir -p "$DATA_DIR"
+          npm start > "$RUNNER_TEMP/v328-server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/v328-server.pid"
+          for attempt in $(seq 1 70); do
+            if curl -fsS http://127.0.0.1:3280/health > "$RUNNER_TEMP/health.json"; then exit 0; fi
+            sleep 0.3
+          done
+          cat "$RUNNER_TEMP/v328-server.log"
+          exit 1
+      - name: Verify version and final authority
+        run: |
+          curl -fsS http://127.0.0.1:3280/version > "$RUNNER_TEMP/version.json"
+          grep -q '"version":"V328"' "$RUNNER_TEMP/version.json"
+          grep -q '"singleFinalVerticalAuthority":true' "$RUNNER_TEMP/version.json"
+          grep -q '"automaticStairsWithoutJoystick":true' "$RUNNER_TEMP/version.json"
+          grep -q '"desktopEyeHeightParity":true' "$RUNNER_TEMP/version.json"
+      - name: Login and inspect authenticated campus
+        run: |
+          JAR="$RUNNER_TEMP/cookies.txt"
+          curl -fsS -c "$JAR" -H 'Content-Type: application/json' \
+            -d '{"login":"admin","password":"Final-V328-Admin9!"}' \
+            http://127.0.0.1:3280/api/auth/login > "$RUNNER_TEMP/login.json"
+          curl -fsS -D "$RUNNER_TEMP/campus.headers" -b "$JAR" \
+            http://127.0.0.1:3280/campus > "$RUNNER_TEMP/campus.html"
+          grep -qi '^X-UCAN-XR-Final-Authority: V328' "$RUNNER_TEMP/campus.headers"
+          grep -q 'data-ucan-v328-xr-final-authority="true"' "$RUNNER_TEMP/campus.html"
+          grep -q 'ucan_v328_xr_final_authority.js?build=V328-20260903-XR-FINAL-HEIGHT-STAIRS-R32' "$RUNNER_TEMP/campus.html"
+          if grep -q 'data-ucan-v326-xr-landing-release="true"' "$RUNNER_TEMP/campus.html"; then echo 'V326 runtime should be disabled'; exit 1; fi
+          if grep -q 'data-ucan-v327-xr-stair-ride="true"' "$RUNNER_TEMP/campus.html"; then echo 'V327 runtime should be disabled'; exit 1; fi
+      - name: Inspect V328 runtime and transformed V324 adapter
+        run: |
+          JAR="$RUNNER_TEMP/cookies.txt"
+          curl -fsS -b "$JAR" http://127.0.0.1:3280/js/ucan_v328_xr_final_authority.js > "$RUNNER_TEMP/v328.js"
+          grep -q '__UCAN_XR_FINAL_AUTHORITY_V328__' "$RUNNER_TEMP/v328.js"
+          grep -q 'automaticStairsWithoutJoystick:true' "$RUNNER_TEMP/v328.js"
+          grep -q 'exactFloorLanding:true' "$RUNNER_TEMP/v328.js"
+          grep -q 'desktopEyeHeightParity:true' "$RUNNER_TEMP/v328.js"
+          curl -fsS -b "$JAR" http://127.0.0.1:3280/js/ucan_v324_xr_stairs_entry.js > "$RUNNER_TEMP/v324-served.js"
+          grep -q 'const SPEEDS = { comfort:3.4, natural:5.0, fast:7.0 };' "$RUNNER_TEMP/v324-served.js"
+          grep -q 'const TURN_SPEED = 1.9;' "$RUNNER_TEMP/v324-served.js"
+          grep -q 'const finalAuthority = window.__UCAN_XR_FINAL_AUTHORITY_V328__;' "$RUNNER_TEMP/v324-served.js"
+      - name: Stop application
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/v328-server.pid" ]; then kill "$(cat "$RUNNER_TEMP/v328-server.pid")" 2>/dev/null || true; fi
+          if [ -f "$RUNNER_TEMP/v328-server.log" ]; then tail -n 180 "$RUNNER_TEMP/v328-server.log"; fi
