@@ -1,73 +1,22 @@
-name: XR Stair Ride Height V327
+name: Legacy XR Stair Ride V327 (archived)
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'public/js/ucan_v327_xr_stair_ride_height.js'
-      - 'auth-compat-v325-render-stability.js'
-      - 'verify_v327_xr_stair_ride_height.js'
-      - 'package.json'
-      - '.github/workflows/xr-stair-ride-v327.yml'
-  pull_request:
-    paths:
-      - 'public/js/ucan_v327_xr_stair_ride_height.js'
-      - 'auth-compat-v325-render-stability.js'
-      - 'verify_v327_xr_stair_ride_height.js'
-      - 'package.json'
-      - '.github/workflows/xr-stair-ride-v327.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  audit:
-    name: Validate Meta Quest stair ride and height
+  archive-audit:
+    name: Verify archived V327 source only
     runs-on: ubuntu-latest
-    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Run repository tests
-        run: npm test
-      - name: Start application
-        env:
-          PORT: '3270'
-          DATA_DIR: ${{ runner.temp }}/ucan-v327-data
-          ADMIN_INITIAL_USERNAME: admin
-          ADMIN_INITIAL_PASSWORD: Stair-V327-Admin9!
-          ADMIN_INITIAL_EMAIL: admin-v327@example.test
+      - name: Verify historical source remains valid
         run: |
-          mkdir -p "$DATA_DIR"
-          npm start > "$RUNNER_TEMP/v327-server.log" 2>&1 &
-          echo $! > "$RUNNER_TEMP/v327-server.pid"
-          for attempt in $(seq 1 70); do
-            if curl -fsS http://127.0.0.1:3270/health > "$RUNNER_TEMP/health.json"; then exit 0; fi
-            sleep 0.3
-          done
-          cat "$RUNNER_TEMP/v327-server.log"
-          exit 1
-      - name: Login and inspect authenticated campus
-        run: |
-          JAR="$RUNNER_TEMP/cookies.txt"
-          curl -fsS -c "$JAR" -H 'Content-Type: application/json' \
-            -d '{"login":"admin","password":"Stair-V327-Admin9!"}' \
-            http://127.0.0.1:3270/api/auth/login > "$RUNNER_TEMP/login.json"
-          curl -fsS -D "$RUNNER_TEMP/campus.headers" -b "$JAR" \
-            http://127.0.0.1:3270/campus > "$RUNNER_TEMP/campus.html"
-          grep -qi '^X-UCAN-XR-Stair-Ride: V327' "$RUNNER_TEMP/campus.headers"
-          grep -q 'data-ucan-v327-xr-stair-ride="true"' "$RUNNER_TEMP/campus.html"
-          grep -q 'ucan_v327_xr_stair_ride_height.js?build=V327-20260903-XR-AUTO-STAIRS-HEIGHT-R31' "$RUNNER_TEMP/campus.html"
-          curl -fsS -b "$JAR" http://127.0.0.1:3270/js/ucan_v327_xr_stair_ride_height.js > "$RUNNER_TEMP/v327.js"
-          grep -q '__UCAN_XR_STAIR_RIDE_V327__' "$RUNNER_TEMP/v327.js"
-          grep -q 'automaticStairRide:true' "$RUNNER_TEMP/v327.js"
-          grep -q 'exactFloorSnap:true' "$RUNNER_TEMP/v327.js"
-          grep -q 'preventsBetweenFloors:true' "$RUNNER_TEMP/v327.js"
-          grep -q 'eyeHeightCorrection:true' "$RUNNER_TEMP/v327.js"
-      - name: Stop application
-        if: always()
-        run: |
-          if [ -f "$RUNNER_TEMP/v327-server.pid" ]; then kill "$(cat "$RUNNER_TEMP/v327-server.pid")" 2>/dev/null || true; fi
-          if [ -f "$RUNNER_TEMP/v327-server.log" ]; then tail -n 180 "$RUNNER_TEMP/v327-server.log"; fi
+          node --check public/js/ucan_v327_xr_stair_ride_height.js
+          node --check verify_v327_xr_stair_ride_height.js
+          echo 'V327 is archived and is not loaded by the production WebXR runtime. V328 owns height, stairs and exact landings.'
