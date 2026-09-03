@@ -6,14 +6,14 @@ Este protocolo es la autoridad final para aprobar el recorrido entre pisos en un
 
 - Aplicación: <https://ucan-academic-mall.onrender.com>
 - Versión requerida: `V328`
-- Revisión requerida: `R32`
+- Revisión requerida: `R33`
 - Dispositivo: Meta Quest con Meta Quest Browser actualizado
 - Seguridad: complete la prueba sentado o dentro de un límite Guardian despejado
 
 Antes de entrar en VR, abra `/version` y confirme:
 
 - `version: V328`
-- `revision: R32`
+- `revision: R33`
 - `singleFinalVerticalAuthority: true`
 - `automaticStairsWithoutJoystick: true`
 - `exactFloorLanding: true`
@@ -31,6 +31,8 @@ Después, cierre completamente cualquier pestaña anterior, abra nuevamente la a
 6. Durante el recorrido, confirme que la cámara no salta, tiembla ni atraviesa la escalera.
 7. Al llegar, confirme que queda completamente sobre el descanso de P2 y puede caminar inmediatamente.
 8. Permanezca diez segundos en P2 y confirme que no baja, flota ni queda entre pisos.
+
+Si resulta difícil alinearse con la entrada, use **Subir piso (asistido)** o **Bajar piso (asistido)**. Estos controles colocan al usuario en la ruta correcta y completan el mismo transporte automático.
 
 Resultado esperado: un solo recorrido automático, aterrizaje exacto en P2, altura visual estable y libertad inmediata para continuar caminando.
 
@@ -53,7 +55,7 @@ Cada ruta debe iniciar una sola vez, moverse sin joystick vertical, aterrizar ex
 
 | Comprobación | Aprobó | Falló | Observación |
 |---|:---:|:---:|---|
-| `/version` muestra V328/R32 | ☐ | ☐ | |
+| `/version` muestra V328/R33 | ☐ | ☐ | |
 | Altura inicial coincide con desktop | ☐ | ☐ | |
 | `up12` inicia solo al entrar | ☐ | ☐ | |
 | P1 → P2 continúa sin joystick | ☐ | ☐ | |

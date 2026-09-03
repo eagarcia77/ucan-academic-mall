@@ -25,6 +25,9 @@ const checks = {
   singleFinalVerticalAuthority:/singleFinalVerticalAuthority:true/.test(text.runtime||'') && /ownsVertical:true/.test(text.runtime||''),
   automaticWithoutJoystick:/automaticStairsWithoutJoystick:true/.test(text.runtime||'') && /function entryRoute/.test(text.runtime||'') && /function updateRide/.test(text.runtime||''),
   exactLanding:/exactFloorLanding:true/.test(text.runtime||'') && /v328-exact-landing/.test(text.runtime||'') && /LANDING_CLEARANCE\s*=\s*2\.7/.test(text.runtime||''),
+  questComfortEntry:/ENTRY_DEPTH\s*=\s*5\.8/.test(text.runtime||'') && /ENTRY_WIDTH_ASSIST\s*=\s*1\.25/.test(text.runtime||''),
+  rideCooldown:/RIDE_COOLDOWN\s*=\s*1800/.test(text.runtime||'') && /lastRideFinishedAt/.test(text.runtime||''),
+  assistedFloorControls:/Subir piso \(asistido\)/.test(text.runtime||'') && /Bajar piso \(asistido\)/.test(text.runtime||'') && /function assistedRide/.test(text.runtime||''),
   desktopEyeParity:/TARGET_EYE_HEIGHT\s*=\s*1\.72/.test(text.runtime||'') && /desktopEyeHeightParity:true/.test(text.runtime||'') && /calibrationFrame/.test(text.runtime||''),
   betweenFloorRepair:/preventsBetweenFloors:true/.test(text.runtime||'') && /repairBetweenFloors/.test(text.runtime||''),
   underStairProtection:/underStairSafetyVolumes:true/.test(text.runtime||'') && /guardUnderStairs/.test(text.runtime||'') && /bajo-terraza/.test(text.runtime||''),
@@ -54,8 +57,8 @@ for (const key of ['runtime','preloader','adapter']) {
 const failures = Object.entries(checks).filter(([,value]) => value !== true);
 const report = {
   version:'V328',
-  revision:'R32',
-  build:'V328-20260903-XR-FINAL-HEIGHT-STAIRS-R32',
+  revision:'R33',
+  build:'V328-20260903-QUEST-COMFORT-STAIRS-R33',
   feature:'Una autoridad vertical final, altura equivalente a escritorio, escaleras automáticas y aterrizaje exacto',
   ok:failures.length===0,
   checks,
