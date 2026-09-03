@@ -180,6 +180,10 @@ Después de un nuevo despliegue:
 4. Entre a `/campus`.
 5. Active VR y pruebe los carteles y objetos de la terraza.
 
+Para aprobar la locomoción entre pisos de V328, complete el protocolo
+[Validación física V328 en Meta Quest](docs/V328_PHYSICAL_TEST.md). La aprobación
+automatizada no reemplaza el recorrido físico P1 → P2.
+
 ## Rutas principales
 
 ```text
