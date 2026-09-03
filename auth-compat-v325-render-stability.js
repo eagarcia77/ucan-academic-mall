@@ -9,10 +9,10 @@ const baseWrite = http.ServerResponse.prototype.write;
 const baseEnd = http.ServerResponse.prototype.end;
 
 const VERSION = 'V328';
-const REVISION = 'R34';
-const BUILD = 'V328-20260903-DYNAMIC-DAY-NIGHT-R34';
-const STABILITY_SRC = '/js/ucan_v325_render_stability.js?build=V328-20260903-DYNAMIC-DAY-NIGHT-R34';
-const FINAL_XR_SRC = '/js/ucan_v328_xr_final_authority.js?build=V328-20260903-DYNAMIC-DAY-NIGHT-R34';
+const REVISION = 'R35';
+const BUILD = 'V328-20260903-PUERTO-RICO-DAYLIGHT-R35';
+const STABILITY_SRC = '/js/ucan_v325_render_stability.js?build=V328-20260903-PUERTO-RICO-DAYLIGHT-R35';
+const FINAL_XR_SRC = '/js/ucan_v328_xr_final_authority.js?build=V328-20260903-PUERTO-RICO-DAYLIGHT-R35';
 
 // La capa V323 se mantiene como adaptador horizontal, pero ya no debe volver a
 // publicar sus metadatos como si fuera la versión final.  V323 consulta este
@@ -66,7 +66,7 @@ function transformHtml(value) {
 
   html = html.replace(/UCAN Academic Mall V(?:323|325|326|327)/g, 'UCAN Academic Mall V328');
   html = html.replace(/COMPILACIÓN V(?:323|325|326|327)[^<]*/g, 'COMPILACIÓN V328 · AUTORIDAD XR ÚNICA Y ATERRIZAJE EXACTO');
-  html = html.replace('</head>', `  <meta name="ucan-render-stability" content="V325-R29" />\n  <meta name="ucan-xr-final-authority" content="V328-R34" />\n</head>`);
+  html = html.replace('</head>', `  <meta name="ucan-render-stability" content="V325-R29" />\n  <meta name="ucan-xr-final-authority" content="V328-R35" />\n</head>`);
   return html;
 }
 
@@ -89,6 +89,7 @@ function transformJson(value) {
       assistedFloorControls:true,
       dynamicDayNightPreserved:true,
       environmentClockShared:true,
+      puertoRicoRealTimeAuthority:true,
       preventsBetweenFloors:true,
       desktopEyeHeightParity:true,
       targetEyeHeightMeters:1.72,

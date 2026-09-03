@@ -2,7 +2,7 @@
   'use strict';
 
   const VERSION = 'V287';
-  const BUILD = 'V287-20260903-SHARED-DAY-NIGHT-R34';
+  const BUILD = 'V287-20260903-PUERTO-RICO-DAYLIGHT-R35';
   const B = window.BABYLON;
   if (!B) return;
 
@@ -61,11 +61,15 @@
   const normalizeDegrees = value => ((Number(value) % 360) + 360) % 360;
 
   function environmentTime() {
-    const shared=window.__UCAN_API__?.getEnvironment?.() || window.__UCAN_ENVIRONMENT__?.getState?.();
-    if (finite(shared?.timeOfDay)) return Number(shared.timeOfDay);
+    const shared=window.__UCAN_ENVIRONMENT__?.getState?.() || window.__UCAN_API__?.getEnvironment?.();
     const formatter=new Intl.DateTimeFormat('en-US',{timeZone:'America/Puerto_Rico',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
     const parts=Object.fromEntries(formatter.formatToParts(new Date()).filter(part=>part.type!=='literal').map(part=>[part.type,part.value]));
-    return Number(parts.hour||0)+Number(parts.minute||0)/60;
+    const puertoRicoTime=(Number(parts.hour||0)%24)+Number(parts.minute||0)/60;
+    // El reloj real de Puerto Rico es la autoridad mientras liveClock esté activo.
+    // La hora almacenada solo se usa durante la demostración acelerada explícita.
+    if (shared?.liveClock !== false) return puertoRicoTime;
+    if (finite(shared?.timeOfDay)) return ((Number(shared.timeOfDay)%24)+24)%24;
+    return puertoRicoTime;
   }
 
   function dayNightMode() {
@@ -529,7 +533,8 @@
       selected:state.selected?.name || null,
       onTerrace:onTerrace(),
       dayNightMode:dayNightMode(),
-      sharedEnvironmentClock:true
+      sharedEnvironmentClock:true,
+      puertoRicoRealTimeAuthority:true
     };
   }
 
