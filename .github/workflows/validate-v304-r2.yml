@@ -1,8 +1,5 @@
-name: Validar Global V304 R5
+name: Legacy Global V304 R5 (archived)
 on:
-  push:
-    branches: [main]
-  pull_request:
   workflow_dispatch:
 
 jobs:

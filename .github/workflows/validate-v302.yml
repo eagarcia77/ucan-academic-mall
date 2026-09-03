@@ -1,8 +1,5 @@
-name: Validar Meta Quest V303
+name: Legacy Meta Quest V303 (archived)
 on:
-  push:
-    branches: [main]
-  pull_request:
   workflow_dispatch:
 
 jobs:

@@ -20,26 +20,14 @@ jobs:
       matrix:
         script:
           - check
-          - audit:unified-xr
-          - audit:manual-rooftop-stairs
-          - audit:quest-xr
-          - audit:quest-visuals
-          - audit:universal-signs
-          - audit:floor-sky
-          - audit:celestial-window
-          - audit:profile
-          - audit:access-scroll
-          - audit:accounts
-          - audit:layers
-          - audit:floor
-          - audit:environment
-          - audit:optimization
-          - audit:stairs
-          - audit:astronomy
-          - audit:text-wrap
-          - audit:astro-panels
-          - audit:keyboard-jump
-          - audit:avatar-v270
+          - test:persistence-v311
+          - audit:v314
+          - audit:v322
+          - audit:v323
+          - audit:v324
+          - audit:v325
+          - audit:v328
+          - audit:voice-v306
 
     steps:
       - name: Checkout repository

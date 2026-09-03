@@ -1,8 +1,5 @@
-name: Validar Carteles e Interacción V304 R6
+name: Legacy Carteles e Interacción V304 R6 (archived)
 on:
-  push:
-    branches: [main]
-  pull_request:
   workflow_dispatch:
 
 jobs:

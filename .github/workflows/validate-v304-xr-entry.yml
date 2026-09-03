@@ -1,8 +1,5 @@
-name: Validar Entrada VR y MR V304
+name: Legacy Entrada VR y MR V304 (archived)
 on:
-  push:
-    branches: [main]
-  pull_request:
   workflow_dispatch:
 
 jobs:
