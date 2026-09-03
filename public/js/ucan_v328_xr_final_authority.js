@@ -5,8 +5,8 @@
   if (!B) return;
 
   const VERSION = 'V328';
-  const REVISION = 'R33';
-  const BUILD = 'V328-20260903-QUEST-COMFORT-STAIRS-R33';
+  const REVISION = 'R34';
+  const BUILD = 'V328-20260903-DYNAMIC-DAY-NIGHT-R34';
   const TARGET_EYE_HEIGHT = 1.72;
   const MAX_UP_CORRECTION = 1.72;
   const MAX_DOWN_CORRECTION = 0.55;
@@ -486,17 +486,24 @@
   function ensureVisualParity() {
     const scene=state.scene,snapshot=state.visualSnapshot;
     if (!scene || !snapshot) return;
-    if (snapshot.clearColor) scene.clearColor=snapshot.clearColor.clone?.()||snapshot.clearColor;
-    if (snapshot.ambientColor) scene.ambientColor=snapshot.ambientColor.clone?.()||snapshot.ambientColor;
+    // Do not restore the entry-time lighting while the natural environment is
+    // active: doing so froze the day/night cycle inside Meta Quest.
+    const dynamicEnvironment=window.__UCAN_ENVIRONMENT__?.getState?.();
+    if (!dynamicEnvironment) {
+      if (snapshot.clearColor) scene.clearColor=snapshot.clearColor.clone?.()||snapshot.clearColor;
+      if (snapshot.ambientColor) scene.ambientColor=snapshot.ambientColor.clone?.()||snapshot.ambientColor;
+    }
     const image=scene.imageProcessingConfiguration;
     if (image) {
       if (finite(snapshot.exposure)) image.exposure=snapshot.exposure;
       if (finite(snapshot.contrast)) image.contrast=snapshot.contrast;
     }
-    for (const item of snapshot.lights) {
-      if (!item.light || item.light.isDisposed?.()) continue;
-      item.light.intensity=item.intensity;
-      if (typeof item.light.setEnabled==='function' && item.light.isEnabled()!==item.enabled) item.light.setEnabled(item.enabled);
+    if (!dynamicEnvironment) {
+      for (const item of snapshot.lights) {
+        if (!item.light || item.light.isDisposed?.()) continue;
+        item.light.intensity=item.intensity;
+        if (typeof item.light.setEnabled==='function' && item.light.isEnabled()!==item.enabled) item.light.setEnabled(item.enabled);
+      }
     }
   }
 
@@ -607,6 +614,8 @@
       legacyV326V327VerticalObserversRemoved:state.legacyObserversRemoved,
       directImmersiveNavigation:true,
       visualParitySnapshot:true,
+      dynamicDayNightPreserved:true,
+      environmentClockShared:true,
       frames:state.frames,
       lastError:state.lastError,
       world:worldPosition()?{x:worldPosition().x,y:worldPosition().y,z:worldPosition().z}:null
@@ -655,7 +664,7 @@
 
     state.installed=true;
     publish();
-    console.info('[UCAN V328 R33] Navegación cómoda, autoridad final de altura, escaleras y aterrizaje instalada.');
+    console.info('[UCAN V328 R34] Día/noche dinámico, navegación cómoda y autoridad final XR instalados.');
     return true;
   }
 

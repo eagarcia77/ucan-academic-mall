@@ -2,7 +2,7 @@
   'use strict';
 
   const VERSION = 'V287';
-  const BUILD = 'V287-20260720-FLOOR-STATE-SKY-OPT';
+  const BUILD = 'V287-20260903-SHARED-DAY-NIGHT-R34';
   const B = window.BABYLON;
   if (!B) return;
 
@@ -49,6 +49,7 @@
     lastFrame:0,
     lastRefresh:0,
     lastSnapshotStamp:'',
+    lastDayNightMode:null,
     refreshes:0,
     createdObjects:0,
     reusedObjects:0,
@@ -58,6 +59,22 @@
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const finite = value => Number.isFinite(Number(value));
   const normalizeDegrees = value => ((Number(value) % 360) + 360) % 360;
+
+  function environmentTime() {
+    const shared=window.__UCAN_API__?.getEnvironment?.() || window.__UCAN_ENVIRONMENT__?.getState?.();
+    if (finite(shared?.timeOfDay)) return Number(shared.timeOfDay);
+    const formatter=new Intl.DateTimeFormat('en-US',{timeZone:'America/Puerto_Rico',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
+    const parts=Object.fromEntries(formatter.formatToParts(new Date()).filter(part=>part.type!=='literal').map(part=>[part.type,part.value]));
+    return Number(parts.hour||0)+Number(parts.minute||0)/60;
+  }
+
+  function dayNightMode() {
+    const live=window.__UCAN_SAN_GERMAN__ || {};
+    const hour=environmentTime();
+    const sunrise=Number(live.sunriseHour || 6.15);
+    const sunset=Number(live.sunsetHour || 18.75);
+    return hour >= sunset || hour < sunrise ? 'night' : 'day';
+  }
 
   function currentCamera() {
     return state.scene?.activeCamera || state.camera || window.__UCAN_API__?.getCamera?.() || null;
@@ -128,10 +145,7 @@
   function drawDomeTexture() {
     const texture = state.domeTexture;
     if (!texture) return;
-    const live = window.__UCAN_SAN_GERMAN__ || {};
-    const snapshotDate = live.skySnapshot?.date ? new Date(live.skySnapshot.date) : new Date();
-    const hour = snapshotDate.getHours() + snapshotDate.getMinutes() / 60;
-    const night = hour >= 18.5 || hour < 5.8;
+    const night = dayNightMode() === 'night';
     const ctx = texture.getContext();
     const gradient = ctx.createLinearGradient(0, 0, 0, 512);
     if (night) {
@@ -153,6 +167,18 @@
       ctx.fill();
     }
     texture.update(false);
+    state.lastDayNightMode=night?'night':'day';
+  }
+
+  function applyDayNightVisibility() {
+    const night=dayNightMode()==='night';
+    for (const record of state.objects.values()) {
+      const celestial=record.entry?.kind;
+      const visible=record.entry?.visible!==false && (night || (celestial!=='star' && celestial!=='spacecraft'));
+      record.mesh?.setEnabled?.(visible);
+      record.label?.setEnabled?.(visible);
+    }
+    return night?'night':'day';
   }
 
   function buildEntries() {
@@ -325,6 +351,7 @@
     }
     fillSelect();
     drawDomeTexture();
+    applyDayNightVisibility();
     state.lastRefresh = Date.now();
     state.lastSnapshotStamp = String(window.__UCAN_SAN_GERMAN__?.lastUpdated || window.__UCAN_SAN_GERMAN__?.skySnapshot?.date || 'fallback');
     state.refreshes += 1;
@@ -500,7 +527,9 @@
       reusedObjects:state.reusedObjects,
       disposedObjects:state.disposedObjects,
       selected:state.selected?.name || null,
-      onTerrace:onTerrace()
+      onTerrace:onTerrace(),
+      dayNightMode:dayNightMode(),
+      sharedEnvironmentClock:true
     };
   }
 
@@ -518,6 +547,12 @@
     }
     if (!terrace || document.hidden) return;
     positionInfoPlane();
+    const mode=dayNightMode();
+    if (mode!==state.lastDayNightMode) {
+      drawDomeTexture();
+      applyDayNightVisibility();
+      updateAudit();
+    }
     const stamp = String(window.__UCAN_SAN_GERMAN__?.lastUpdated || window.__UCAN_SAN_GERMAN__?.skySnapshot?.date || 'fallback');
     if ((Date.now() - state.lastRefresh >= REFRESH_MS) && stamp !== state.lastSnapshotStamp) reconcile();
   }

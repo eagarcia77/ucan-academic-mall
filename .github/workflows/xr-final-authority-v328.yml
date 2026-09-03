@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'public/js/ucan_v328_xr_final_authority.js'
+      - 'public/js/ucan_v287_rooftop_sky.js'
+      - 'auth-compat-v287.js'
       - 'auth-compat-v323-browser-panel.js'
       - 'auth-compat-v325-render-stability.js'
       - 'verify_v328_xr_final_authority.js'
@@ -13,6 +15,8 @@ on:
   pull_request:
     paths:
       - 'public/js/ucan_v328_xr_final_authority.js'
+      - 'public/js/ucan_v287_rooftop_sky.js'
+      - 'auth-compat-v287.js'
       - 'auth-compat-v323-browser-panel.js'
       - 'auth-compat-v325-render-stability.js'
       - 'verify_v328_xr_final_authority.js'
@@ -68,7 +72,7 @@ jobs:
             http://127.0.0.1:3280/campus > "$RUNNER_TEMP/campus.html"
           grep -qi '^X-UCAN-XR-Final-Authority: V328' "$RUNNER_TEMP/campus.headers"
           grep -q 'data-ucan-v328-xr-final-authority="true"' "$RUNNER_TEMP/campus.html"
-          grep -q 'ucan_v328_xr_final_authority.js?build=V328-20260903-QUEST-COMFORT-STAIRS-R33' "$RUNNER_TEMP/campus.html"
+          grep -q 'ucan_v328_xr_final_authority.js?build=V328-20260903-DYNAMIC-DAY-NIGHT-R34' "$RUNNER_TEMP/campus.html"
           if grep -q 'data-ucan-v326-xr-landing-release="true"' "$RUNNER_TEMP/campus.html"; then echo 'V326 runtime should be disabled'; exit 1; fi
           if grep -q 'data-ucan-v327-xr-stair-ride="true"' "$RUNNER_TEMP/campus.html"; then echo 'V327 runtime should be disabled'; exit 1; fi
       - name: Inspect V328 runtime and transformed V324 adapter
@@ -81,6 +85,7 @@ jobs:
           grep -q 'desktopEyeHeightParity:true' "$RUNNER_TEMP/v328.js"
           grep -q 'Subir piso (asistido)' "$RUNNER_TEMP/v328.js"
           grep -q 'Bajar piso (asistido)' "$RUNNER_TEMP/v328.js"
+          grep -q 'dynamicDayNightPreserved:true' "$RUNNER_TEMP/v328.js"
           curl -fsS -b "$JAR" http://127.0.0.1:3280/js/ucan_v324_xr_stairs_entry.js > "$RUNNER_TEMP/v324-served.js"
           grep -q 'const SPEEDS = { comfort:3.4, natural:5.0, fast:7.0 };' "$RUNNER_TEMP/v324-served.js"
           grep -q 'const TURN_SPEED = 1.9;' "$RUNNER_TEMP/v324-served.js"

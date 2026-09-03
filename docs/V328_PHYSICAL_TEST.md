@@ -6,14 +6,14 @@ Este protocolo es la autoridad final para aprobar el recorrido entre pisos en un
 
 - Aplicación: <https://ucan-academic-mall.onrender.com>
 - Versión requerida: `V328`
-- Revisión requerida: `R33`
+- Revisión requerida: `R34`
 - Dispositivo: Meta Quest con Meta Quest Browser actualizado
 - Seguridad: complete la prueba sentado o dentro de un límite Guardian despejado
 
 Antes de entrar en VR, abra `/version` y confirme:
 
 - `version: V328`
-- `revision: R33`
+- `revision: R34`
 - `singleFinalVerticalAuthority: true`
 - `automaticStairsWithoutJoystick: true`
 - `exactFloorLanding: true`
@@ -55,7 +55,8 @@ Cada ruta debe iniciar una sola vez, moverse sin joystick vertical, aterrizar ex
 
 | Comprobación | Aprobó | Falló | Observación |
 |---|:---:|:---:|---|
-| `/version` muestra V328/R33 | ☐ | ☐ | |
+| `/version` muestra V328/R34 | ☐ | ☐ | |
+| Día y noche coinciden en browser y Meta Quest | ☐ | ☐ | |
 | Altura inicial coincide con desktop | ☐ | ☐ | |
 | `up12` inicia solo al entrar | ☐ | ☐ | |
 | P1 → P2 continúa sin joystick | ☐ | ☐ | |
