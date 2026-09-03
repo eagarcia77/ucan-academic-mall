@@ -10,9 +10,10 @@ const baseEnd = http.ServerResponse.prototype.end;
 
 const VERSION = 'V325';
 const REVISION = 'R29';
-const BUILD = 'V325-20260806-STABLE-RENDER-XR-LANDING-R29';
-const STABILITY_SRC = '/js/ucan_v325_render_stability.js?build=V325-20260806-STABLE-RENDER-XR-LANDING-R29';
+const BUILD = 'V325-20260903-STABLE-RENDER-XR-STAIRS-R29';
+const STABILITY_SRC = '/js/ucan_v325_render_stability.js?build=V325-20260903-STABLE-RENDER-XR-STAIRS-R29';
 const LANDING_SRC = '/js/ucan_v326_xr_landing_release.js?build=V326-20260806-XR-LANDING-RELEASE-R30';
+const STAIR_RIDE_SRC = '/js/ucan_v327_xr_stair_ride_height.js?build=V327-20260903-XR-AUTO-STAIRS-HEIGHT-R31';
 
 function contentTypeFrom(response, headers) {
   const entries = headers && typeof headers === 'object' ? Object.entries(headers) : [];
@@ -30,6 +31,9 @@ function transformHtml(value) {
   if (!html.includes('ucan_v326_xr_landing_release.js')) {
     tags.push(`<script src="${LANDING_SRC}" data-ucan-v326-xr-landing-release="true"></script>`);
   }
+  if (!html.includes('ucan_v327_xr_stair_ride_height.js')) {
+    tags.push(`<script src="${STAIR_RIDE_SRC}" data-ucan-v327-xr-stair-ride="true"></script>`);
+  }
 
   if (tags.length) {
     const mainPattern = /(<script[^>]+src=["']\/js\/ucan_babylon_mall_v265_accounts_avatars\.js[^>]*><\/script>)/i;
@@ -38,9 +42,13 @@ function transformHtml(value) {
     else html = html.replace('</head>', `  ${block}\n</head>`);
   }
 
-  html = html.replace(/UCAN Academic Mall V323/g, 'UCAN Academic Mall V325');
-  html = html.replace(/COMPILACIÓN V323[^<]*/g, 'COMPILACIÓN V325 · RENDER ESTABLE Y DESEMBARQUE XR');
-  html = html.replace('</head>', `  <meta name="ucan-render-stability" content="${BUILD}" />\n  <meta name="ucan-xr-landing-release" content="V326-R30" />\n</head>`);
+  html = html.replace(/UCAN Academic Mall V323/g, 'UCAN Academic Mall V327');
+  html = html.replace(/UCAN Academic Mall V325/g, 'UCAN Academic Mall V327');
+  html = html.replace(/UCAN Academic Mall V326/g, 'UCAN Academic Mall V327');
+  html = html.replace(/COMPILACIÓN V323[^<]*/g, 'COMPILACIÓN V327 · WEBXR ALTURA Y ESCALERAS AUTOMÁTICAS');
+  html = html.replace(/COMPILACIÓN V325[^<]*/g, 'COMPILACIÓN V327 · WEBXR ALTURA Y ESCALERAS AUTOMÁTICAS');
+  html = html.replace(/COMPILACIÓN V326[^<]*/g, 'COMPILACIÓN V327 · WEBXR ALTURA Y ESCALERAS AUTOMÁTICAS');
+  html = html.replace('</head>', `  <meta name="ucan-render-stability" content="${BUILD}" />\n  <meta name="ucan-xr-landing-release" content="V326-R30" />\n  <meta name="ucan-xr-stair-ride" content="V327-R31" />\n</head>`);
   return html;
 }
 
@@ -57,6 +65,7 @@ http.ServerResponse.prototype.writeHead = function writeHeadV325(statusCode, sta
     this.setHeader?.('X-UCAN-Stability', VERSION);
     this.setHeader?.('X-UCAN-Stability-Revision', REVISION);
     this.setHeader?.('X-UCAN-XR-Landing', 'V326');
+    this.setHeader?.('X-UCAN-XR-Stair-Ride', 'V327');
     if (/text\/html/i.test(type)) {
       this.removeHeader?.('Content-Length');
       this.setHeader?.('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
@@ -67,7 +76,8 @@ http.ServerResponse.prototype.writeHead = function writeHeadV325(statusCode, sta
       ...nextHeaders,
       'X-UCAN-Stability':VERSION,
       'X-UCAN-Stability-Revision':REVISION,
-      'X-UCAN-XR-Landing':'V326'
+      'X-UCAN-XR-Landing':'V326',
+      'X-UCAN-XR-Stair-Ride':'V327'
     };
     for (const key of Object.keys(nextHeaders)) {
       if (String(key).toLowerCase() === 'content-length' && /text\/html/i.test(type)) delete nextHeaders[key];
@@ -105,4 +115,4 @@ http.ServerResponse.prototype.end = function endV325(chunk, encoding, callback) 
   return baseEnd.call(this, body, encoding, callback);
 };
 
-console.info(`[UCAN ${VERSION} ${REVISION}] Estabilidad visual y desembarque XR V326 activos (${BUILD}).`);
+console.info(`[UCAN ${VERSION} ${REVISION}] Estabilidad visual + desembarque V326 + escaleras/altura V327 activos (${BUILD}).`);
