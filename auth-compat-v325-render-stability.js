@@ -14,6 +14,17 @@ const BUILD = 'V328-20260903-XR-FINAL-HEIGHT-STAIRS-R32';
 const STABILITY_SRC = '/js/ucan_v325_render_stability.js?build=V328-20260903-XR-FINAL-HEIGHT-STAIRS-R32';
 const FINAL_XR_SRC = '/js/ucan_v328_xr_final_authority.js?build=V328-20260903-XR-FINAL-HEIGHT-STAIRS-R32';
 
+// La capa V323 se mantiene como adaptador horizontal, pero ya no debe volver a
+// publicar sus metadatos como si fuera la versión final.  V323 consulta este
+// marcador al terminar la respuesta, después de que V328 haya transformado el
+// JSON y los encabezados.
+global.__UCAN_ACTIVE_RELEASE__ = Object.freeze({
+  version:VERSION,
+  releaseVersion:VERSION,
+  revision:REVISION,
+  build:BUILD
+});
+
 function contentTypeFrom(response, headers) {
   const entries = headers && typeof headers === 'object' ? Object.entries(headers) : [];
   const direct = entries.find(([key]) => String(key).toLowerCase() === 'content-type')?.[1];

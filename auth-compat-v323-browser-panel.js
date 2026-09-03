@@ -262,15 +262,16 @@ function transformJson(value) {
   try {
     const data = JSON.parse(String(value || '{}'));
     if (!data || typeof data !== 'object') return value;
+    const activeRelease = global.__UCAN_ACTIVE_RELEASE__ || {};
     const persistence = global.__UCAN_PERSISTENT_IDENTITY_V311__?.getStatus?.() || {};
     const realtime = global.__UCAN_REALTIME_WORLD_V313_SERVER__?.getStatus?.() || {};
     return JSON.stringify({
       ...data,
       ok:data.ok !== false,
-      version:VERSION,
-      releaseVersion:VERSION,
-      revision:REVISION,
-      build:BUILD,
+      version:activeRelease.version || VERSION,
+      releaseVersion:activeRelease.releaseVersion || activeRelease.version || VERSION,
+      revision:activeRelease.revision || REVISION,
+      build:activeRelease.build || BUILD,
       architecture:'one-movement-loop-single-browser-panel-controller',
       singleMovementLoop:true,
       groundResolvedOncePerMovementFrame:true,
@@ -321,11 +322,14 @@ http.ServerResponse.prototype.writeHead = function writeHeadV323(statusCode, sta
   const pathname = requestPath(this);
   const contentType = String((nextHeaders && Object.entries(nextHeaders).find(([key]) => key.toLowerCase() === 'content-type')?.[1]) || this.getHeader?.('Content-Type') || '');
   const transformable = SCRIPT_TARGETS.has(pathname) || /text\/html/i.test(contentType) || ((pathname === '/version' || pathname === '/health' || pathname === '/healthz') && /application\/json/i.test(contentType));
+  const activeRelease = global.__UCAN_ACTIVE_RELEASE__ || {};
+  const responseVersion = activeRelease.version || VERSION;
+  const responseRevision = activeRelease.revision || REVISION;
   if (transformable) this.__ucanV323Chunks = [];
   try {
     this.removeHeader?.('Content-Length');
-    this.setHeader?.('X-UCAN-Version', VERSION);
-    this.setHeader?.('X-UCAN-Revision', REVISION);
+    this.setHeader?.('X-UCAN-Version', responseVersion);
+    this.setHeader?.('X-UCAN-Revision', responseRevision);
     this.setHeader?.('X-UCAN-Panel-Controller', 'single');
     if (transformable) {
       this.setHeader?.('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
@@ -340,8 +344,8 @@ http.ServerResponse.prototype.writeHead = function writeHeadV323(statusCode, sta
       if (lower === 'content-length') delete nextHeaders[key];
       if (transformable && ['cache-control','pragma','expires'].includes(lower)) delete nextHeaders[key];
     }
-    nextHeaders['X-UCAN-Version'] = VERSION;
-    nextHeaders['X-UCAN-Revision'] = REVISION;
+    nextHeaders['X-UCAN-Version'] = responseVersion;
+    nextHeaders['X-UCAN-Revision'] = responseRevision;
     nextHeaders['X-UCAN-Panel-Controller'] = 'single';
     if (transformable) {
       nextHeaders['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0';

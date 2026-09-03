@@ -37,6 +37,8 @@ const checks = {
   v326NotInjected:!/(?:LANDING_SRC|data-ucan-v326-xr-landing-release)/.test(text.preloader||''),
   v327NotInjected:!/(?:STAIR_RIDE_SRC|data-ucan-v327-xr-stair-ride)/.test(text.preloader||''),
   versionEndpointV328:/version:VERSION/.test(text.preloader||'') && /singleFinalVerticalAuthority:true/.test(text.preloader||''),
+  finalReleaseMarker:/global\.__UCAN_ACTIVE_RELEASE__\s*=/.test(text.preloader||'') && /version:VERSION/.test(text.preloader||''),
+  v323PreservesFinalRelease:/global\.__UCAN_ACTIVE_RELEASE__/.test(text.adapter||'') && /activeRelease\.version \|\| VERSION/.test(text.adapter||''),
   v324ResponseTransformed:/ucan_v324_xr_stairs_entry\.js/.test(text.adapter||'') && /function patchXrAdapter/.test(text.adapter||''),
   v324DesktopSpeedParity:/comfort:3\.4, natural:5\.0, fast:7\.0/.test(text.adapter||'') && /const TURN_SPEED = 1\.9/.test(text.adapter||''),
   v324DefersVertical:/finalAuthority\?\.ownsVertical/.test(text.adapter||'') && /__UCAN_XR_FINAL_AUTHORITY_V328__/.test(text.adapter||''),
