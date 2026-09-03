@@ -9,18 +9,19 @@ require('./auth-compat-v313-parallel.js');
 
 const VERSION = 'V323';
 const REVISION = 'R27';
-const BUILD = 'V323-20260730-SINGLE-BROWSER-PANEL-CONTROLLER-R27';
-const RUNTIME_SRC = '/js/ucan_v316_complete_browser_vr_audit.js?build=V323-20260730-ONE-MOVEMENT-LOOP-R27';
-const AUTHORITY_SRC = '/js/ucan_v322_stair_authority.js?build=V323-20260730-PURE-GROUND-PROVIDER-R27';
-const VISUAL_SRC = '/js/ucan_v323_visual_comfort.js?build=V323-20260730-PANEL-AWARE-VISUAL-R27';
-const PANEL_SRC = '/js/ucan_v323_browser_panel.js?build=V323-20260730-SINGLE-PANEL-CONTROLLER-R27';
-const LOADER_SRC = '/js/ucan_v323_social_loader.js?build=V323-20260730-PANEL-SOCIAL-LOADER-R27';
+const BUILD = 'V323-20260903-V328-HORIZONTAL-ADAPTER-R27';
+const RUNTIME_SRC = '/js/ucan_v316_complete_browser_vr_audit.js?build=V323-20260903-V328-HORIZONTAL-ADAPTER-R27';
+const AUTHORITY_SRC = '/js/ucan_v322_stair_authority.js?build=V323-20260903-V328-HORIZONTAL-ADAPTER-R27';
+const VISUAL_SRC = '/js/ucan_v323_visual_comfort.js?build=V323-20260903-V328-HORIZONTAL-ADAPTER-R27';
+const PANEL_SRC = '/js/ucan_v323_browser_panel.js?build=V323-20260903-V328-HORIZONTAL-ADAPTER-R27';
+const LOADER_SRC = '/js/ucan_v323_social_loader.js?build=V323-20260903-V328-HORIZONTAL-ADAPTER-R27';
 
 const SCRIPT_TARGETS = new Set([
   '/js/ucan_babylon_mall_v265_accounts_avatars.js',
   '/js/ucan_v316_complete_browser_vr_audit.js',
   '/js/ucan_v313_parallel_scene.js',
-  '/js/ucan_v314_render_parity.js'
+  '/js/ucan_v314_render_parity.js',
+  '/js/ucan_v324_xr_stairs_entry.js'
 ]);
 
 function requestPath(response) {
@@ -206,11 +207,46 @@ function patchRenderParity(source) {
   return code;
 }
 
+function patchXrAdapter(source) {
+  let code = String(source || '');
+  code = code.replace(
+    "const SPEEDS = { comfort:4.8, natural:6.8, fast:9.2 };",
+    "const SPEEDS = { comfort:3.4, natural:5.0, fast:7.0 };"
+  );
+  code = code.replace('const TURN_SPEED = 2.45;', 'const TURN_SPEED = 1.9;');
+  code = code.replace(
+    'root.position.y = state.ground;',
+    "if (!window.__UCAN_XR_FINAL_AUTHORITY_V328__?.ownsVertical) root.position.y = state.ground;"
+  );
+  code = code.replace(
+    'state.root.position.y = state.ground;',
+    "window.__UCAN_XR_FINAL_AUTHORITY_V328__?.ownsVertical ? window.__UCAN_XR_FINAL_AUTHORITY_V328__.setGround?.(state.ground,'v324-teleport') : (state.root.position.y = state.ground);"
+  );
+  code = code.replace(
+    `state.ground = stairApi()?.resolveGround?.(world,state.ground) ?? state.ground;
+      state.root.position.y = state.ground;`,
+    `const finalAuthority = window.__UCAN_XR_FINAL_AUTHORITY_V328__;
+      if (finalAuthority?.ownsVertical) {
+        const finalState = finalAuthority.getState?.() || finalAuthority;
+        if (Number.isFinite(Number(finalState.stableFloor))) state.ground = Number(finalState.stableFloor);
+      } else {
+        state.ground = stairApi()?.resolveGround?.(world,state.ground) ?? state.ground;
+        state.root.position.y = state.ground;
+      }`
+  );
+  code = code.replace(
+    "headTrackingPreserved:true,stairCollisionBypassedDuringRoute:true,",
+    "headTrackingPreserved:true,stairCollisionBypassedDuringRoute:true,finalVerticalAuthorityV328:Boolean(window.__UCAN_XR_FINAL_AUTHORITY_V328__?.ownsVertical),desktopSpeedParity:true,"
+  );
+  return code;
+}
+
 function transformScript(pathname, value) {
   if (pathname === '/js/ucan_babylon_mall_v265_accounts_avatars.js') return patchBaseScene(value);
   if (pathname === '/js/ucan_v316_complete_browser_vr_audit.js') return patchLocomotion(value);
   if (pathname === '/js/ucan_v313_parallel_scene.js') return patchCanonicalScene(value);
   if (pathname === '/js/ucan_v314_render_parity.js') return patchRenderParity(value);
+  if (pathname === '/js/ucan_v324_xr_stairs_entry.js') return patchXrAdapter(value);
   return value;
 }
 
@@ -251,6 +287,11 @@ function transformJson(value) {
       rooftopStairWidth:8.4,
       rooftopLandingWidth:10.6,
       visualComfortSameBrowserVr:true,
+      xrHorizontalAdapterPatchedForV328:true,
+      xrDesktopSpeedParity:true,
+      xrNaturalSpeed:5.0,
+      xrComfortSpeed:3.4,
+      xrFastSpeed:7.0,
       runtime:RUNTIME_SRC,
       authority:AUTHORITY_SRC,
       visual:VISUAL_SRC,
