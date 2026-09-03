@@ -214,14 +214,9 @@ function patchXrAdapter(source) {
     "const SPEEDS = { comfort:3.4, natural:5.0, fast:7.0 };"
   );
   code = code.replace('const TURN_SPEED = 2.45;', 'const TURN_SPEED = 1.9;');
-  code = code.replace(
-    'root.position.y = state.ground;',
-    "if (!window.__UCAN_XR_FINAL_AUTHORITY_V328__?.ownsVertical) root.position.y = state.ground;"
-  );
-  code = code.replace(
-    'state.root.position.y = state.ground;',
-    "window.__UCAN_XR_FINAL_AUTHORITY_V328__?.ownsVertical ? window.__UCAN_XR_FINAL_AUTHORITY_V328__.setGround?.(state.ground,'v324-teleport') : (state.root.position.y = state.ground);"
-  );
+
+  // Primero sustituye el bloque de frame completo. V324 conserva movimiento X/Z y giro,
+  // pero deja de resolver o escribir Y cuando V328 es la autoridad final.
   code = code.replace(
     `state.ground = stairApi()?.resolveGround?.(world,state.ground) ?? state.ground;
       state.root.position.y = state.ground;`,
@@ -234,6 +229,19 @@ function patchXrAdapter(source) {
         state.root.position.y = state.ground;
       }`
   );
+
+  // Alineación inicial: X/Z siempre, Y solamente cuando V328 no está instalado.
+  code = code.replace(
+    'root.position.y = state.ground;',
+    "if (!window.__UCAN_XR_FINAL_AUTHORITY_V328__?.ownsVertical) root.position.y = state.ground;"
+  );
+
+  // Teletransporte por joystick: V328 fija el nivel, V324 solo fija la posición horizontal.
+  code = code.replace(
+    'state.root.position.y = state.ground;',
+    "window.__UCAN_XR_FINAL_AUTHORITY_V328__?.ownsVertical ? window.__UCAN_XR_FINAL_AUTHORITY_V328__.setGround?.(state.ground,'v324-teleport') : (state.root.position.y = state.ground);"
+  );
+
   code = code.replace(
     "headTrackingPreserved:true,stairCollisionBypassedDuringRoute:true,",
     "headTrackingPreserved:true,stairCollisionBypassedDuringRoute:true,finalVerticalAuthorityV328:Boolean(window.__UCAN_XR_FINAL_AUTHORITY_V328__?.ownsVertical),desktopSpeedParity:true,"
