@@ -5,8 +5,8 @@
   if (!B) return;
 
   const VERSION = 'V328';
-  const REVISION = 'R35';
-  const BUILD = 'V328-20260903-PUERTO-RICO-DAYLIGHT-R35';
+  const REVISION = 'R36';
+  const BUILD = 'V328-20260904-BOOT-CACHE-DAYLIGHT-R36';
   const TARGET_EYE_HEIGHT = 1.72;
   const MAX_UP_CORRECTION = 1.72;
   const MAX_DOWN_CORRECTION = 0.55;
@@ -664,7 +664,7 @@
 
     state.installed=true;
     publish();
-    console.info('[UCAN V328 R35] Hora real de Puerto Rico, navegación cómoda y autoridad final XR instalados.');
+    console.info('[UCAN V328 R36] Arranque renovado, hora real de Puerto Rico y autoridad final XR instalados.');
     return true;
   }
 

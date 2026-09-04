@@ -9,10 +9,11 @@ const baseWrite = http.ServerResponse.prototype.write;
 const baseEnd = http.ServerResponse.prototype.end;
 
 const VERSION = 'V328';
-const REVISION = 'R35';
-const BUILD = 'V328-20260903-PUERTO-RICO-DAYLIGHT-R35';
-const STABILITY_SRC = '/js/ucan_v325_render_stability.js?build=V328-20260903-PUERTO-RICO-DAYLIGHT-R35';
-const FINAL_XR_SRC = '/js/ucan_v328_xr_final_authority.js?build=V328-20260903-PUERTO-RICO-DAYLIGHT-R35';
+const REVISION = 'R36';
+const BUILD = 'V328-20260904-BOOT-CACHE-DAYLIGHT-R36';
+const STABILITY_SRC = '/js/ucan_v325_render_stability.js?build=V328-20260904-BOOT-CACHE-DAYLIGHT-R36';
+const FINAL_XR_SRC = '/js/ucan_v328_xr_final_authority.js?build=V328-20260904-BOOT-CACHE-DAYLIGHT-R36';
+const MAIN_BUILD = 'V328-20260904-BOOT-CACHE-DAYLIGHT-R36';
 
 // La capa V323 se mantiene como adaptador horizontal, pero ya no debe volver a
 // publicar sus metadatos como si fuera la versión final.  V323 consulta este
@@ -44,6 +45,13 @@ function removeScript(html, fileName) {
 function transformHtml(value) {
   let html = String(value || '');
 
+  // El archivo principal se transforma en el servidor; una URL nueva obliga a
+  // Meta Quest y Chrome a descartar cualquier copia V283/V323 retenida.
+  html = html.replace(
+    /(\/js\/ucan_babylon_mall_v265_accounts_avatars\.js)\?build=[^"']+/g,
+    `$1?build=${MAIN_BUILD}`
+  );
+
   // V328 es la única capa autorizada para corregir altura y transportar por escaleras.
   for (const legacy of ['ucan_v326_xr_landing_release.js','ucan_v327_xr_stair_ride_height.js']) {
     html = removeScript(html, legacy);
@@ -66,7 +74,7 @@ function transformHtml(value) {
 
   html = html.replace(/UCAN Academic Mall V(?:323|325|326|327)/g, 'UCAN Academic Mall V328');
   html = html.replace(/COMPILACIÓN V(?:323|325|326|327)[^<]*/g, 'COMPILACIÓN V328 · AUTORIDAD XR ÚNICA Y ATERRIZAJE EXACTO');
-  html = html.replace('</head>', `  <meta name="ucan-render-stability" content="V325-R29" />\n  <meta name="ucan-xr-final-authority" content="V328-R35" />\n</head>`);
+  html = html.replace('</head>', `  <meta name="ucan-render-stability" content="V325-R29" />\n  <meta name="ucan-xr-final-authority" content="V328-R36" />\n</head>`);
   return html;
 }
 

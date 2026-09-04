@@ -65,6 +65,17 @@ function transformHtml(value) {
   html = html.replace(/COMPILACIÓN V(?:272|283|313|314|315|316|317|318|319|320|321|322)(?: · [^<]+)?(?: ACTIVA)?/g, 'COMPILACIÓN V323 · PANEL IZQUIERDO VERIFICADO');
   html = html.replace(/V(?:272|283|313|314|315|316|317|318|319|320|321|322):[^<]*/g, 'V323: cada opción del panel izquierdo utiliza un solo manejador y reporta su estado.');
   html = html.replace('</head>', `  <meta name="ucan-runtime-v323" content="${BUILD}" />\n</head>`);
+
+  // Esta capa se ejecuta al final de la respuesta. Cuando existe una versión
+  // superior activa, conserva el panel V323 pero no debe volver a anunciarla
+  // como la versión pública del campus.
+  const activeRelease = global.__UCAN_ACTIVE_RELEASE__ || {};
+  if (activeRelease.version && activeRelease.version !== VERSION) {
+    const activeVersion = String(activeRelease.version);
+    const activeRevision = String(activeRelease.revision || '');
+    html = html.replace(/UCAN Academic Mall V323/g, `UCAN Academic Mall ${activeVersion}`);
+    html = html.replace(/COMPILACIÓN V323 · PANEL IZQUIERDO VERIFICADO/g, `COMPILACIÓN ${activeVersion}${activeRevision ? ` · ${activeRevision}` : ''} · ACTIVA`);
+  }
   return html;
 }
 

@@ -72,7 +72,10 @@ jobs:
             http://127.0.0.1:3280/campus > "$RUNNER_TEMP/campus.html"
           grep -qi '^X-UCAN-XR-Final-Authority: V328' "$RUNNER_TEMP/campus.headers"
           grep -q 'data-ucan-v328-xr-final-authority="true"' "$RUNNER_TEMP/campus.html"
-          grep -q 'ucan_v328_xr_final_authority.js?build=V328-20260903-PUERTO-RICO-DAYLIGHT-R35' "$RUNNER_TEMP/campus.html"
+          grep -q 'UCAN Academic Mall V328' "$RUNNER_TEMP/campus.html"
+          if grep -q 'UCAN Academic Mall V323' "$RUNNER_TEMP/campus.html"; then echo 'V323 must not remain as the public release label'; exit 1; fi
+          grep -q 'ucan_babylon_mall_v265_accounts_avatars.js?build=V328-20260904-BOOT-CACHE-DAYLIGHT-R36' "$RUNNER_TEMP/campus.html"
+          grep -q 'ucan_v328_xr_final_authority.js?build=V328-20260904-BOOT-CACHE-DAYLIGHT-R36' "$RUNNER_TEMP/campus.html"
           if grep -q 'data-ucan-v326-xr-landing-release="true"' "$RUNNER_TEMP/campus.html"; then echo 'V326 runtime should be disabled'; exit 1; fi
           if grep -q 'data-ucan-v327-xr-stair-ride="true"' "$RUNNER_TEMP/campus.html"; then echo 'V327 runtime should be disabled'; exit 1; fi
       - name: Inspect V328 runtime and transformed V324 adapter
