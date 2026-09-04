@@ -5,8 +5,8 @@
   if (!B) return;
 
   const VERSION = 'V328';
-  const REVISION = 'R37';
-  const BUILD = 'V328-20260904-RESILIENT-BABYLON-START-R37';
+  const REVISION = 'R38';
+  const BUILD = 'V328-20260904-RESTORE-MAIN-SOURCE-R38';
   const TARGET_EYE_HEIGHT = 1.72;
   const MAX_UP_CORRECTION = 1.72;
   const MAX_DOWN_CORRECTION = 0.55;
@@ -664,7 +664,7 @@
 
     state.installed=true;
     publish();
-    console.info('[UCAN V328 R37] Arranque Babylon resiliente, hora real de Puerto Rico y autoridad final XR instalados.');
+    console.info('[UCAN V328 R38] Fuente principal restaurada, hora real de Puerto Rico y autoridad final XR instalados.');
     return true;
   }
 

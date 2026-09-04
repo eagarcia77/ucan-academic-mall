@@ -49,7 +49,7 @@ const checks = {
   versionEndpointV328:/version:VERSION/.test(text.preloader||'') && /singleFinalVerticalAuthority:true/.test(text.preloader||''),
   finalReleaseMarker:/global\.__UCAN_ACTIVE_RELEASE__\s*=/.test(text.preloader||'') && /version:VERSION/.test(text.preloader||''),
   finalHtmlKeepsActiveRelease:/activeRelease\.version && activeRelease\.version !== VERSION/.test(text.adapter||'') && /UCAN Academic Mall V323/.test(text.adapter||''),
-  mainScriptCacheBusted:/const MAIN_BUILD = 'V328-20260904-RESILIENT-BABYLON-START-R37'/.test(text.preloader||'') && /ucan_babylon_mall_v265_accounts_avatars/.test(text.preloader||''),
+  mainScriptCacheBusted:/const MAIN_BUILD = 'V328-20260904-RESTORE-MAIN-SOURCE-R38'/.test(text.preloader||'') && /ucan_babylon_mall_v265_accounts_avatars/.test(text.preloader||''),
   resilientBabylonStartup:/let engine = null/.test(text.main||'') && /disableWebGL2Support: true/.test(text.main||'') && /__UCAN_STARTUP_ERROR_R37__/.test(text.main||''),
   v323PreservesFinalRelease:/global\.__UCAN_ACTIVE_RELEASE__/.test(text.adapter||'') && /activeRelease\.version \|\| VERSION/.test(text.adapter||''),
   v324ResponseTransformed:/ucan_v324_xr_stairs_entry\.js/.test(text.adapter||'') && /function patchXrAdapter/.test(text.adapter||''),
@@ -67,8 +67,8 @@ for (const key of ['runtime','sky','preloader','adapter']) {
 const failures = Object.entries(checks).filter(([,value]) => value !== true);
 const report = {
   version:'V328',
-  revision:'R37',
-  build:'V328-20260904-RESILIENT-BABYLON-START-R37',
+  revision:'R38',
+  build:'V328-20260904-RESTORE-MAIN-SOURCE-R38',
   feature:'Una autoridad vertical final, altura equivalente a escritorio, escaleras automáticas y aterrizaje exacto',
   ok:failures.length===0,
   checks,
