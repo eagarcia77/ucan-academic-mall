@@ -74,8 +74,8 @@ jobs:
           grep -q 'data-ucan-v328-xr-final-authority="true"' "$RUNNER_TEMP/campus.html"
           grep -q 'UCAN Academic Mall V328' "$RUNNER_TEMP/campus.html"
           if grep -q 'UCAN Academic Mall V323' "$RUNNER_TEMP/campus.html"; then echo 'V323 must not remain as the public release label'; exit 1; fi
-          grep -q 'ucan_babylon_mall_v265_accounts_avatars.js?build=V328-20260904-BOOT-CACHE-DAYLIGHT-R36' "$RUNNER_TEMP/campus.html"
-          grep -q 'ucan_v328_xr_final_authority.js?build=V328-20260904-BOOT-CACHE-DAYLIGHT-R36' "$RUNNER_TEMP/campus.html"
+          grep -q 'ucan_babylon_mall_v265_accounts_avatars.js?build=V328-20260904-RESILIENT-BABYLON-START-R37' "$RUNNER_TEMP/campus.html"
+          grep -q 'ucan_v328_xr_final_authority.js?build=V328-20260904-RESILIENT-BABYLON-START-R37' "$RUNNER_TEMP/campus.html"
           if grep -q 'data-ucan-v326-xr-landing-release="true"' "$RUNNER_TEMP/campus.html"; then echo 'V326 runtime should be disabled'; exit 1; fi
           if grep -q 'data-ucan-v327-xr-stair-ride="true"' "$RUNNER_TEMP/campus.html"; then echo 'V327 runtime should be disabled'; exit 1; fi
       - name: Inspect V328 runtime and transformed V324 adapter
@@ -89,6 +89,9 @@ jobs:
           grep -q 'Subir piso (asistido)' "$RUNNER_TEMP/v328.js"
           grep -q 'Bajar piso (asistido)' "$RUNNER_TEMP/v328.js"
           grep -q 'dynamicDayNightPreserved:true' "$RUNNER_TEMP/v328.js"
+          curl -fsS -b "$JAR" http://127.0.0.1:3280/js/ucan_babylon_mall_v265_accounts_avatars.js > "$RUNNER_TEMP/main.js"
+          grep -q 'disableWebGL2Support: true' "$RUNNER_TEMP/main.js"
+          grep -q '__UCAN_STARTUP_ERROR_R37__' "$RUNNER_TEMP/main.js"
           curl -fsS -b "$JAR" http://127.0.0.1:3280/js/ucan_v287_rooftop_sky.js > "$RUNNER_TEMP/sky.js"
           grep -q 'puertoRicoRealTimeAuthority:true' "$RUNNER_TEMP/sky.js"
           grep -q "shared?.liveClock !== false" "$RUNNER_TEMP/sky.js"

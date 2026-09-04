@@ -5,6 +5,7 @@ const path = require('path');
 const root = __dirname;
 const files = {
   runtime:path.join(root,'public/js/ucan_v328_xr_final_authority.js'),
+  main:path.join(root,'public/js/ucan_babylon_mall_v265_accounts_avatars.js'),
   sky:path.join(root,'public/js/ucan_v287_rooftop_sky.js'),
   preloader:path.join(root,'auth-compat-v325-render-stability.js'),
   adapter:path.join(root,'auth-compat-v323-browser-panel.js'),
@@ -48,7 +49,8 @@ const checks = {
   versionEndpointV328:/version:VERSION/.test(text.preloader||'') && /singleFinalVerticalAuthority:true/.test(text.preloader||''),
   finalReleaseMarker:/global\.__UCAN_ACTIVE_RELEASE__\s*=/.test(text.preloader||'') && /version:VERSION/.test(text.preloader||''),
   finalHtmlKeepsActiveRelease:/activeRelease\.version && activeRelease\.version !== VERSION/.test(text.adapter||'') && /UCAN Academic Mall V323/.test(text.adapter||''),
-  mainScriptCacheBusted:/const MAIN_BUILD = 'V328-20260904-BOOT-CACHE-DAYLIGHT-R36'/.test(text.preloader||'') && /ucan_babylon_mall_v265_accounts_avatars/.test(text.preloader||''),
+  mainScriptCacheBusted:/const MAIN_BUILD = 'V328-20260904-RESILIENT-BABYLON-START-R37'/.test(text.preloader||'') && /ucan_babylon_mall_v265_accounts_avatars/.test(text.preloader||''),
+  resilientBabylonStartup:/let engine = null/.test(text.main||'') && /disableWebGL2Support: true/.test(text.main||'') && /__UCAN_STARTUP_ERROR_R37__/.test(text.main||''),
   v323PreservesFinalRelease:/global\.__UCAN_ACTIVE_RELEASE__/.test(text.adapter||'') && /activeRelease\.version \|\| VERSION/.test(text.adapter||''),
   v324ResponseTransformed:/ucan_v324_xr_stairs_entry\.js/.test(text.adapter||'') && /function patchXrAdapter/.test(text.adapter||''),
   v324DesktopSpeedParity:/comfort:3\.4, natural:5\.0, fast:7\.0/.test(text.adapter||'') && /const TURN_SPEED = 1\.9/.test(text.adapter||''),
@@ -65,8 +67,8 @@ for (const key of ['runtime','sky','preloader','adapter']) {
 const failures = Object.entries(checks).filter(([,value]) => value !== true);
 const report = {
   version:'V328',
-  revision:'R36',
-  build:'V328-20260904-BOOT-CACHE-DAYLIGHT-R36',
+  revision:'R37',
+  build:'V328-20260904-RESILIENT-BABYLON-START-R37',
   feature:'Una autoridad vertical final, altura equivalente a escritorio, escaleras automáticas y aterrizaje exacto',
   ok:failures.length===0,
   checks,
