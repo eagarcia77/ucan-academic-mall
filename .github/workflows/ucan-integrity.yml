@@ -1,0 +1,49 @@
+name: UCAN Integrity
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Node 24 full audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Verify runtime versions
+        run: |
+          node --version
+          npm --version
+
+      - name: Run complete UCAN audit
+        run: npm test
+
+  docker:
+    name: Production container build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build production image
+        run: docker build --pull -t ucan-academic-mall:ci .
+
+      - name: Verify V329 preload is present
+        run: |
+          docker run --rm ucan-academic-mall:ci sh -lc "node -e \"const p=require('./package.json'); if(!p.scripts.start.includes('auth-compat-v329-vr-innovation.js')) process.exit(1); console.log(p.scripts.start)\""
