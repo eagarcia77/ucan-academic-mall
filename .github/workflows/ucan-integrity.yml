@@ -32,25 +32,25 @@ jobs:
       - name: Run complete UCAN audit
         run: npm test
 
-      - name: Production HTTP smoke test V330
+      - name: Production HTTP smoke test V331
         env:
           PORT: 3011
           ADMIN_INITIAL_PASSWORD: GitHub-Test-UCAN-2026!
-          UCAN_BUILD: V330-20261002-XR-IMMERSIVE-STABILITY-R39
+          UCAN_BUILD: V331-20261002-XR-SINGLE-VERTICAL-AUTHORITY-R40
         run: |
-          npm start > /tmp/ucan-v330.log 2>&1 &
-          echo $! > /tmp/ucan-v330.pid
-          cleanup() { kill "$(cat /tmp/ucan-v330.pid)" 2>/dev/null || true; }
+          npm start > /tmp/ucan-v331.log 2>&1 &
+          echo $! > /tmp/ucan-v331.pid
+          cleanup() { kill "$(cat /tmp/ucan-v331.pid)" 2>/dev/null || true; }
           trap cleanup EXIT
           for i in {1..40}; do
             if curl -fsS http://127.0.0.1:3011/health > /tmp/health.json; then break; fi
             sleep 1
           done
           curl -fsS http://127.0.0.1:3011/version > /tmp/version.json
-          CI_USER="civ330${GITHUB_RUN_ID}"
+          CI_USER="civ331${GITHUB_RUN_ID}"
           curl -fsS -c /tmp/cookies.txt \
             -H 'Content-Type: application/json' \
-            -d "{\"username\":\"${CI_USER}\",\"displayName\":\"CI V330\",\"email\":\"${CI_USER}@example.test\",\"password\":\"CI-V330-Quest-2026!\"}" \
+            -d "{\"username\":\"${CI_USER}\",\"displayName\":\"CI V331\",\"email\":\"${CI_USER}@example.test\",\"password\":\"CI-V331-Quest-2026!\"}" \
             http://127.0.0.1:3011/api/auth/register > /tmp/register.json
           curl -fsS -b /tmp/cookies.txt http://127.0.0.1:3011/campus > /tmp/campus.html
           node - <<'NODE'
@@ -60,11 +60,11 @@ jobs:
           const html=fs.readFileSync('/tmp/campus.html','utf8');
           const checks={
             health:health.ok===true,
-            release:version.version==='V330' && version.revision==='R39',
-            build:version.build==='V330-20261002-XR-IMMERSIVE-STABILITY-R39',
-            finalAuthority:html.includes('ucan_v328_xr_final_authority.js?build=V330-20261002-XR-IMMERSIVE-STABILITY-R39'),
-            mainCacheBust:html.includes('ucan_babylon_mall_v265_accounts_avatars.js?build=V330-20261002-XR-IMMERSIVE-STABILITY-R39'),
-            stabilityGuard:html.includes('ucan_v330_xr_stability_guard.js?build=V330-20261002-XR-IMMERSIVE-STABILITY-R39'),
+            release:version.version==='V331' && version.revision==='R40',
+            build:version.build==='V331-20261002-XR-SINGLE-VERTICAL-AUTHORITY-R40',
+            finalAuthority:html.includes('ucan_v328_xr_final_authority.js?build=V331-20261002-XR-SINGLE-VERTICAL-AUTHORITY-R40'),
+            mainCacheBust:html.includes('ucan_babylon_mall_v265_accounts_avatars.js?build=V331-20261002-XR-SINGLE-VERTICAL-AUTHORITY-R40'),
+            stabilityGuard:html.includes('ucan_v331_xr_stability_guard.js?build=V331-20261002-XR-SINGLE-VERTICAL-AUTHORITY-R40'),
             legacyV326Absent:!html.includes('ucan_v326_xr_landing_release.js'),
             legacyV327Absent:!html.includes('ucan_v327_xr_stair_ride_height.js')
           };
@@ -83,6 +83,6 @@ jobs:
       - name: Build production image
         run: docker build --pull -t ucan-academic-mall:ci .
 
-      - name: Verify V330 production preload is present
+      - name: Verify V331 production preload is present
         run: |
-          docker run --rm ucan-academic-mall:ci sh -lc "node -e \"const p=require('./package.json'); if(!p.scripts.start.includes('auth-compat-v329-vr-innovation.js')) process.exit(1); if(p.version!=='3.3.0') process.exit(1); console.log(p.scripts.start)\""
+          docker run --rm ucan-academic-mall:ci sh -lc "node -e \"const p=require('./package.json'); if(!p.scripts.start.includes('auth-compat-v329-vr-innovation.js')) process.exit(1); if(p.version!=='3.3.1') process.exit(1); console.log(p.scripts.start)\""
