@@ -28,7 +28,7 @@ const checks = {
   singleFinalVerticalAuthority:/singleFinalVerticalAuthority:true/.test(text.runtime||'') && /ownsVertical:true/.test(text.runtime||''),
   automaticWithoutJoystick:/automaticStairsWithoutJoystick:true/.test(text.runtime||'') && /function entryRoute/.test(text.runtime||'') && /function updateRide/.test(text.runtime||''),
   exactLanding:/exactFloorLanding:true/.test(text.runtime||'') && /v328-exact-landing/.test(text.runtime||'') && /LANDING_CLEARANCE\s*=\s*2\.7/.test(text.runtime||''),
-  questComfortEntry:/ENTRY_DEPTH\s*=\s*5\.8/.test(text.runtime||'') && /ENTRY_WIDTH_ASSIST\s*=\s*1\.25/.test(text.runtime||''),
+  questComfortEntry:/ENTRY_DEPTH\s*=\s*7\.0/.test(text.runtime||'') && /ENTRY_WIDTH_ASSIST\s*=\s*1\.8/.test(text.runtime||''),
   rideCooldown:/RIDE_COOLDOWN\s*=\s*1800/.test(text.runtime||'') && /lastRideFinishedAt/.test(text.runtime||''),
   assistedFloorControls:/Subir piso \(asistido\)/.test(text.runtime||'') && /Bajar piso \(asistido\)/.test(text.runtime||'') && /function assistedRide/.test(text.runtime||''),
   dynamicDayNight:/dynamicDayNightPreserved:true/.test(text.runtime||'') && /const dynamicEnvironment=window\.__UCAN_ENVIRONMENT__/.test(text.runtime||''),
@@ -49,7 +49,7 @@ const checks = {
   versionEndpointV328:/version:VERSION/.test(text.preloader||'') && /singleFinalVerticalAuthority:true/.test(text.preloader||''),
   finalReleaseMarker:/global\.__UCAN_ACTIVE_RELEASE__\s*=/.test(text.preloader||'') && /version:VERSION/.test(text.preloader||''),
   finalHtmlKeepsActiveRelease:/activeRelease\.version && activeRelease\.version !== VERSION/.test(text.adapter||'') && /UCAN Academic Mall V323/.test(text.adapter||''),
-  mainScriptCacheBusted:/const MAIN_BUILD = 'V328-20260904-RESTORE-MAIN-SOURCE-R38'/.test(text.preloader||'') && /ucan_babylon_mall_v265_accounts_avatars/.test(text.preloader||''),
+  mainScriptCacheBusted:/const MAIN_BUILD = 'V328-20260904-RESTORE-MAIN-SOURCE-R39'/.test(text.preloader||'') && /ucan_babylon_mall_v265_accounts_avatars/.test(text.preloader||''),
   resilientBabylonStartup:/let engine = null/.test(text.main||'') && /disableWebGL2Support: true/.test(text.main||'') && /__UCAN_STARTUP_ERROR_R37__/.test(text.main||''),
   v323PreservesFinalRelease:/global\.__UCAN_ACTIVE_RELEASE__/.test(text.adapter||'') && /activeRelease\.version \|\| VERSION/.test(text.adapter||''),
   v324ResponseTransformed:/ucan_v324_xr_stairs_entry\.js/.test(text.adapter||'') && /function patchXrAdapter/.test(text.adapter||''),
@@ -67,8 +67,8 @@ for (const key of ['runtime','sky','preloader','adapter']) {
 const failures = Object.entries(checks).filter(([,value]) => value !== true);
 const report = {
   version:'V328',
-  revision:'R38',
-  build:'V328-20260904-RESTORE-MAIN-SOURCE-R38',
+  revision:'R39',
+  build:'V328-20260904-RESTORE-MAIN-SOURCE-R39',
   feature:'Una autoridad vertical final, altura equivalente a escritorio, escaleras automáticas y aterrizaje exacto',
   ok:failures.length===0,
   checks,
