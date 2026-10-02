@@ -5,18 +5,20 @@
   const { Readable } = require('stream');
   const path = require('path');
 
-  const VERSION = 'V329';
-  const BUILD = 'V329-20261002-VR-INNOVATION-PARITY-GUARD-R2';
+  const VERSION = 'V330';
+  const BUILD = 'V330-20261002-XR-IMMERSIVE-STABILITY-R39';
   const TARGET_FILE = `${path.sep}public${path.sep}campus.html`;
   const SCRIPT = `<script src="/js/ucan_v329_vr_innovation_overlay.js?build=${BUILD}"></script>`;
+  const STABILITY_SCRIPT = `<script src="/js/ucan_v330_xr_stability_guard.js?build=${BUILD}"></script>`;
 
   global.__UCAN_ACTIVE_RELEASE__ = Object.freeze({
     version: VERSION,
     releaseVersion: VERSION,
-    revision: 'R2',
+    revision: 'R39',
     build: BUILD,
     vrInnovation: true,
-    immersiveVisualParityGuard: true
+    immersiveVisualParityGuard: true,
+    xrImmersiveStabilityGuard: true
   });
 
   const originalCreateReadStream = fs.createReadStream.bind(fs);
@@ -34,6 +36,9 @@
     html = html.replace(/Cargando áreas comunes, anfiteatro renovado y pizarras electrónicas…/g, 'Cargando entorno VR innovador, rutas Meta Quest y ayudas de confort…');
     if (!html.includes('/js/ucan_v329_vr_innovation_overlay.js')) {
       html = html.replace(/<\/body>/i, `${SCRIPT}\n</body>`);
+    }
+    if (!html.includes('/js/ucan_v330_xr_stability_guard.js')) {
+      html = html.replace(/<\/body>/i, `${STABILITY_SCRIPT}\n</body>`);
     }
     return html;
   }
@@ -74,7 +79,8 @@
     build: BUILD,
     installed: true,
     mode: 'campus-html-injection',
-    revision: 'R2',
-    immersiveVisualParityGuard: true
+    revision: 'R39',
+    immersiveVisualParityGuard: true,
+    xrImmersiveStabilityGuard: true
   };
 })();
