@@ -1,4 +1,4 @@
-FROM node:20-bookworm-slim
+FROM node:24-bookworm-slim
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git openssh-client ca-certificates \
@@ -12,4 +12,4 @@ ENV HOME=/tmp/ucan-home
 ENV DATA_DIR=/app/data
 VOLUME ["/app/data"]
 EXPOSE 3000
-CMD ["node", "-r", "./auth-compat-v323-browser-panel.js", "-r", "./auth-compat-v325-render-stability.js", "server.js"]
+CMD ["npm", "start"]
