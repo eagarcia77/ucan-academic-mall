@@ -6,9 +6,18 @@
   const path = require('path');
 
   const VERSION = 'V329';
-  const BUILD = 'V329-20260928-VR-INNOVATION-QUEST-COMFORT';
+  const BUILD = 'V329-20261002-VR-INNOVATION-PARITY-GUARD-R2';
   const TARGET_FILE = `${path.sep}public${path.sep}campus.html`;
   const SCRIPT = `<script src="/js/ucan_v329_vr_innovation_overlay.js?build=${BUILD}"></script>`;
+
+  global.__UCAN_ACTIVE_RELEASE__ = Object.freeze({
+    version: VERSION,
+    releaseVersion: VERSION,
+    revision: 'R2',
+    build: BUILD,
+    vrInnovation: true,
+    immersiveVisualParityGuard: true
+  });
 
   const originalCreateReadStream = fs.createReadStream.bind(fs);
   const originalStat = fs.promises.stat.bind(fs.promises);
@@ -64,6 +73,8 @@
     version: VERSION,
     build: BUILD,
     installed: true,
-    mode: 'campus-html-injection'
+    mode: 'campus-html-injection',
+    revision: 'R2',
+    immersiveVisualParityGuard: true
   };
 })();
