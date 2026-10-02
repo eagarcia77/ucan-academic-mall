@@ -1,9 +1,9 @@
 (() => {
   'use strict';
 
-  const VERSION = 'V329';
-  const REVISION = 'R2';
-  const BUILD = 'V329-20261002-VR-INNOVATION-PARITY-GUARD-R2';
+  const VERSION = 'V330';
+  const REVISION = 'R39';
+  const BUILD = 'V330-20261002-XR-IMMERSIVE-STABILITY-R39';
   const state = {
     installed: false,
     scene: null,
@@ -68,7 +68,7 @@
     document.head.appendChild(style);
     const panel=document.createElement('aside');
     panel.id='ucanV329Panel';
-    panel.setAttribute('aria-label','Panel de innovación VR V329');
+    panel.setAttribute('aria-label','Panel de innovación VR V330');
     panel.innerHTML=`
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
         <div><span class="ucan-v329-badge">${VERSION} · Meta Quest</span><h2>Innovación VR</h2></div>
@@ -241,7 +241,7 @@
     state.baseHardwareScaling=Number(engine.getHardwareScalingLevel?.()||1);
     injectUi();createInteractionPoints(B,scene);applyComfort();installInputShortcuts();
     scene.onBeforeRenderObservable.add(adaptiveQualityTick);
-    status('UCAN V329 R2 listo: paridad inmersiva protegida, navegación segura y calidad adaptativa sin cambiar la escala XR.');
+    status('UCAN V330 R39 listo: paridad inmersiva protegida, navegación segura y calidad adaptativa sin cambiar la escala XR.');
   }
 
   function waitForScene(){
