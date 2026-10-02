@@ -3,7 +3,7 @@
 
   const VERSION = 'V329';
   const REVISION = 'R2';
-  const BUILD = 'V329-20261002-VR-INNOVATION-PARITY-GUARD';
+  const BUILD = 'V329-20261002-VR-INNOVATION-PARITY-GUARD-R2';
   const state = {
     installed: false,
     scene: null,
