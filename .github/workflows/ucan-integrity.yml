@@ -64,7 +64,7 @@ jobs:
             build:version.build==='V331-20261002-XR-SINGLE-VERTICAL-AUTHORITY-R40',
             finalAuthority:html.includes('ucan_v328_xr_final_authority.js?build=V331-20261002-XR-SINGLE-VERTICAL-AUTHORITY-R40'),
             mainCacheBust:html.includes('ucan_babylon_mall_v265_accounts_avatars.js?build=V331-20261002-XR-SINGLE-VERTICAL-AUTHORITY-R40'),
-            stabilityGuard:html.includes('ucan_v331_xr_stability_guard.js?build=V331-20261002-XR-SINGLE-VERTICAL-AUTHORITY-R40'),
+            stabilityGuard:html.includes('ucan_v331_xr_single_authority_guard.js?build=V331-20261002-XR-SINGLE-VERTICAL-AUTHORITY-R40'),
             legacyV326Absent:!html.includes('ucan_v326_xr_landing_release.js'),
             legacyV327Absent:!html.includes('ucan_v327_xr_stair_ride_height.js')
           };
