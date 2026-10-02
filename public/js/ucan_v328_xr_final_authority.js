@@ -626,6 +626,8 @@
       targetEyeHeight:TARGET_EYE_HEIGHT,
       eyeBaseline:state.eyeBaseline,
       eyeOffset:state.eyeOffset,
+      rootY:Number(root()?.position?.y),
+      expectedRootY:Number(state.stableFloor)+Number(state.eyeOffset||0)+Number(state.jumpOffset||0),
       calibrated:state.calibrated,
       stableFloor:state.stableFloor,
       activeRide:state.ride?.route?.id||null,
