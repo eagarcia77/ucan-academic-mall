@@ -8,6 +8,7 @@ const docker = read('Dockerfile');
 const v329 = read('auth-compat-v329-vr-innovation.js');
 const v325 = read('auth-compat-v325-render-stability.js');
 const server = read('server.js');
+const v329Overlay = read('public/js/ucan_v329_vr_innovation_overlay.js');
 
 const checks = {
   node24Runtime: /^FROM node:24-bookworm-slim/m.test(docker),
@@ -16,6 +17,10 @@ const checks = {
   packageLoadsRenderStability: String(pkg.scripts?.start || '').includes('auth-compat-v325-render-stability.js'),
   packageLoadsV329: String(pkg.scripts?.start || '').includes('auth-compat-v329-vr-innovation.js'),
   v329InjectsOverlay: /ucan_v329_vr_innovation_overlay\.js/.test(v329),
+  v329CacheBuildR2: /V329-20261002-VR-INNOVATION-PARITY-GUARD-R2/.test(v329),
+  v329ActiveReleaseR2: /global\.__UCAN_ACTIVE_RELEASE__/.test(v329) && /revision: 'R2'/.test(v329),
+  v329OverlayR2: /const REVISION = 'R2'/.test(v329Overlay) && /immersiveHardwareScalingLocked:true/.test(v329Overlay),
+  v325UsesActiveRelease: /const active = global\.__UCAN_ACTIVE_RELEASE__ \|\| \{\}/.test(v325) && /activeReleaseVersion:publicVersion/.test(v325),
   v329PatchesStreamAndStat: /fs\.createReadStream/.test(v329) && /fs\.promises\.stat/.test(v329),
   v328TransformsHtmlAndJson: /function transformHtml/.test(v325) && /function transformJson/.test(v325),
   v328DisablesLegacyVerticalLayers: /legacyV326RuntimeLoaded:false/.test(v325) && /legacyV327RuntimeLoaded:false/.test(v325),
