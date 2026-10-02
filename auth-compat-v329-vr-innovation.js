@@ -5,20 +5,21 @@
   const { Readable } = require('stream');
   const path = require('path');
 
-  const VERSION = 'V330';
-  const BUILD = 'V330-20261002-XR-IMMERSIVE-STABILITY-R39';
+  const VERSION = 'V331';
+  const BUILD = 'V331-20261002-XR-SINGLE-VERTICAL-AUTHORITY-R40';
   const TARGET_FILE = `${path.sep}public${path.sep}campus.html`;
   const SCRIPT = `<script src="/js/ucan_v329_vr_innovation_overlay.js?build=${BUILD}"></script>`;
-  const STABILITY_SCRIPT = `<script src="/js/ucan_v330_xr_stability_guard.js?build=${BUILD}"></script>`;
+  const STABILITY_SCRIPT = `<script src="/js/ucan_v331_xr_single_authority_guard.js?build=${BUILD}"></script>`;
 
   global.__UCAN_ACTIVE_RELEASE__ = Object.freeze({
     version: VERSION,
     releaseVersion: VERSION,
-    revision: 'R39',
+    revision: 'R40',
     build: BUILD,
     vrInnovation: true,
     immersiveVisualParityGuard: true,
-    xrImmersiveStabilityGuard: true
+    xrImmersiveStabilityGuard: true,
+    singleVerticalAuthority: true
   });
 
   const originalCreateReadStream = fs.createReadStream.bind(fs);
@@ -31,13 +32,13 @@
 
   function enhanceHtml(raw) {
     let html = String(raw || '');
-    html = html.replace(/UCAN Academic Mall V272/g, 'UCAN Academic Mall V330');
-    html = html.replace(/COMPILACIÓN V272 ACTIVA/g, 'COMPILACIÓN V330 XR ESTABLE ACTIVA');
+    html = html.replace(/UCAN Academic Mall V272/g, 'UCAN Academic Mall V331');
+    html = html.replace(/COMPILACIÓN V272 ACTIVA/g, 'COMPILACIÓN V331 · AUTORIDAD VERTICAL ÚNICA ACTIVA');
     html = html.replace(/Cargando áreas comunes, anfiteatro renovado y pizarras electrónicas…/g, 'Cargando entorno VR innovador, rutas Meta Quest y ayudas de confort…');
     if (!html.includes('/js/ucan_v329_vr_innovation_overlay.js')) {
       html = html.replace(/<\/body>/i, `${SCRIPT}\n</body>`);
     }
-    if (!html.includes('/js/ucan_v330_xr_stability_guard.js')) {
+    if (!html.includes('/js/ucan_v331_xr_single_authority_guard.js')) {
       html = html.replace(/<\/body>/i, `${STABILITY_SCRIPT}\n</body>`);
     }
     return html;
@@ -79,8 +80,9 @@
     build: BUILD,
     installed: true,
     mode: 'campus-html-injection',
-    revision: 'R39',
+    revision: 'R40',
     immersiveVisualParityGuard: true,
-    xrImmersiveStabilityGuard: true
+    xrImmersiveStabilityGuard: true,
+    singleVerticalAuthority: true
   };
 })();
