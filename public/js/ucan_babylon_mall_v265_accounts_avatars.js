@@ -338,7 +338,11 @@
     if (opts.alpha !== undefined) {
       m.alpha = opts.alpha;
       m.backFaceCulling = false;
-      m.needDepthPrePass = true;
+      // WebXR stereo-safe transparency: depth pre-pass caused dark/black glass
+      // on Quest. Alpha blend without depth writes matches desktop more closely.
+      m.needDepthPrePass = false;
+      m.disableDepthWrite = true;
+      if (BABYLON.Material?.MATERIAL_ALPHABLEND != null) m.transparencyMode = BABYLON.Material.MATERIAL_ALPHABLEND;
     }
     if (opts.emissive) {
       m.emissiveColor = BABYLON.Color3.FromHexString(opts.emissive).scale(opts.emissiveIntensity ?? 0.25);
