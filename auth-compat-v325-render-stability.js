@@ -82,13 +82,18 @@ function transformJson(value) {
   try {
     const data = JSON.parse(String(value || '{}'));
     if (!data || typeof data !== 'object') return value;
+    const active = global.__UCAN_ACTIVE_RELEASE__ || {};
+    const publicVersion = String(active.version || VERSION);
+    const publicReleaseVersion = String(active.releaseVersion || publicVersion);
+    const publicRevision = String(active.revision || REVISION);
+    const publicBuild = String(active.build || BUILD);
     return JSON.stringify({
       ...data,
       ok:data.ok !== false,
-      version:VERSION,
-      releaseVersion:VERSION,
-      revision:REVISION,
-      build:BUILD,
+      version:publicVersion,
+      releaseVersion:publicReleaseVersion,
+      revision:publicRevision,
+      build:publicBuild,
       xrFinalAuthority:FINAL_XR_SRC,
       singleFinalVerticalAuthority:true,
       automaticStairsWithoutJoystick:true,
@@ -109,7 +114,12 @@ function transformJson(value) {
       directImmersiveNavigation:true,
       legacyV326RuntimeLoaded:false,
       legacyV327RuntimeLoaded:false,
-      renderStabilityLayer:'V325-R29'
+      renderStabilityLayer:'V325-R29',
+      baseXrAuthority:VERSION,
+      activeReleaseVersion:publicVersion,
+      activeReleaseBuild:publicBuild,
+      vrInnovation:Boolean(active.vrInnovation),
+      immersiveVisualParityGuard:Boolean(active.immersiveVisualParityGuard)
     });
   } catch (_) {
     return value;
