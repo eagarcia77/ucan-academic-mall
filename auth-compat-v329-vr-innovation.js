@@ -31,8 +31,8 @@
 
   function enhanceHtml(raw) {
     let html = String(raw || '');
-    html = html.replace(/UCAN Academic Mall V272/g, 'UCAN Academic Mall V329');
-    html = html.replace(/COMPILACIÓN V272 ACTIVA/g, 'COMPILACIÓN V329 VR ACTIVA');
+    html = html.replace(/UCAN Academic Mall V272/g, 'UCAN Academic Mall V330');
+    html = html.replace(/COMPILACIÓN V272 ACTIVA/g, 'COMPILACIÓN V330 XR ESTABLE ACTIVA');
     html = html.replace(/Cargando áreas comunes, anfiteatro renovado y pizarras electrónicas…/g, 'Cargando entorno VR innovador, rutas Meta Quest y ayudas de confort…');
     if (!html.includes('/js/ucan_v329_vr_innovation_overlay.js')) {
       html = html.replace(/<\/body>/i, `${SCRIPT}\n</body>`);
