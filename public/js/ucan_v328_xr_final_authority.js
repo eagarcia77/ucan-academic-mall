@@ -5,13 +5,13 @@
   if (!B) return;
 
   const VERSION = 'V328';
-  const REVISION = 'R38';
-  const BUILD = 'V328-20260904-RESTORE-MAIN-SOURCE-R38';
+  const REVISION = 'R39';
+  const BUILD = 'V330-20261002-XR-IMMERSIVE-STABILITY-R39';
   const TARGET_EYE_HEIGHT = 1.72;
-  const MAX_UP_CORRECTION = 1.72;
-  const MAX_DOWN_CORRECTION = 0.55;
-  const ENTRY_DEPTH = 5.8;
-  const ENTRY_WIDTH_ASSIST = 1.25;
+  const MAX_UP_CORRECTION = 0.45;
+  const MAX_DOWN_CORRECTION = 0.45;
+  const ENTRY_DEPTH = 7.0;
+  const ENTRY_WIDTH_ASSIST = 1.8;
   const LANDING_CLEARANCE = 2.7;
   const RIDE_COOLDOWN = 1800;
   const JUMP_VELOCITY = 4.4;
@@ -137,9 +137,16 @@
   }
 
   function localEyeHeight() {
-    const values = [state.xr?.position?.y, state.xr?.realWorldHeight, state.xr?._realWorldHeight].map(Number);
-    const local = values.find(value => finite(value) && value >= 0 && value <= 2.5);
-    return finite(local) ? local : TARGET_EYE_HEIGHT;
+    // Meta Quest reports physical eye height through realWorldHeight when the
+    // local-floor pose is ready. Camera.position.y may still be 0 during
+    // ENTERING_XR, so it must never be the first calibration source.
+    const physical = [state.xr?.realWorldHeight, state.xr?._realWorldHeight]
+      .map(Number)
+      .find(value => finite(value) && value >= 0.8 && value <= 2.3);
+    if (finite(physical)) return physical;
+    const local = Number(state.xr?.position?.y);
+    if (finite(local) && local >= 0.8 && local <= 2.3) return local;
+    return TARGET_EYE_HEIGHT;
   }
 
   function median(values) {
@@ -289,6 +296,22 @@
     return true;
   }
 
+  function settleExactLanding(route) {
+    const landingZ = route.toZ + route.direction*LANDING_CLEARANCE;
+    for (const delay of [80, 240, 650]) {
+      window.setTimeout(() => {
+        if (!state.inXR || state.ride) return;
+        stairApi()?.setFloor?.(route.toFloor,`v330-landing-settle:${route.id}`);
+        state.stableFloor = route.toFloor;
+        setWorldXZ(route.centerX, landingZ);
+        applyGround(route.toFloor,'v330-landing-settle');
+        syncDesktop(route.toFloor);
+        const current = worldPosition();
+        if (current) state.lastSafe = current.clone();
+      }, delay);
+    }
+  }
+
   function exactFinish(route) {
     const landingZ = route.toZ + route.direction*LANDING_CLEARANCE;
     setWorldXZ(route.centerX,landingZ);
@@ -304,6 +327,7 @@
     state.exactSnaps += 1;
     state.lastRideFinishedAt=performance.now();
     state.lastCompletedRoute=route.id;
+    settleExactLanding(route);
     status(`${route.label} completado. Piso fijado exactamente en ${route.toFloor.toFixed(1)} m.`);
   }
 
@@ -558,6 +582,7 @@
   }
 
   function enterXR() {
+    if (state.inXR) return;
     state.inXR=true;
     const stair=stairApi()?.getState?.()||{};
     const desktopGround=nearestFloor(Number(state.desktop?.position?.y||TARGET_EYE_HEIGHT)-TARGET_EYE_HEIGHT);
@@ -566,12 +591,17 @@
     state.jumpOffset=0;
     state.jumpVelocity=0;
     state.jumping=false;
-    beginCalibration(true);
+    state.eyeOffset=0;
+    state.eyeBaseline=null;
     captureVisual();
-    window.setTimeout(()=>{removeLegacyVerticalObservers();ensureLastObserver();repairBetweenFloors();},0);
-    window.setTimeout(()=>{removeLegacyVerticalObservers();ensureLastObserver();repairBetweenFloors();ensureVisualParity();},180);
-    window.setTimeout(()=>{removeLegacyVerticalObservers();ensureLastObserver();repairBetweenFloors();ensureVisualParity();},650);
-    status('V328: altura de computadora, escaleras automáticas y aterrizaje exacto activos.');
+    // Wait until IN_XR has a valid local-floor pose before calibrating or
+    // writing the locomotion root. This prevents the headset from starting
+    // too low/high and avoids landing between floors.
+    window.setTimeout(()=>{if(state.inXR) beginCalibration(true);},220);
+    window.setTimeout(()=>{if(state.inXR){removeLegacyVerticalObservers();ensureLastObserver();repairBetweenFloors();ensureVisualParity();}},260);
+    window.setTimeout(()=>{if(state.inXR){removeLegacyVerticalObservers();ensureLastObserver();repairBetweenFloors();ensureVisualParity();}},700);
+    window.setTimeout(()=>{if(state.inXR){repairBetweenFloors();ensureVisualParity();}},1400);
+    status('V330: pose local-floor estabilizada; altura, escaleras y aterrizaje exacto activos.');
   }
 
   function exitXR() {
@@ -636,6 +666,8 @@
       rollback,
       recalibrate:()=>beginCalibration(true),
       repairFloor:()=>repairBetweenFloors(),
+      assistedRide,
+      forceFloor:floor=>{const target=nearestFloor(floor);stairApi()?.setFloor?.(target,'v330-force-floor');state.stableFloor=target;state.ride=null;applyGround(target,'v330-force-floor');syncDesktop(target);return target;},
       getState
     };
   }
@@ -658,13 +690,14 @@
 
     state.xrStateObserver=state.helper.baseExperience.onStateChangedObservable.add(value=>{
       const X=B.WebXRState||{};
-      if (value===X.ENTERING_XR || value===X.IN_XR) enterXR();
+      if (value===X.ENTERING_XR) captureVisual();
+      else if (value===X.IN_XR) enterXR();
       else if (value===X.NOT_IN_XR) exitXR();
     });
 
     state.installed=true;
     publish();
-    console.info('[UCAN V328 R38] Fuente principal restaurada, hora real de Puerto Rico y autoridad final XR instalados.');
+    console.info('[UCAN V328 R39 / V330] Pose local-floor estabilizada, aterrizaje reforzado y autoridad XR final instalados.');
     return true;
   }
 
