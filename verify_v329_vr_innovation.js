@@ -39,4 +39,4 @@ if (failures.length) {
   for (const failure of failures) console.error(`- ${failure}`);
   process.exit(1);
 }
-console.log('UCAN V329 VR innovation R2 audit passed.');
+console.log('UCAN V330 VR innovation compatibility audit passed.');
