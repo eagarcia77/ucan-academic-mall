@@ -5,11 +5,11 @@
   if (!B) return;
 
   const VERSION = 'V328';
-  const REVISION = 'R39';
-  const BUILD = 'V330-20261002-XR-IMMERSIVE-STABILITY-R39';
+  const REVISION = 'R40';
+  const BUILD = 'V331-20261002-XR-SINGLE-VERTICAL-AUTHORITY-R40';
   const TARGET_EYE_HEIGHT = 1.72;
-  const MAX_UP_CORRECTION = 0.45;
-  const MAX_DOWN_CORRECTION = 0.45;
+  const MAX_UP_CORRECTION = 0.65;
+  const MAX_DOWN_CORRECTION = 0.65;
   const ENTRY_DEPTH = 7.0;
   const ENTRY_WIDTH_ASSIST = 1.8;
   const LANDING_CLEARANCE = 2.7;
@@ -298,13 +298,13 @@
 
   function settleExactLanding(route) {
     const landingZ = route.toZ + route.direction*LANDING_CLEARANCE;
-    for (const delay of [80, 240, 650]) {
+    for (const delay of [80, 240, 650, 1100]) {
       window.setTimeout(() => {
         if (!state.inXR || state.ride) return;
-        stairApi()?.setFloor?.(route.toFloor,`v330-landing-settle:${route.id}`);
+        stairApi()?.setFloor?.(route.toFloor,`v331-landing-settle:${route.id}`);
         state.stableFloor = route.toFloor;
         setWorldXZ(route.centerX, landingZ);
-        applyGround(route.toFloor,'v330-landing-settle');
+        applyGround(route.toFloor,'v331-landing-settle');
         syncDesktop(route.toFloor);
         const current = worldPosition();
         if (current) state.lastSafe = current.clone();
@@ -601,7 +601,7 @@
     window.setTimeout(()=>{if(state.inXR){removeLegacyVerticalObservers();ensureLastObserver();repairBetweenFloors();ensureVisualParity();}},260);
     window.setTimeout(()=>{if(state.inXR){removeLegacyVerticalObservers();ensureLastObserver();repairBetweenFloors();ensureVisualParity();}},700);
     window.setTimeout(()=>{if(state.inXR){repairBetweenFloors();ensureVisualParity();}},1400);
-    status('V330: pose local-floor estabilizada; altura, escaleras y aterrizaje exacto activos.');
+    status('V331: una sola autoridad vertical controla altura, salto, escaleras y aterrizaje; locomoción horizontal preservada.');
   }
 
   function exitXR() {
@@ -642,6 +642,9 @@
       underStairSafetyVolumes:true,
       hazardBlocks:state.hazardBlocks,
       legacyV326V327VerticalObserversRemoved:state.legacyObserversRemoved,
+      horizontalControllerVerticalDelegation:true,
+      singleWriterVerticalInvariant:true,
+      stairRideLocksHorizontalInput:true,
       directImmersiveNavigation:true,
       visualParitySnapshot:true,
       dynamicDayNightPreserved:true,
@@ -667,7 +670,7 @@
       recalibrate:()=>beginCalibration(true),
       repairFloor:()=>repairBetweenFloors(),
       assistedRide,
-      forceFloor:floor=>{const target=nearestFloor(floor);stairApi()?.setFloor?.(target,'v330-force-floor');state.stableFloor=target;state.ride=null;applyGround(target,'v330-force-floor');syncDesktop(target);return target;},
+      forceFloor:floor=>{const target=nearestFloor(floor);stairApi()?.setFloor?.(target,'v331-force-floor');state.stableFloor=target;state.ride=null;applyGround(target,'v331-force-floor');syncDesktop(target);return target;},
       getState
     };
   }
@@ -697,7 +700,7 @@
 
     state.installed=true;
     publish();
-    console.info('[UCAN V328 R39 / V330] Pose local-floor estabilizada, aterrizaje reforzado y autoridad XR final instalados.');
+    console.info('[UCAN V328 R40 / V331] Autoridad vertical única, altura calibrada y aterrizaje exacto instalados.');
     return true;
   }
 
