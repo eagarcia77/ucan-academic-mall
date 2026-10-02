@@ -5,11 +5,11 @@
   if (!B) return;
 
   const VERSION = 'V324';
-  const REVISION = 'R28';
-  const BUILD = 'V324-20260730-XR-PARENT-RIG-QUEST-ENTRY-R28';
+  const REVISION = 'R40';
+  const BUILD = 'V331-20261002-XR-SINGLE-VERTICAL-AUTHORITY-R40';
   const BUTTON_ID = 'ucanV324VrEntry';
   const LEVELS = [0, 8.2, 16.4, 27.2];
-  const SPEEDS = { comfort:4.8, natural:6.8, fast:9.2 };
+  const SPEEDS = { comfort:3.4, natural:5.0, fast:7.0 };
   const ROUTES = {
     up12:{ centerX:-20, halfWidth:3.45, direction:-1 },
     down21:{ centerX:-8, halfWidth:3.45, direction:1 },
@@ -37,6 +37,7 @@
   const nearestFloor = value => LEVELS.reduce((best, floor) => Math.abs(Number(value)-floor) < Math.abs(Number(value)-best) ? floor : best, LEVELS[0]);
   const rigApi = () => window.__UCAN_LOCOMOTION_CONTROLS_V323__ || null;
   const stairApi = () => window.__UCAN_STAIR_AUTHORITY_V322__ || null;
+  const finalAuthority = () => window.__UCAN_XR_FINAL_AUTHORITY_V328__ || null;
 
   function fail(stage, reason) {
     state.lastError = { stage, message:String(reason?.message || reason), at:new Date().toISOString() };
@@ -90,8 +91,10 @@
     if (!world || !state.desktop?.position) return;
     state.desktop.position.x = world.x;
     state.desktop.position.z = world.z;
-    state.desktop.position.y = state.ground + 1.72;
-    state.lastWorld = { x:world.x, y:state.ground, z:world.z };
+    const final = finalAuthority();
+    const finalState = final?.getState?.() || final;
+    if (!(final?.installed && finalState?.inXR)) state.desktop.position.y = state.ground + 1.72;
+    state.lastWorld = { x:world.x, y:world.y, z:world.z };
   }
 
   function normalizeAxis(raw) {
@@ -250,7 +253,10 @@
         state.ground = nearestFloor(state.teleportTarget.y);
         stairApi()?.setFloor?.(state.ground,'v324-teleport');
         setWorldXZ(state.teleportTarget.x,state.teleportTarget.z);
-        state.root.position.y = state.ground;
+        const final = finalAuthority();
+        const finalState = final?.getState?.() || final;
+        if (final?.installed && finalState?.inXR && typeof final.forceFloor === 'function') final.forceFloor(state.ground);
+        else state.root.position.y = state.ground;
       }
       if (state.teleportMarker) state.teleportMarker.isVisible = false;
       state.teleportTarget = null;
@@ -263,26 +269,42 @@
       const dt = clamp((state.scene.getEngine().getDeltaTime()||16)/1000,0.001,0.05);
       const left = axes('left');
       const right = axes('right');
+      const final = finalAuthority();
+      const finalState = final?.getState?.() || final;
+      const verticalDelegated = Boolean(final?.installed && finalState?.inXR);
+      const automaticRide = Boolean(verticalDelegated && finalState?.activeRide);
+
       turn(right.x,dt);
-      const basis = yawBasis();
-      const desired = basis.right.scale(left.x).add(basis.forward.scale(-left.y));
-      const magnitude = Math.min(1,Math.hypot(left.x,left.y));
-      if (desired.lengthSquared() > 1) desired.normalize();
-      desired.scaleInPlace(speed()*magnitude);
-      const response = 1-Math.exp(-(desired.lengthSquared()>0.0001?ACCELERATION:BRAKING)*dt);
-      state.velocity = B.Vector3.Lerp(state.velocity,desired,response);
-      state.velocity.y = 0;
-      if (state.velocity.lengthSquared()<0.00025) state.velocity.set(0,0,0);
-      move(state.velocity.scale(dt));
-      const world = worldPosition();
-      const before = stairApi()?.getState?.() || {};
-      state.ground = stairApi()?.resolveGround?.(world,state.ground) ?? state.ground;
-      state.root.position.y = state.ground;
-      const after = stairApi()?.getState?.() || {};
-      if (before.activeRoute && !after.activeRoute) state.completedExits += 1;
-      if (after.activeRoute) state.stairFrames += 1;
+
+      if (!automaticRide) {
+        const basis = yawBasis();
+        const desired = basis.right.scale(left.x).add(basis.forward.scale(-left.y));
+        const magnitude = Math.min(1,Math.hypot(left.x,left.y));
+        if (desired.lengthSquared() > 1) desired.normalize();
+        desired.scaleInPlace(speed()*magnitude);
+        const response = 1-Math.exp(-(desired.lengthSquared()>0.0001?ACCELERATION:BRAKING)*dt);
+        state.velocity = B.Vector3.Lerp(state.velocity,desired,response);
+        state.velocity.y = 0;
+        if (state.velocity.lengthSquared()<0.00025) state.velocity.set(0,0,0);
+        move(state.velocity.scale(dt));
+      } else {
+        state.velocity.set(0,0,0);
+      }
+
+      if (verticalDelegated) {
+        if (Number.isFinite(Number(finalState?.stableFloor))) state.ground = nearestFloor(finalState.stableFloor);
+      } else {
+        const world = worldPosition();
+        const before = stairApi()?.getState?.() || {};
+        state.ground = stairApi()?.resolveGround?.(world,state.ground) ?? state.ground;
+        state.root.position.y = state.ground;
+        const after = stairApi()?.getState?.() || {};
+        if (before.activeRoute && !after.activeRoute) state.completedExits += 1;
+        if (after.activeRoute) state.stairFrames += 1;
+      }
+
       if (state.velocity.lengthSquared()>0.0001) state.movementFrames += 1;
-      updateTeleport(right.y);
+      if (!automaticRide) updateTeleport(right.y);
       syncDesktop();
       publish();
     } catch (reason) { fail('xr-frame',reason); }
@@ -400,6 +422,7 @@
       version:VERSION,revision:REVISION,build:BUILD,installed:state.installed,
       xrParentRig:Boolean(state.root),v316FrameSuspendedInXr:Boolean(state.inXR && state.v316Observer),
       headTrackingPreserved:true,stairCollisionBypassedDuringRoute:true,
+      verticalAuthorityDelegatedToV328:true,automaticRideInputLocked:true,desktopSpeedParity:true,
       rightVrButtonSupported:state.supported,rightVrButtonPresent:Boolean(document.getElementById(BUTTON_ID)),
       rightVrButtonVisible:Boolean(state.button && state.button.style.display !== 'none'),
       inXR:state.inXR,ground:state.ground,movementFrames:state.movementFrames,
@@ -407,7 +430,7 @@
       clicks:state.clicks,entries:state.entries,lastWorld:state.lastWorld,lastError:state.lastError,
       enterVr,refresh:refreshButton,getState:() => ({
         installed:state.installed,xrParentRig:Boolean(state.root),v316FrameSuspendedInXr:Boolean(state.inXR && state.v316Observer),
-        headTrackingPreserved:true,stairCollisionBypassedDuringRoute:true,rightVrButtonSupported:state.supported,
+        headTrackingPreserved:true,stairCollisionBypassedDuringRoute:true,verticalAuthorityDelegatedToV328:true,automaticRideInputLocked:true,desktopSpeedParity:true,rightVrButtonSupported:state.supported,
         rightVrButtonPresent:Boolean(document.getElementById(BUTTON_ID)),rightVrButtonVisible:Boolean(state.button && state.button.style.display !== 'none'),
         inXR:state.inXR,ground:state.ground,activeRoute:stairApi()?.getState?.().activeRoute||null,
         routeProgress:stairApi()?.getState?.().routeProgress||0,completedExits:state.completedExits,lastError:state.lastError
@@ -435,7 +458,7 @@
     detectSupport();
     window.setInterval(refreshButton,900);
     publish();
-    console.info('[UCAN V324 R28] Locomoción WebXR por nodo padre y botón derecho instalados.');
+    console.info('[UCAN V324 R40 / V331] Locomoción horizontal WebXR delega toda la altura y escaleras a la autoridad final.');
     return true;
   }
 
