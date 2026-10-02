@@ -137,9 +137,12 @@ http.ServerResponse.prototype.writeHead = function writeHeadV328(statusCode, sta
   const pathname = requestPath(this);
   const transformable = /text\/html/i.test(type) || ((pathname === '/version' || pathname === '/health' || pathname === '/healthz') && /application\/json/i.test(type));
   if (transformable) this.__ucanV328Chunks = [];
+  const active = global.__UCAN_ACTIVE_RELEASE__ || {};
+  const publicVersion = String(active.version || VERSION);
+  const publicRevision = String(active.revision || REVISION);
   try {
-    this.setHeader?.('X-UCAN-Version', VERSION);
-    this.setHeader?.('X-UCAN-Revision', REVISION);
+    this.setHeader?.('X-UCAN-Version', publicVersion);
+    this.setHeader?.('X-UCAN-Revision', publicRevision);
     this.setHeader?.('X-UCAN-Stability', 'V325');
     this.setHeader?.('X-UCAN-XR-Final-Authority', VERSION);
     this.setHeader?.('X-UCAN-Legacy-XR-Vertical', 'disabled');
@@ -153,8 +156,8 @@ http.ServerResponse.prototype.writeHead = function writeHeadV328(statusCode, sta
   if (nextHeaders && typeof nextHeaders === 'object') {
     nextHeaders = {
       ...nextHeaders,
-      'X-UCAN-Version':VERSION,
-      'X-UCAN-Revision':REVISION,
+      'X-UCAN-Version':publicVersion,
+      'X-UCAN-Revision':publicRevision,
       'X-UCAN-Stability':'V325',
       'X-UCAN-XR-Final-Authority':VERSION,
       'X-UCAN-Legacy-XR-Vertical':'disabled'
