@@ -9,11 +9,11 @@ const baseWrite = http.ServerResponse.prototype.write;
 const baseEnd = http.ServerResponse.prototype.end;
 
 const VERSION = 'V328';
-const REVISION = 'R39';
-const BUILD = 'V330-20261002-XR-IMMERSIVE-STABILITY-R39';
-const STABILITY_SRC = '/js/ucan_v325_render_stability.js?build=V330-20261002-XR-IMMERSIVE-STABILITY-R39';
-const FINAL_XR_SRC = '/js/ucan_v328_xr_final_authority.js?build=V330-20261002-XR-IMMERSIVE-STABILITY-R39';
-const MAIN_BUILD = 'V330-20261002-XR-IMMERSIVE-STABILITY-R39';
+const REVISION = 'R40';
+const BUILD = 'V331-20261002-XR-SINGLE-VERTICAL-AUTHORITY-R40';
+const STABILITY_SRC = '/js/ucan_v325_render_stability.js?build=V331-20261002-XR-SINGLE-VERTICAL-AUTHORITY-R40';
+const FINAL_XR_SRC = '/js/ucan_v328_xr_final_authority.js?build=V331-20261002-XR-SINGLE-VERTICAL-AUTHORITY-R40';
+const MAIN_BUILD = 'V331-20261002-XR-SINGLE-VERTICAL-AUTHORITY-R40';
 
 // La capa V323 se mantiene como adaptador horizontal, pero ya no debe volver a
 // publicar sus metadatos como si fuera la versión final.  V323 consulta este
@@ -74,7 +74,7 @@ function transformHtml(value) {
 
   html = html.replace(/UCAN Academic Mall V(?:323|325|326|327)/g, 'UCAN Academic Mall V328');
   html = html.replace(/COMPILACIÓN V(?:323|325|326|327)[^<]*/g, 'COMPILACIÓN V328 · AUTORIDAD XR ÚNICA Y ATERRIZAJE EXACTO');
-  html = html.replace('</head>', `  <meta name="ucan-render-stability" content="V325-R29" />\n  <meta name="ucan-xr-final-authority" content="V328-R39" />\n</head>`);
+  html = html.replace('</head>', `  <meta name="ucan-render-stability" content="V325-R29" />\n  <meta name="ucan-xr-final-authority" content="V328-R40" />\n</head>`);
   return html;
 }
 
@@ -209,4 +209,4 @@ http.ServerResponse.prototype.end = function endV328(chunk, encoding, callback) 
   return baseEnd.call(this, body, encoding, callback);
 };
 
-console.info(`[UCAN ${VERSION} ${REVISION}] V325 visual estable + V328 como única autoridad vertical WebXR (${BUILD}).`);
+console.info(`[UCAN ${VERSION} ${REVISION}] V325 visual estable + V328 R40 como única autoridad vertical WebXR (${BUILD}).`);
