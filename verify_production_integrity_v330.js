@@ -37,6 +37,7 @@ const checks = {
   testRunsV327: String(pkg.scripts?.test || '').includes('audit:v327'),
   testRunsV328: String(pkg.scripts?.test || '').includes('audit:v328'),
   testRunsV329: String(pkg.scripts?.test || '').includes('audit:v329'),
+  testRunsV330: String(pkg.scripts?.test || '').includes('audit:v330'),
   testRunsProductionIntegrity: String(pkg.scripts?.test || '').includes('audit:production')
 };
 
